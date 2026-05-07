@@ -32,6 +32,7 @@ The crawler must render cards in a fenced, non-executable format with:
 
 - source namespace
 - provenance and quality state
+- outcome type
 - card version
 - confidence or ranking score
 - stale/deprecated/disputed flags
@@ -41,9 +42,9 @@ The crawler must never allow retrieved card text to directly trigger privileged 
 
 ## Authorization
 
-Every API, search, ranking, ingestion, approval, review, deprecation, and billing operation must be authorized at object level.
+Every API, search, candidate generation, ranking, ingestion, approval, review, deprecation, and billing operation must be authorized at object level.
 
-Tenant-scoped records must include `tenant_id`. Tenant identity must be included in primary keys, foreign keys, search filters, cache keys, object storage manifests, and audit events. Search authorization must happen before ranking and reranking.
+Tenant-scoped records must include `tenant_id`. Tenant identity must be included in primary keys, foreign keys, search filters, cache keys, object storage manifests, and audit events. Search authorization must happen before candidate generation, ranking, and reranking.
 
 Public cards keep the publisher's `tenant_id` for ownership, audit, revocation, billing, and abuse response. Public discoverability is granted by `namespace.visibility = public`, not by removing tenant ownership. Search indexes therefore use both `tenant_id` and `namespace_id`: public queries can read eligible public namespace records, while private/team queries must still match the caller's tenant or explicit sharing grant.
 
@@ -86,9 +87,19 @@ Consent records must bind:
 - exact redacted card digest
 - card version
 - namespace
+- approved derived-artifact policy, if any
 - timestamp
 - approval UI/session metadata
 - expiration or revocation state
+
+Approval UI must show the exact public artifact and a clear redaction summary before approval. It must distinguish:
+
+- public card publication
+- raw/source artifact retention
+- deterministic derived artifacts, such as canonical trails
+- editorial or monetized derived artifacts, such as curated packs
+
+Consent for a public card does not automatically grant consent for raw artifact retention, editorial rewriting, curated packs, model training, or any derived artifact that reveals new detail or materially changes meaning. Derived artifacts need an explicit inheritance rule or renewed approval.
 
 Revocation must create a tombstone event and block retrieval immediately. Purge propagation must cover canonical metadata, object storage, hot index, main index, local caches, archives, and derived canonical trails.
 
@@ -99,6 +110,7 @@ Raw logs, transcripts, stack traces, and file excerpts are not stored by default
 Raw/source artifacts can be stored only when all of these are true:
 
 - the user explicitly opts in
+- the consent surface states who can read it, why, and for how long
 - the artifact is encrypted before object storage
 - object storage key includes tenant, source event, and content hash
 - access is limited to the owner tenant and required reviewer/service roles

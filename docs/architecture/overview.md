@@ -1,6 +1,8 @@
 # Architecture Overview
 
-Knudg is central infrastructure, not local-first storage. Local state should be limited to temporary current-work summaries, pending writer approval queues, and recent retrieval caches.
+Knudg is central infrastructure, not local-first storage. Local state should be limited to temporary current-work summaries, pending writer approval queues, and session-scoped retrieval cache metadata.
+
+Local retrieval cache must not become a personal memory layer. By default it stores only card IDs, card versions, freshness metadata, and ranking metadata. Card bodies may be cached only with explicit user or tenant policy, encryption at rest, short TTL, and purge on revocation.
 
 The central service manages:
 
@@ -44,18 +46,30 @@ Writing is asynchronous and stateful.
 State inventory:
 
 - `candidate_created`
+- `pending_admission`
 - `pending_redaction`
 - `pending_review`
 - `awaiting_user_approval`
 - `approved`
 - `indexed_hot`
 - `indexed_main`
+- `deferred`
 - `rejected`
 - `superseded`
 - `deprecated`
 - `revoked`
 
 The canonical lifecycle is defined in [Data Model](data-model.md). This list is an enum inventory, not an alternate ordering.
+
+Before redaction/review, public candidates must pass admission control:
+
+- dedupe against existing public, team, and private-scope candidates the caller can access
+- novelty scoring against canonical trails and open clusters
+- abuse, spam, and quota checks
+- review-capacity checks for the target wedge
+- backlog age controls that can sideline, defer, or reject low-novelty candidates
+
+Admission control does not decide truth. It decides whether Knudg should spend review/indexing budget on the candidate now.
 
 Do not immediately push every approved card into the main index. Use a small hot index for recent cards, then batch compact into the main index.
 
@@ -70,6 +84,7 @@ Required worker rules:
 - every derived index entry can be rebuilt from canonical events
 - duplicate queue delivery must not create duplicate cards, approvals, or index entries
 - state transitions are monotonic except for explicit rejection, deprecation, supersession, or revocation transitions
+- admission, dedupe, novelty, and review decisions are recorded as events and can be audited
 
 ## Scaling Principle
 
@@ -87,6 +102,10 @@ many similar solved cards
 ```
 
 Compression must preserve the details that make a fix valid. Canonical trails should keep environment-specific variants instead of collapsing them away.
+
+Canonical trails are derived artifacts, not new ground truth. They must be reversible to their source card versions through a cluster manifest. A minority variant must not be discarded just because the majority path works in another environment.
+
+Derived artifacts have their own versions, provenance, and consent policy. A deterministic aggregation of already-public redacted card versions can inherit publication status only when the derived artifact exposes no new private detail and the policy says inheritance is allowed. Editorial rewrites, curated packs, monetized bundles, or artifacts that change meaning require explicit policy review and may require renewed consent.
 
 Variant dimensions:
 

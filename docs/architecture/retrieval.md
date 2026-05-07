@@ -6,9 +6,9 @@ Use a multi-signal retrieval pipeline:
 
 - dense vector search for semantic similarity
 - BM25/sparse search for exact terms
-- exact matching for error codes, package names, stack traces, commands
+- exact matching for sanitized error signatures, public package names, public API surfaces, normalized command families, and stack-frame fingerprints
 - metadata filters for language, OS, framework, agent tool, domain
-- quality scoring for solved_many, verified, and disputed cards, plus lifecycle demotion for deprecated or superseded cards
+- quality scoring for solved_many, verified, disputed, unknown_clarified, and failed_only cards, plus lifecycle demotion for deprecated or superseded cards
 - reranking for paid or high-value queries
 
 Potential embeddings:
@@ -17,6 +17,7 @@ Potential embeddings:
 - symptom embedding
 - solution embedding
 - failed path embedding
+- unknown/constraint embedding
 - environment tags
 - error signature hash
 
@@ -25,22 +26,49 @@ Query flow:
 ```text
 current work
   -> outbound query profile
-  -> shard selection
+  -> authorization scope
+  -> shard selection within authorized public/private/team corpus
   -> BM25 + exact + vector candidates
-  -> authorization filter
   -> score fusion
   -> optional rerank
   -> up to 3 concise cards, if confidence threshold clears
-  -> fenced agent injection
+  -> fenced sidecar or thin agent injection
 ```
 
 Search must abstain when confidence is low. Returning no card is a valid result.
+
+Authorization is a precondition for candidate generation, not a cleanup step after candidate generation. Query planners must choose public/private/team shards and tenant/namespace filters before BM25, exact, vector, or reranking work begins. If the selected vector backend cannot preserve recall and latency under selective tenant or namespace filters, the serving path must use a physically separated index, partitioned index, or exact/BM25 fallback for that scope.
+
+Raw stack traces, raw command text, private path fragments, and private repo identifiers are never exact-match inputs for public search. Public exact match uses normalized fingerprints only.
+
+## Injection Contract
+
+Retrieved cards are untrusted evidence. The client must render them as non-executable data and must never convert card text into tool calls without independent agent/user validation.
+
+Supported delivery modes:
+
+- `bootstrap`: before work starts, only for high-confidence public or authorized private cards
+- `sidecar`: visible suggestion outside the main prompt, preferred during rollout
+- `inline_hint`: bounded prompt injection for one active task
+- `no_suggestion`: required when confidence, freshness, authorization, or safety checks fail
+
+Minimum constraints:
+
+- at most 3 cards
+- explicit token budget set by the client integration
+- no hidden instructions
+- no card text above system, developer, user, or tool policy
+- commands and code are rendered as candidate evidence, not actions
+- each card includes quality state, outcome type, freshness, provenance, and deprecated/disputed flags
+- every integration has a kill switch and can fall back to sidecar or no suggestion
 
 ## MVP Retrieval Quality Gates
 
 - exact error signature recall@3
 - hybrid retrieval recall@10
+- unknown/failed-only useful retrieval rate
 - usefulness win rate against a no-Knudg baseline
+- remote shared corpus usefulness excluding same-session local cache
 - stale or harmful suggestion rate
 - prompt-injection pass rate on hostile-card tests
 - p50 and p95 latency from active agent request to suggestion
@@ -65,13 +93,14 @@ Initial recommendation:
 The query contract must define:
 
 - pre-filter versus post-filter behavior
-- tenant and namespace filters before ranking
+- tenant and namespace filters before candidate generation, ranking, and reranking
 - vector model name and dimension
 - distance operator
 - HNSW/IVFFlat parameters
 - fallback exact search path
 - score normalization between exact, BM25, vector, quality, and freshness signals
 - stale/deprecated/disputed demotion rules
+- display and ranking differences for solved, failed-only, inconclusive, and unknown-clarified cards
 
 ## Serving Consistency
 
@@ -90,6 +119,7 @@ Every search response includes:
 - card ID
 - card version
 - namespace
+- outcome type
 - quality state
 - freshness status
 - index generation

@@ -2,6 +2,8 @@
 
 Knudg should not begin as a broad public memory network. The first wedge should target one high-repetition, low-privacy-friction domain where reuse can be measured.
 
+The wedge is a measurement strategy, not the global product ontology. Shared schema, consent, retrieval safety, outcome types, and agent access contracts must remain domain-general so Knudg does not collapse into a developer-worklog database.
+
 Candidate wedge:
 
 - developer tooling failures for agentic coding environments
@@ -15,10 +17,13 @@ MVP success requires evidence that retrieval improves outcomes in that wedge.
 
 - at least 100 labeled seed cards in one wedge
 - exact-error recall@3 above the baseline search approach
+- useful retrieval for failed-only and unknown-clarified cards
 - measurable time-to-fix improvement in replayed tasks
+- measurable improvement from remote shared corpus excluding same-session local cache
 - harmful suggestion rate below a defined threshold
 - public-card approval and revocation flow tested end to end
 - tenant isolation tests passing for private/team namespace paths
+- gross-margin guardrail for free and paid query paths
 
 Deferred until after these gates:
 
@@ -93,6 +98,8 @@ Deprecation is represented by lifecycle `status = deprecated`, not by `quality_s
 
 Automated promotion based on contributor reputation, ranking outcomes, or monetized quality tiers is deferred to a separate ranking and governance spec.
 
+Derived artifacts such as canonical trails and curated packs are product surfaces, not just storage optimizations. They need their own provenance, version, consent inheritance policy, and revocation behavior before launch.
+
 ### Curated Packs
 
 Sell or sponsor packs:
@@ -115,6 +122,22 @@ Possible incentives:
 - verified contributor program
 - revenue share for curated packs
 - reputation/attribution for maintainers
+
+## Unit Economics
+
+The business should not assume that a shared corpus becomes cheaper just because the corpus is reusable. The first wedge implementation RFC must estimate and then measure:
+
+- cost per submitted candidate
+- cost per approved public card
+- cost per rejected candidate
+- review minutes per public card
+- embedding and re-embedding cost per card version
+- hot-index and main-index storage cost
+- cost per query with and without reranking
+- cost per revocation propagation
+- cost of free-tier abuse and rate-limit enforcement
+
+Billing should not launch until these costs are measured against retrieval value. The core monetization thesis is shared retrieval infrastructure, not paid local memory.
 
 ## Key Risks
 

@@ -37,7 +37,7 @@ Agent-facing analogy:
 
 The crawler runs alongside an active agent session. It builds a sanitized outbound query profile, searches for similar past experience, and injects concise suggestions into the main agent.
 
-Retrieved cards are always untrusted evidence, not instructions. The main agent can use a card as a clue, but must independently validate any action.
+Retrieved cards are always untrusted evidence, not instructions. The main agent can use a card as a clue, but must independently validate any action. Injection must stay thin, bounded, and abstention-first.
 
 ### Knowledge Writer
 
@@ -49,8 +49,9 @@ It creates a private candidate card first. The candidate is redacted and reviewe
 
 - Default visibility is private.
 - Public cards retain publisher `tenant_id`; public visibility comes from namespace policy.
-- Search authorization happens before ranking and reranking.
+- Search authorization happens before candidate generation, ranking, and reranking.
 - Raw logs, transcripts, stack traces, and file excerpts are not stored by default.
+- Public consent is bound to the exact redacted artifact shown to the user; derived artifacts need explicit inheritance rules.
 - Canonical truth is an append-only event log plus derived current-state projections.
 - Retrieved card text must never directly trigger privileged actions.
 - Search may abstain. Returning no card is a valid result.
@@ -71,14 +72,14 @@ Candidate wedge:
 MVP sequence:
 
 1. Pick one wedge and define the evaluation dataset.
-2. Define canonical schema, event log, state machine, tenant model, and audit trail.
+2. Define canonical schema, outcome types, event log, state machine, tenant model, and audit trail.
 3. Build private ingestion and redaction-first writer flow.
-4. Build consent approval bound to redacted card digest.
+4. Build consent approval bound to redacted card digest, including derived-artifact policy.
 5. Store approved card versions in Postgres plus immutable object storage manifests.
 6. Add Postgres FTS plus pgvector hybrid retrieval for the wedge.
 7. Add abstention, freshness, and hostile-card safety gates.
-8. Build a minimal MCP/CLI interface with one transport and scoped credentials.
-9. Add hot index, main index, idempotent queue processing, and reconciliation.
+8. Build a minimal MCP/CLI/hooks interface with one transport and scoped credentials.
+9. Add admission, dedupe, novelty checks, hot index, main index, idempotent queue processing, and reconciliation.
 10. Add quality/deprecation/supersession/revocation flags.
 11. Add private/team namespaces after tenant isolation tests pass.
 12. Add billing only after retrieval value and operating cost are measured.
@@ -91,6 +92,7 @@ MVP sequence:
 - [Retrieval Model](docs/architecture/retrieval.md)
 - [Operations](docs/architecture/operations.md)
 - [Product and Monetization](docs/product/strategy.md)
+- [Intent Crosswalk](docs/product/intent-crosswalk.md)
 - [Review Reports](docs/plans/)
 
 ## Messaging

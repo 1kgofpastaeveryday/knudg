@@ -13,11 +13,13 @@ This directory holds detailed design notes that would make the root README too l
 ## Product
 
 - [Product Strategy](product/strategy.md)
+- [Intent Crosswalk](product/intent-crosswalk.md)
 
 ## Plans and Reviews
 
 - [Adversarial Review - 2026-05-07](plans/adversarial-review-2026-05-07.md)
 - [Adversarial Review Fix Loop - 2026-05-07](plans/adversarial-review-2026-05-07-fix-loop.md)
+- [Intent Drift Review - 2026-05-08](plans/intent-drift-review-2026-05-08.md)
 
 ## Split Rule
 

@@ -17,6 +17,7 @@ This directory holds detailed design notes that would make the root README too l
 
 ## Plans and Reviews
 
+- [Adversarial Review - 2026-05-09](plans/adversarial-review-2026-05-09.md)
 - [Adversarial Review - 2026-05-07](plans/adversarial-review-2026-05-07.md)
 - [Adversarial Review Fix Loop - 2026-05-07](plans/adversarial-review-2026-05-07-fix-loop.md)
 - [Intent Drift Review - 2026-05-08](plans/intent-drift-review-2026-05-08.md)

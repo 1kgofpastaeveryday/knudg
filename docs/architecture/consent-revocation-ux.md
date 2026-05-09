@@ -16,6 +16,8 @@ Knudg can postpone a polished knowledge-base UI, but it cannot postpone consent 
 
 If a surface is not listed here, consent is denied by default.
 
+`Default off` means the product surface is not launched or enabled by default. If that surface is later launched, the same row still governs whether consent can be inherited or must be renewed.
+
 ## Approval Flow
 
 The approval surface must offer separate actions:

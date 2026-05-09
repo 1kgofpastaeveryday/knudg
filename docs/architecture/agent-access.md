@@ -37,11 +37,13 @@ Read and write scopes are separate. A token that can search private cards cannot
 | `get_card` | Fetch a specific authorized card version | `read:{namespace}` | no | 1000 ms | yes |
 | `submit_candidate` | Submit a private candidate for admission | `submit:{tenant}` | required | 3000 ms | yes |
 | `ask_approval` | Create a human approval challenge for a redacted artifact | `approval:create` | required | 3000 ms | yes |
-| `approve_publication` | Complete one signed approval challenge | `approval:complete` | required | 3000 ms | no replay |
+| `approve_publication` | Complete one signed approval challenge from a human session | `approval:complete` | required | 3000 ms | idempotent result only |
 | `revoke_card` | Create a tombstone and block retrieval | `revoke:own` or `revoke:any` | required | 2000 ms | yes |
 | `report_harmful_card` | Report prompt injection, stale, unsafe, or misleading card | `report` | optional | 1500 ms | yes |
 
 All write operations require an idempotency key. Retried writes with the same request digest return the original effect. A reused key with a different digest is a hard error.
+
+`approve_publication` is human-session only. An agent, service account, MCP tool call, or background worker may create or display an approval challenge, but cannot complete it. The approval challenge itself is single-use. A network retry with the same idempotency key and request digest can return the already-completed result, but must not create a second publish effect or allow a changed artifact to reuse the challenge.
 
 ## Hook Events
 

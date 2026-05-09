@@ -22,6 +22,10 @@ This directory holds detailed design notes that would make the root README too l
 
 - [Decision Backlog](decisions/README.md)
 
+## RFCs
+
+- [RFC 0001 - M0 Schema and Event Log](rfcs/0001-m0-schema-event-log.md)
+
 ## Plans and Reviews
 
 Plans are historical review artifacts unless a file explicitly says it is a current implementation spec. Current normative design lives under `docs/architecture/`, `docs/product/`, and `docs/decisions/`.

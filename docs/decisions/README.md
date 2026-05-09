@@ -15,6 +15,7 @@ This backlog prevents deferred design decisions from disappearing into prose. St
 | DEC-009 | Raw artifact retention | defaulted | off by default, max 30 days | M2 | security/product | M2 start |
 | DEC-010 | Local card body cache | defaulted | disabled in MVP | M3 | platform/security | M3 start |
 | DEC-011 | Mojibake source quote recovery | open | English intent summaries are authoritative until source text is restored | M0 | product | before external review |
+| DEC-012 | M0 migration framework | open | decide in RFC 0001 before implementation | M0 | data | before M0 code |
 
 ## Decision Rules
 

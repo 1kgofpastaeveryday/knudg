@@ -14,6 +14,8 @@ This document turns review findings into blocking implementation requirements. I
 | M5 | Agent access | MCP/CLI contract, delegated tokens, hooks, search response contract | broad third-party integrations |
 | M6 | Public wedge pilot | quotas, review capacity, quality gates, cost circuits | general public contributor marketplace |
 
+M3 may use an internal CLI/API harness to test exact/FTS sidecar retrieval. Full external MCP/hooks support remains M5 scope.
+
 ## MVP Defaults
 
 These are provisional defaults. A wedge RFC can change them only with measured evidence.
@@ -31,6 +33,8 @@ These are provisional defaults. A wedge RFC can change them only with measured e
 - global retrieval budget: 2500 ms
 - exact/FTS fallback budget: 1000 ms
 - rerank budget: 800 ms
+
+M1 storage boundary: private candidate metadata and redacted draft bodies may live in Postgres. Raw/source artifacts remain disabled until M2 or a deployment RFC pins object storage, encryption, purge, and signed access.
 
 ## Postgres and Migration Requirements
 

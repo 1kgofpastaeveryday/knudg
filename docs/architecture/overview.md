@@ -34,10 +34,10 @@ Vector search:
   pgvector first
 
 Queue:
-  one explicitly chosen queue with documented delivery semantics
+  Postgres-backed queue for MVP, unless DEC-001 is changed
 ```
 
-For MVP deployment, the implementation must pin exact providers in an implementation RFC. This architecture document intentionally allows R2 or S3 because provider choice is deployment-dependent; the invariant is immutable object manifests, encryption, tenant scoping, retention policy, and canonical DB linkage.
+For MVP deployment, the implementation must pin exact providers in an implementation RFC. This architecture document intentionally allows R2 or S3 because provider choice is deployment-dependent; the invariant is an S3-compatible interface with immutable object manifests, encryption, tenant scoping, retention policy, signed access, purge path, and canonical DB linkage.
 
 ## Write Pipeline
 
@@ -50,7 +50,9 @@ State inventory:
 - `pending_redaction`
 - `pending_review`
 - `awaiting_user_approval`
-- `approved`
+- `approved_private`
+- `approved_for_publication`
+- `published`
 - `indexed_hot`
 - `indexed_main`
 - `deferred`

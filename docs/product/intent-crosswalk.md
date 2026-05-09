@@ -30,6 +30,7 @@ Intent:
 Design anchors:
 
 - `README.md`: Core Roles and Initial MVP
+- `docs/architecture/agent-access.md`: transport, operation, token, hook, and response contracts
 - `docs/architecture/retrieval.md`: injection contract and delivery modes
 
 Guardrail:
@@ -66,6 +67,7 @@ Intent:
 Design anchors:
 
 - `docs/architecture/security-privacy.md`: Privacy, Redaction, and Consent
+- `docs/architecture/consent-revocation-ux.md`: consent matrix and revocation cockpit
 - `docs/architecture/data-model.md`: consent records and derived artifacts
 - `docs/architecture/overview.md`: canonical trail policy
 
@@ -135,6 +137,7 @@ Design anchors:
 
 - `docs/architecture/overview.md`: admission, dedupe, novelty, backlog controls
 - `docs/architecture/operations.md`: cost telemetry and index migration operations
+- `docs/architecture/implementation-readiness.md`: provisional budgets, queue defaults, runbook template
 - `docs/product/strategy.md`: unit economics
 
 Guardrail:

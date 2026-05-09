@@ -89,10 +89,14 @@ MVP sequence:
 - [Architecture Overview](docs/architecture/overview.md)
 - [Security and Privacy](docs/architecture/security-privacy.md)
 - [Data Model](docs/architecture/data-model.md)
+- [Agent Access](docs/architecture/agent-access.md)
 - [Retrieval Model](docs/architecture/retrieval.md)
 - [Operations](docs/architecture/operations.md)
+- [Consent and Revocation UX](docs/architecture/consent-revocation-ux.md)
+- [Implementation Readiness](docs/architecture/implementation-readiness.md)
 - [Product and Monetization](docs/product/strategy.md)
 - [Intent Crosswalk](docs/product/intent-crosswalk.md)
+- [Decision Backlog](docs/decisions/README.md)
 - [Review Reports](docs/plans/)
 
 ## Messaging

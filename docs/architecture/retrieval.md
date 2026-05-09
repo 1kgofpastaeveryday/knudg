@@ -88,7 +88,7 @@ Initial recommendation:
 - keyword search: Postgres full-text search for MVP
 - vector search: pgvector HNSW indexes for MVP
 - object storage: R2 or S3 with immutable content-addressed objects
-- queue: one Postgres-backed queue or one managed queue, not multiple interchangeable options
+- queue: Postgres-backed queue for MVP; any managed queue replacement requires a decision update
 
 The query contract must define:
 
@@ -108,11 +108,14 @@ The canonical Postgres event log is authoritative. Search indexes and object sto
 
 Visibility rules:
 
-- `candidate_created`, `pending_redaction`, `pending_review`, and `awaiting_user_approval` are never searchable
-- `approved` is visible only to authorized owners/reviewers until indexed
+- `candidate_created`, `pending_admission`, `deferred`, `pending_redaction`, `pending_review`, `awaiting_user_approval`, `approved_private`, `approved_for_publication`, `rejected`, and `published` are not public-searchable
+- `approved_private` is visible only to authorized owner/team scopes
+- `approved_for_publication` and `published` are visible only to authorized owners/reviewers until indexed
 - `indexed_hot` and `indexed_main` are searchable according to namespace and tenant policy
 - `deprecated` and `superseded` can appear only when explicitly requested or when used as provenance for a replacement
 - `revoked` is never returned
+
+The full status-to-visibility matrix lives in [Data Model](data-model.md). Retrieval implementations must not define their own visibility policy.
 
 Every search response includes:
 
@@ -123,6 +126,19 @@ Every search response includes:
 - quality state
 - freshness status
 - index generation
+- revocation epoch
 - source event range
 
-Cache keys must include tenant, namespace, card version, quality state, and index generation. Status changes emit invalidation events. If invalidation is delayed beyond the freshness SLO, serving must prefer no result over stale guidance.
+Cache keys must include tenant, namespace, card version, quality state, revocation epoch, and index generation. Status changes emit invalidation events. If invalidation is delayed beyond the freshness SLO, serving must prefer no result over stale guidance.
+
+MVP vector defaults are intentionally conservative until a wedge evaluation corpus exists:
+
+- distance: cosine
+- pgvector operator class: `vector_cosine_ops`
+- HNSW `m`: 16
+- HNSW `ef_construction`: 64
+- query `ef_search`: 80, tunable per request class
+- tenant/private scopes: partitioned or physically separated indexes before vector candidate generation
+- fallback: exact/FTS when authorized filters are too selective for vector recall
+
+The retrieval RFC can change these values only with recall, latency, and cost measurements.

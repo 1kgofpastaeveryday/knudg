@@ -6,7 +6,7 @@ Knudg has three hard trust boundaries:
 - public/private card storage to active agent prompt
 - public namespace to private/team namespaces
 
-Default visibility is private. A card can become public only after redaction, review, user approval, and indexing eligibility checks have all succeeded.
+Default visibility is private. A card can become public only after redaction, review, user approval, reviewer publish, and indexing eligibility checks have all succeeded.
 
 ## Read-Path Privacy
 
@@ -23,6 +23,8 @@ Allowed outbound query fields:
 - repo shape category, not repo identity
 
 If a useful query would require sensitive identifiers, the crawler must use a private/team namespace, local cache, or no-query fallback. Public search should prefer hashed or normalized signatures where exact text could identify the workspace.
+
+Public exact-match fingerprints use keyed HMAC or another keyed server-side fingerprint, not unsalted public hashes. Rare combinations of package, version, framework, error, OS, and repo shape are suppressed from public search unless they meet the wedge frequency threshold. Negative-result timing must not reveal whether a rare private event exists.
 
 ## Retrieved Card Trust Boundary
 
@@ -57,6 +59,8 @@ Required authorization dimensions:
 
 Postgres row-level security should be used for tenant-scoped tables. Application authorization is still required at the API boundary.
 
+Tenant-scoped tables use `(tenant_id, id)` primary or unique keys, and foreign keys include `tenant_id`. Row-level security is mandatory for normal application roles. Policies must define both `USING` and `WITH CHECK`. Roles with `BYPASSRLS` are prohibited for application traffic; break-glass access is a separate audited role with time-bound approval.
+
 ## Minimal Role-Operation Matrix
 
 | Role | Public Search | Private Search | Submit Candidate | Approve Publish | Redact/Review | Publish | Revoke Own Card | Revoke Any Card | Supersede/Deprecate | Billing/Admin |
@@ -68,7 +72,9 @@ Postgres row-level security should be used for tenant-scoped tables. Application
 | Tenant admin | yes | own tenant | own tenant | own tenant | own tenant if enabled | own tenant if enabled | own tenant | no | own tenant | own tenant |
 | Platform admin | yes | break-glass only | no | no | yes | yes | yes | yes | yes | yes |
 
-Agent clients act through short-lived delegated user tokens in MVP. Service accounts are reserved for backend workers and cannot approve publication.
+Agent clients act through delegated user tokens as defined in [Agent Access](agent-access.md). Service accounts are reserved for backend workers and cannot approve publication.
+
+Break-glass access requires a case ID, time limit, two-person approval, immutable audit event, and post-access review. Platform admin access to private/team search is read-only during break-glass unless a separate emergency mutation approval exists.
 
 ## Privacy, Redaction, and Consent
 
@@ -101,7 +107,9 @@ Approval UI must show the exact public artifact and a clear redaction summary be
 
 Consent for a public card does not automatically grant consent for raw artifact retention, editorial rewriting, curated packs, model training, or any derived artifact that reveals new detail or materially changes meaning. Derived artifacts need an explicit inheritance rule or renewed approval.
 
-Revocation must create a tombstone event and block retrieval immediately. Purge propagation must cover canonical metadata, object storage, hot index, main index, local caches, archives, and derived canonical trails.
+The consent surface matrix and approval/revocation interaction requirements are defined in [Consent and Revocation UX](consent-revocation-ux.md). Publication approval uses a one-time signed challenge bound to subject, tenant, namespace, card version, redacted digest, derived-use policy, raw-retention policy, origin, and expiry. Publish, raw retention, commercial derived use, and model/eval use require step-up reauthentication.
+
+Revocation must create a tombstone event and block retrieval immediately. The tombstone table is a mandatory read-path deny source independent of card lifecycle status. Purge propagation must cover canonical metadata, object storage, hot index, main index, local caches, archives, and derived canonical trails.
 
 ## Raw Artifact Policy
 
@@ -118,6 +126,8 @@ Raw/source artifacts can be stored only when all of these are true:
 - deletion/revocation can purge the object and all derived indexes
 - audit events record creation, read, redaction, approval, revocation, and deletion
 
+Raw/source artifact encryption uses tenant-scoped envelope encryption. Each artifact stores the encrypted object key, content hash, KMS key ID, per-object data-key metadata, consent record ID, source event ID, expiry, retention policy, and deletion state. Key rotation, emergency rotation, break-glass decrypt, and crypto-shred on TTL expiry are mandatory operational capabilities.
+
 Unapproved candidate artifacts expire by default. Public cards should store only the redacted canonical card version and its immutable digest, not raw session material.
 
 ## Hostile Card Controls
@@ -132,3 +142,5 @@ Minimum controls:
 - quarantine state for suspicious cards
 - adversarial test corpus for prompt-injection and supply-chain poisoning cases
 - explicit distinction between community cards and verified cards
+
+High-risk cards that include commands, package replacements, repository links, install scripts, environment variable changes, or credential handling cannot appear as inline hints until verified. Sidecar display must include a high-risk warning. Package and URL advice require typosquat checks, malicious URL checks, and either sandbox reproduction or reviewer approval before they can improve ranking.

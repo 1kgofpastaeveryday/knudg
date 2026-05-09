@@ -24,6 +24,15 @@ MVP success requires evidence that retrieval improves outcomes in that wedge.
 - public-card approval and revocation flow tested end to end
 - tenant isolation tests passing for private/team namespace paths
 - gross-margin guardrail for free and paid query paths
+- review capacity and stale-card removal gates passing for the wedge
+- public corpus, private/team corpus, and same-session local cache evaluated separately
+
+MVP also needs stop conditions:
+
+- pause public corpus expansion if public-only retrieval does not beat baseline on replayed tasks
+- pause public candidate admission if review backlog exceeds the configured capacity
+- keep billing disabled if query gross margin and approved-card cost are not measured
+- keep inline hints disabled if harmful suggestion or dismissal rate exceeds the wedge threshold
 
 Deferred until after these gates:
 

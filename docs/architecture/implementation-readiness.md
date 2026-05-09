@@ -6,7 +6,7 @@ This document turns review findings into blocking implementation requirements. I
 
 | Milestone | Scope | Must ship | Explicitly out |
 |---|---|---|---|
-| M0 | Schema and event log | DDL RFC, tenant/RLS policy, card events, tombstones, idempotency keys | vector search, public corpus |
+| M0 | Schema and event log | accepted DDL RFC 0001, tenant/RLS policy, card events, tombstones, idempotency keys | vector search, public corpus |
 | M1 | Private writer queue | Postgres-backed jobs, admission, redaction draft, private candidates | public indexing, curated packs |
 | M2 | Consent and revocation | approval challenge, consent matrix, revoke cockpit, tombstone read fence | commercial derived use |
 | M3 | Exact and FTS retrieval | authorized exact/FTS search, sidecar only, no body cache | pgvector, inline hints |
@@ -16,13 +16,15 @@ This document turns review findings into blocking implementation requirements. I
 
 M3 may use an internal CLI/API harness to test exact/FTS sidecar retrieval. Full external MCP/hooks support remains M5 scope.
 
+M6 is blocked until wedge privacy validation proves that public search enforces the `k` distinct-tenant cohort rule, minimum cohort size, normalized timing/reasons, privacy budgets, and rare-query generic abstention. The validation corpus must include rare fingerprint probes and hostile command/package/repo/credential-bearing cards; unverified high-risk cards must remain hidden from sidecar and inline output.
+
 ## MVP Defaults
 
 These are provisional defaults. A wedge RFC can change them only with measured evidence.
 
 - local card body cache: disabled
 - queue: Postgres-backed queue
-- object storage: S3-compatible interface, provider pinned in deployment RFC
+- object storage: S3-compatible interface, provider pinned in deployment RFC before first raw/source artifact storage
 - public card candidate quota: 20 per tenant per day
 - anonymous public search: 60 requests per hour per IP/account tuple
 - rerank: disabled for free anonymous users

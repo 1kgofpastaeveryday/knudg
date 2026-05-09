@@ -24,7 +24,7 @@ Allowed outbound query fields:
 
 If a useful query would require sensitive identifiers, the crawler must use a private/team namespace, local cache, or no-query fallback. Public search should prefer hashed or normalized signatures where exact text could identify the workspace.
 
-Public exact-match fingerprints use keyed HMAC or another keyed server-side fingerprint, not unsalted public hashes. Rare combinations of package, version, framework, error, OS, and repo shape are suppressed from public search unless they meet the wedge frequency threshold. Negative-result timing must not reveal whether a rare private event exists.
+Public exact-match fingerprints use keyed HMAC or another keyed server-side fingerprint, not unsalted public hashes. Rare combinations of package, version, framework, error, OS, and repo shape are suppressed from public search unless they meet the wedge frequency threshold: at least `k` distinct tenants and a minimum cohort size for the active wedge. Search must normalize timing and failure reasons so callers cannot distinguish "rare private fingerprint", "not indexed", "redacted", and "no match". Rare public queries return a generic abstention, consume privacy budget, and are subject to stricter rate limits.
 
 ## Retrieved Card Trust Boundary
 
@@ -52,7 +52,7 @@ Public cards keep the publisher's `tenant_id` for ownership, audit, revocation, 
 
 Required authorization dimensions:
 
-- subject: user, agent, service account, reviewer, admin
+- subject: user, delegated agent, ingestion worker, approval worker, redaction worker, review worker, index worker, compaction worker, revocation worker, billing worker, reviewer, tenant admin, platform admin
 - namespace: public, private, team, enterprise
 - operation: read, search, submit, approve, redact, review, publish, deprecate, supersede, delete, bill
 - object: card, card version, event, consent record, object blob, index entry
@@ -63,16 +63,24 @@ Tenant-scoped tables use `(tenant_id, id)` primary or unique keys, and foreign k
 
 ## Minimal Role-Operation Matrix
 
-| Role | Public Search | Private Search | Submit Candidate | Approve Publish | Redact/Review | Publish | Revoke Own Card | Revoke Any Card | Supersede/Deprecate | Billing/Admin |
+| Role | Public Search | Private Search | Submit Candidate | Approve Publication | Redact/Review | Reviewer Publish | Revoke Own Card | Revoke Any Card | Supersede/Deprecate | Billing/Admin |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Anonymous | yes, rate-limited | no | no | no | no | no | no | no | no | no |
 | User | yes | own/shared tenant only | own tenant | own candidate only | no | no | own public card | no | propose only | no |
 | Agent delegated by user | yes | user's allowed tenant scope | draft only | no | no | no | no | no | no | no |
+| Ingestion worker | no | scoped source read only | create queued artifacts | no | no | no | no | no | no | no |
+| Approval worker | no | assigned approval artifact only | no | challenge creation only | no | no | no | no | no | no |
+| Redaction worker | no | assigned artifact only | no | no | redact only | no | no | no | no | no |
+| Review worker | no | assigned review queue only | no | no | queue routing only | no | no | no | no | no |
+| Index worker | public index write only | authorized namespace read for indexing | no | no | no | no | no | no | no | no |
+| Compaction worker | public index write only | authorized namespace read for compaction | no | no | no | no | no | no | supersede/deprecate by policy event only | no |
+| Revocation worker | no | tombstone propagation only | no | no | no | no | tombstone propagation only | tombstone propagation only | no | no |
+| Billing worker | no | no | no | no | no | no | no | no | no | metering only |
 | Reviewer | yes | assigned tenant only | no | no | assigned queue | yes after approval | no | no | yes within policy | no |
-| Tenant admin | yes | own tenant | own tenant | own tenant | own tenant if enabled | own tenant if enabled | own tenant | no | own tenant | own tenant |
-| Platform admin | yes | break-glass only | no | no | yes | yes | yes | yes | yes | yes |
+| Tenant admin | yes | own tenant | own tenant | own tenant | own tenant if enabled | no unless reviewer-assigned | own tenant | no | own tenant | own tenant |
+| Platform admin | yes | break-glass only | no | no | yes | break-glass only | yes | yes | yes | yes |
 
-Agent clients act through delegated user tokens as defined in [Agent Access](agent-access.md). Service accounts are reserved for backend workers and cannot approve publication.
+Agent clients act through delegated user tokens as defined in [Agent Access](agent-access.md). Non-human principals are separate worker identities, not a generic service-account role. Each worker has one purpose-bound credential, no user-consent or reviewer-publish scope, tenant and namespace filters in every query, and append-only audit events for reads and writes. Worker database roles must use RLS like application roles; `BYPASSRLS` is prohibited outside audited break-glass access.
 
 Break-glass access requires a case ID, time limit, two-person approval, immutable audit event, and post-access review. Platform admin access to private/team search is read-only during break-glass unless a separate emergency mutation approval exists.
 
@@ -143,4 +151,4 @@ Minimum controls:
 - adversarial test corpus for prompt-injection and supply-chain poisoning cases
 - explicit distinction between community cards and verified cards
 
-High-risk cards that include commands, package replacements, repository links, install scripts, environment variable changes, or credential handling cannot appear as inline hints until verified. Sidecar display must include a high-risk warning. Package and URL advice require typosquat checks, malicious URL checks, and either sandbox reproduction or reviewer approval before they can improve ranking.
+High-risk cards that include commands, package replacements, repository links, install scripts, environment variable changes, repo migration steps, or credential handling cannot appear as inline hints or sidecar cards until verified. Before verification, the response may show only a generic "withheld pending verification" state with no command text, package name, repository URL, token shape, or credential-bearing detail. Package, repository, URL, install, migration, and credential advice requires typosquat checks where applicable, malicious URL checks where applicable, sandbox reproduction or equivalent isolated validation, and reviewer approval before it can improve ranking or be displayed.

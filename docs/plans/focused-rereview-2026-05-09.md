@@ -1,5 +1,7 @@
 # Focused Re-Review - 2026-05-09
 
+Status: historical review artifact, non-normative. This file records a point-in-time review result and does not define the current implementation gate. Current gates live in `docs/architecture/implementation-readiness.md`, `docs/decisions/README.md`, and accepted RFCs.
+
 ## Review Configuration
 
 - Date: 2026-05-09
@@ -20,7 +22,7 @@
 
 ## Result
 
-Status: **M0 can start after small doc cleanups.**
+Status at time of review: **M0 can start after small doc cleanups.**
 
 The previous full-review blockers are materially reduced:
 
@@ -29,7 +31,7 @@ The previous full-review blockers are materially reduced:
 - Implementation readiness now defines milestones, provisional defaults, queue defaults, migration requirements, event ordering, revocation fence, cost circuits, and runbook template.
 - Decision backlog now tracks deferred decisions with defaults.
 
-This is no longer a "do not implement" design. It is ready to start M0 as a schema/event-log implementation track, provided the small findings below are fixed or carried as explicit M0 tasks.
+At the time of this focused review, the design was no longer a "do not implement" design. Later reviews may supersede this readiness assessment; use the current decision backlog and accepted RFCs for implementation gates.
 
 ## Findings
 
@@ -98,7 +100,7 @@ No Tier 1 findings.
 
 ## Recommendation
 
-Proceed as follows:
+At the time of this review, the recommended follow-up was:
 
 1. Apply the small doc cleanups above.
 2. Create the M0 schema/event-log RFC.

@@ -22,7 +22,7 @@ If a surface is not listed here, consent is denied by default.
 
 The approval surface must offer separate actions:
 
-- `Publish redacted card`
+- `Approve public release`
 - `Request more redaction`
 - `Keep private`
 - `Discard candidate`
@@ -41,6 +41,8 @@ The same screen or CLI review must show:
 - digest that will be approved
 
 Any edit, re-redaction, namespace change, derived-use change, or retention change invalidates the approval digest and returns the candidate to review.
+
+User-facing copy must not imply that the user publishes the card. User approval records consent for the exact redacted artifact. A reviewer performs the separate publish action after checking that approval, review, redaction, and policy gates still match.
 
 ## Approval Security
 

@@ -41,6 +41,13 @@ Authorization is a precondition for candidate generation, not a cleanup step aft
 
 Raw stack traces, raw command text, private path fragments, and private repo identifiers are never exact-match inputs for public search. Public exact match uses normalized fingerprints only.
 
+Public search privacy rules:
+
+- rare fingerprints must meet the wedge `k` distinct-tenant threshold and minimum cohort size before public matching
+- response timing and reason codes must be normalized across no-match, redacted, not-indexed, and rare-fingerprint cases
+- privacy budgets and per-subject/IP rate limits apply before candidate generation
+- rare queries must return `no_suggestion` with a generic abstention, not a count, nearest match, or rarity explanation
+
 ## Injection Contract
 
 Retrieved cards are untrusted evidence. The client must render them as non-executable data and must never convert card text into tool calls without independent agent/user validation.
@@ -61,6 +68,7 @@ Minimum constraints:
 - commands and code are rendered as candidate evidence, not actions
 - each card includes quality state, outcome type, freshness, provenance, and deprecated/disputed flags
 - every integration has a kill switch and can fall back to sidecar or no suggestion
+- command, package, repository, install, migration, and credential-bearing cards are excluded from sidecar and inline delivery until verification clears
 
 ## MVP Retrieval Quality Gates
 
@@ -87,7 +95,7 @@ Initial recommendation:
 - canonical metadata: Postgres
 - keyword search: Postgres full-text search for MVP
 - vector search: pgvector HNSW indexes for MVP
-- object storage: R2 or S3 with immutable content-addressed objects
+- object storage: disabled until M2 or deployment RFC; when enabled, use an S3-compatible provider with immutable content-addressed objects
 - queue: Postgres-backed queue for MVP; any managed queue replacement requires a decision update
 
 The query contract must define:

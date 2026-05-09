@@ -25,7 +25,7 @@ Canonical metadata:
   Postgres
 
 Raw/card object storage:
-  Cloudflare R2 or S3
+  disabled until M2 or a deployment RFC pins an S3-compatible provider
 
 Keyword search:
   Postgres FTS first
@@ -37,7 +37,7 @@ Queue:
   Postgres-backed queue for MVP, unless DEC-001 is changed
 ```
 
-For MVP deployment, the implementation must pin exact providers in an implementation RFC. This architecture document intentionally allows R2 or S3 because provider choice is deployment-dependent; the invariant is an S3-compatible interface with immutable object manifests, encryption, tenant scoping, retention policy, signed access, purge path, and canonical DB linkage.
+For MVP deployment, the implementation must pin exact providers in an implementation RFC before any raw/source artifact storage is enabled. M0/M1 may store canonical metadata and redacted draft bodies in Postgres without choosing an object storage provider. When object storage is enabled, the invariant is an S3-compatible interface with immutable object manifests, encryption, tenant scoping, retention policy, signed access, purge path, and canonical DB linkage.
 
 ## Write Pipeline
 
@@ -79,7 +79,7 @@ Queue processing is at-least-once. Every worker action must be idempotent at the
 
 Required worker rules:
 
-- each ingestion, approval, redaction, review, indexing, compaction, deprecation, and revocation job has an idempotency key
+- each ingestion, approval challenge, redaction, review routing, indexing, compaction, deprecation, and revocation propagation job has an idempotency key and a purpose-bound worker role
 - retries use bounded exponential backoff with jitter
 - poison jobs move to a dead-letter queue after the retry cap
 - stranded intermediate states are found by a sweeper

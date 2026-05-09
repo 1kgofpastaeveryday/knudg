@@ -15,13 +15,16 @@ MVP success requires evidence that retrieval improves outcomes in that wedge.
 
 ## MVP Gates
 
-- at least 100 labeled seed cards in one wedge
+- at least 100 labeled seed cards in one wedge as bootstrap inventory, followed by stratified holdout evaluation before public expansion
 - exact-error recall@3 above the baseline search approach
+- separate evaluation bands for exact-error, semantic-only, failed-only, unknown-clarified, deprecated, and disputed cards
 - useful retrieval for failed-only and unknown-clarified cards
 - measurable time-to-fix improvement in replayed tasks
 - measurable improvement from remote shared corpus excluding same-session local cache
 - harmful suggestion rate below a defined threshold
+- no-suggestion rate, first-session useful suggestion rate, sidecar open/read rate, and disable-after-no-suggestion rate measured by wedge
 - public-card approval and revocation flow tested end to end
+- wedge privacy friction measured: public approval rate, redaction minutes per card, rare identifier rate, duplicate error rate, and useful retrieval rate
 - tenant isolation tests passing for private/team namespace paths
 - gross-margin guardrail for free and paid query paths
 - review capacity and stale-card removal gates passing for the wedge
@@ -30,6 +33,7 @@ MVP success requires evidence that retrieval improves outcomes in that wedge.
 MVP also needs stop conditions:
 
 - pause public corpus expansion if public-only retrieval does not beat baseline on replayed tasks
+- pause public corpus expansion if privacy friction exceeds the wedge threshold or public-only retrieval underperforms private/team/local baselines
 - pause public candidate admission if review backlog exceeds the configured capacity
 - keep billing disabled if query gross margin and approved-card cost are not measured
 - keep inline hints disabled if harmful suggestion or dismissal rate exceeds the wedge threshold

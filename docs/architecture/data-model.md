@@ -9,10 +9,10 @@ Canonical required fields:
 - `card_id`: stable UUID
 - `tenant_id`: owner tenant UUID, including public-card publisher tenant
 - `namespace_id`: public/private/team/enterprise namespace UUID
-- `visibility`: enum, one of `private`, `team`, `public`
+- `visibility`: lookup key, one of `private`, `team`, `public`
 - `card_schema_version`: integer
-- `status`: enum, one of `candidate_created`, `pending_admission`, `deferred`, `pending_redaction`, `pending_review`, `awaiting_user_approval`, `approved_private`, `approved_for_publication`, `published`, `indexed_hot`, `indexed_main`, `rejected`, `superseded`, `deprecated`, `revoked`
-- `outcome_type`: enum, one of `solved`, `failed_only`, `inconclusive`, `unknown_clarified`
+- `status`: lookup key, one of `candidate_created`, `pending_admission`, `deferred`, `pending_redaction`, `pending_review`, `awaiting_user_approval`, `approved_private`, `approved_for_publication`, `published`, `indexed_hot`, `indexed_main`, `rejected`, `superseded`, `deprecated`, `revoked`
+- `outcome_type`: lookup key, one of `solved`, `failed_only`, `inconclusive`, `unknown_clarified`
 - `goal`: non-empty text
 - `symptom`: non-empty text
 - `environment`: structured object
@@ -21,9 +21,9 @@ Canonical required fields:
 - `failed_paths`: ordered list, default empty
 - `known_unknowns`: ordered list, default empty
 - `scope_limits`: ordered list, default empty
-- `evidence_strength`: enum, one of `single_session`, `multi_session`, `reproduced`, `external_reference`, `operator_judgment`
+- `evidence_strength`: lookup key, one of `single_session`, `multi_session`, `reproduced`, `external_reference`, `operator_judgment`
 - `twist`: nullable text
-- `quality_state`: enum, one of `unreviewed`, `solved_once`, `solved_many`, `verified`, `disputed`
+- `quality_state`: lookup key, one of `unreviewed`, `solved_once`, `solved_many`, `verified`, `disputed`
 - `privacy`: structured object
 - `provenance`: structured object
 - `quality_score`: numeric, nullable until indexed
@@ -115,7 +115,7 @@ Required constraints:
 - one active public approval per public card version
 - derived artifacts must reference source card versions and consent inheritance policy
 - state transitions must follow the transition table
-- unique idempotency keys for ingestion, approval, indexing, and state transitions
+- unique idempotency keys for ingestion, approval, reviewer publish, indexing, and state transitions
 - per-card event sequence is unique as `(tenant_id, card_id, event_seq)`
 - outcome type, quality state, and evidence strength must satisfy compatibility checks
 - index rows must point back to card version, source event, processor version, and content hash
@@ -125,10 +125,10 @@ Required constraints:
 Idempotency key format:
 
 ```text
-tenant_id + operation + logical_object_id + operation_version + request_digest
+tenant_id + operation + logical_object_type + logical_object_id + operation_version + idempotency_key
 ```
 
-Keys are retained for at least 90 days for user/API operations and at least 1 year for indexing, compaction, migration, and replay operations. The implementation may retain them longer if the replay window is longer. A key collision with a different request digest is a hard error. A key replay with the same request digest returns the original effect.
+`request_digest` is stored with the key but is not part of the uniqueness scope. Keys are retained for at least 90 days for user/API operations and at least 1 year for indexing, compaction, migration, and replay operations. The implementation may retain them longer if the replay window is longer. A key collision with a different request digest is a hard error. A key replay with the same request digest returns the original effect.
 
 ## Card Lifecycle
 
@@ -168,6 +168,8 @@ indexed_main -> deprecated
 indexed_hot -> revoked
 indexed_main -> revoked
 ```
+
+`approve_publication` records user consent and moves `awaiting_user_approval` to `approved_for_publication`; it does not publish. `reviewer_publish` is the only operation that can move `approved_for_publication` to `published`, and it must recheck redaction, review outcome, approval digest, derived-use policy, namespace eligibility, and abuse gates at transition time.
 
 No public state transition can skip redaction, review, user approval, and reviewer publish. `revoked` blocks retrieval immediately through `revocation_tombstones`, even if projections or indexes are stale. Physical deletion is separate from logical revocation and must respect audit, legal, and retention rules.
 

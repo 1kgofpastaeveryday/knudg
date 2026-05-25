@@ -13,3 +13,13 @@ Desktop.ini
 tmp/
 temp/
 
+# Dependency and tool caches
+node_modules/
+.pytest_cache/
+.wrangler/
+__pycache__/
+*.py[cod]
+
+# Local operator/agent state
+.codex/
+.letta/

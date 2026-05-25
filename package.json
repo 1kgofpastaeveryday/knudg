@@ -1,0 +1,39 @@
+{
+  "private": true,
+  "scripts": {
+    "deploy:lp": "npx --yes wrangler@4.90.0 deploy --message \"LP deploy\"",
+    "deploy:lp:candidate": "npx --yes wrangler@4.90.0 versions upload --message \"LP candidate\"",
+    "deploy:lp:dry-run": "npx --yes wrangler@4.90.0 deploy --dry-run",
+    "deploy:lp:list": "npx --yes wrangler@4.90.0 deployments list",
+    "rollback:lp": "npx --yes wrangler@4.90.0 rollback --name knudg-site --message \"Rollback LP deploy\" --yes",
+    "check:lp": "node scripts/check-knudg-layout.js",
+    "smoke:lp": "powershell -ExecutionPolicy Bypass -File scripts/smoke-knudg-site.ps1 -BaseUrl https://knudg.com",
+    "dev:server": "python scripts/knudg_dev_server.py",
+    "dev:closed-api": "python scripts/knudg_closed_api.py",
+    "dev:server:ctl": "python scripts/knudg_dev_server_ctl.py",
+    "knudgctl": "python scripts/knudgctl.py",
+    "post:private-card": "python scripts/knudg_post_private_card.py",
+    "writer:draft": "python scripts/knudg_writer.py",
+    "task-profile": "python scripts/knudg_task_profile.py",
+    "roles": "python scripts/knudg_roles.py",
+    "dogfood:local": "python scripts/knudg_roles.py local-dogfood",
+    "dogfood:local-private": "python scripts/smoke_local_private_dogfood.py --card-input fixtures/local-private-card.sample.json --task-profile fixtures/local-private-task-profile.sample.json",
+    "wedge:evidence": "python scripts/wedge_evidence.py",
+    "retrieval:skeleton": "python scripts/knudg_retrieval.py",
+    "retrieval:synthetic": "python scripts/knudg_synthetic_retrieval.py",
+    "retrieval:replay": "python scripts/knudg_synthetic_retrieval.py replay",
+    "m3:gates": "python scripts/validate_m3_gates.py --input fixtures/m3-retrieval-gates.draft.json",
+    "review:gates": "python scripts/validate_review_ops_gates.py --input fixtures/review-ops-gates.draft.json",
+    "circuit:gates": "python scripts/validate_circuit_gates.py --input fixtures/circuit-gates.draft.json",
+    "runbook:manifest": "python scripts/validate_runbook_manifest.py --input fixtures/runbook-command-manifest.draft.json",
+    "launch:gates": "python scripts/validate_launch_gate_manifest.py --input fixtures/launch-gate-manifest.draft.json",
+    "intake:gates": "python scripts/validate_intake_safety_gate.py --input fixtures/intake-safety-gate.draft.json",
+    "auth:gates": "python scripts/validate_auth_verifier_gate.py --input fixtures/auth-verifier-gate.draft.json",
+    "consent:gates": "python scripts/validate_consent_revocation_gate.py --input fixtures/consent-revocation-gate.draft.json",
+    "gates:all": "npm run wedge:evidence -- validate --input fixtures/wedge-evidence.sample.json && npm run m3:gates && npm run review:gates && npm run circuit:gates && npm run runbook:manifest && npm run launch:gates && npm run intake:gates && npm run auth:gates && npm run consent:gates"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1",
+    "wrangler": "4.90.0"
+  }
+}

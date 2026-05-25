@@ -1,0 +1,39 @@
+{
+  "profile": "sha256:jcs-rfc8785:v1",
+  "notes": [
+    "Vectors use the M0 portable JCS subset implemented by scripts/card_payload.py.",
+    "Duplicate-key rejection is represented as a negative raw JSON vector because duplicate keys cannot be represented in JSON objects."
+  ],
+  "vectors": [
+    {
+      "name": "key-order-and-arrays",
+      "raw": "{\"z\":[3,2,1],\"a\":{\"b\":\"two\",\"a\":\"one\"}}",
+      "canonical": "{\"a\":{\"a\":\"one\",\"b\":\"two\"},\"z\":[3,2,1]}",
+      "digest": "sha256:jcs-rfc8785:v1:41d0b6f144c36a39920e8ad8e1cb0d9dc17191c47baa228bd6c1f89912219b29"
+    },
+    {
+      "name": "unicode",
+      "raw": "{\"message\":\"\u30a8\u30fc\u30b8\u30a7\u30f3\u30c8\",\"safe\":true}",
+      "canonical": "{\"message\":\"\u30a8\u30fc\u30b8\u30a7\u30f3\u30c8\",\"safe\":true}",
+      "digest": "sha256:jcs-rfc8785:v1:6287a01ffbb3ad13894cef247af683fab47646d44d15ea0bbd70e0936cb57b65"
+    },
+    {
+      "name": "integer-number",
+      "raw": "{\"count\":42,\"scope\":\"m0\"}",
+      "canonical": "{\"count\":42,\"scope\":\"m0\"}",
+      "digest": "sha256:jcs-rfc8785:v1:2b95a1e1dace863500653b8ab2a1a22193e90728ee5d24cf38ce7fab705c7d84"
+    }
+  ],
+  "negative_vectors": [
+    {
+      "name": "duplicate-key-rejection",
+      "raw": "{\"goal\":\"first\",\"goal\":\"second\"}",
+      "error": "duplicate object key"
+    },
+    {
+      "name": "projection-owned-field-rejection",
+      "raw": "{\"tenant_id\":\"00000000-0000-0000-0000-000000000000\"}",
+      "error": "projection-owned field"
+    }
+  ]
+}

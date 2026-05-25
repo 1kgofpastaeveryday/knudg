@@ -1,0 +1,74 @@
+{
+  "schema_version": "circuit-gates-v0",
+  "status": "draft_scaffold",
+  "decision_id": "DEC-015",
+  "families": [
+    {
+      "family": "auth_revocation_data_integrity_backup",
+      "normal_store": "operational_circuits",
+      "emergency_store": "signed_emergency_deny_manifest",
+      "postgres_unavailable_behavior": "fail_closed",
+      "stale_emergency_behavior": "remain_closed_page_operator",
+      "auto_clear_allowed": false,
+      "strictest_state_wins": true,
+      "owner_role": "role:security_privacy_owner",
+      "runbook_id": "RB-004"
+    },
+    {
+      "family": "public_wedge_publication",
+      "normal_store": "operational_circuits",
+      "emergency_store": "signed_rollout_disable_config",
+      "postgres_unavailable_behavior": "publication_search_disabled",
+      "stale_emergency_behavior": "remain_disabled_no_auto_clear",
+      "auto_clear_allowed": false,
+      "strictest_state_wins": true,
+      "owner_role": "role:reviewer_operator",
+      "runbook_id": "RB-008"
+    },
+    {
+      "family": "landing_route_denylist",
+      "normal_store": "host_config",
+      "emergency_store": "edge_proxy_deny_rule",
+      "postgres_unavailable_behavior": "serve_inert_static_or_404_410",
+      "stale_emergency_behavior": "keep_deny_until_probe",
+      "auto_clear_allowed": false,
+      "strictest_state_wins": true,
+      "owner_role": "role:landing_operator",
+      "runbook_id": "RB-LP-001"
+    },
+    {
+      "family": "vector_rerank_cost",
+      "normal_store": "operational_circuits",
+      "emergency_store": "signed_feature_disable_config",
+      "postgres_unavailable_behavior": "disable_dependency_exact_fts_or_no_suggestion",
+      "stale_emergency_behavior": "keep_disabled_until_owner_review",
+      "auto_clear_allowed": false,
+      "strictest_state_wins": true,
+      "owner_role": "role:search_on_call",
+      "runbook_id": "RB-001"
+    },
+    {
+      "family": "noncritical_writes_admission",
+      "normal_store": "operational_circuits",
+      "emergency_store": "signed_admission_pause_config",
+      "postgres_unavailable_behavior": "pause_or_reject_idempotently",
+      "stale_emergency_behavior": "keep_paused_no_background_retries",
+      "auto_clear_allowed": false,
+      "strictest_state_wins": true,
+      "owner_role": "role:platform_on_call",
+      "runbook_id": "RB-003"
+    }
+  ],
+  "enablement": {
+    "live_mutation_enabled": false,
+    "public_publication_enabled": false,
+    "blocked_until": [
+      "circuit_ddl_implemented",
+      "audit_events_implemented",
+      "operator_authz_implemented",
+      "emergency_manifest_verifier_implemented",
+      "strictest_state_selection_tested",
+      "outage_drills_pass"
+    ]
+  }
+}

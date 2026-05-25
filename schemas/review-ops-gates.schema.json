@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.local/schemas/review-ops-gates.schema.json",
+  "title": "Review Operations Gate Fixture",
+  "type": "object",
+  "additionalProperties": false,
+    "required": [
+    "schema_version",
+    "status",
+    "decision_id",
+    "accepted_review_ops_artifact",
+    "reviewer_lanes",
+    "assignment",
+    "high_risk_verification",
+    "malicious_card_tests",
+    "pause_rules",
+    "enablement"
+  ],
+  "properties": {
+    "schema_version": {"const": "review-ops-gates-v0"},
+    "status": {"enum": ["draft_scaffold", "ready_for_review", "accepted"]},
+    "decision_id": {"const": "DEC-018"},
+    "accepted_review_ops_artifact": {"type": ["string", "null"], "pattern": "^docs/operations/evidence/[A-Za-z0-9_.-]+\\.json$"},
+    "reviewer_lanes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["lane_id", "risk_band", "dual_review_required", "calibration_fixture_set_id"],
+        "properties": {
+          "lane_id": {"type": "string", "pattern": "^lane_[A-Za-z0-9_-]{6,80}$"},
+          "risk_band": {"enum": ["low", "medium", "high"]},
+          "dual_review_required": {"type": "boolean"},
+          "calibration_fixture_set_id": {"type": "string", "pattern": "^calibration_[A-Za-z0-9_-]{6,80}$"}
+        }
+      }
+    },
+    "assignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy_id", "conflict_check_required", "escalation_pool_id"],
+      "properties": {
+        "policy_id": {"type": "string", "pattern": "^assignment_[A-Za-z0-9_-]{6,80}$"},
+        "conflict_check_required": {"const": true},
+        "escalation_pool_id": {"type": "string", "pattern": "^escalation_[A-Za-z0-9_-]{6,80}$"}
+      }
+    },
+    "high_risk_verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "two_person_approval_required",
+        "reproduction_lab_profile_id",
+        "verification_expiry_days",
+        "reverification_triggers"
+      ],
+      "properties": {
+        "required": {"const": true},
+        "two_person_approval_required": {"const": true},
+        "reproduction_lab_profile_id": {"type": "string", "pattern": "^lab_[A-Za-z0-9_-]{6,80}$"},
+        "verification_expiry_days": {"type": "integer", "minimum": 1, "maximum": 365},
+        "reverification_triggers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "dependency_major_change",
+              "provider_model_change",
+              "package_ownership_change",
+              "malicious_report",
+              "verification_expired",
+              "security_policy_change"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "malicious_card_tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fixture_set_id", "seeded_test_required", "false_approval_threshold_label"],
+      "properties": {
+        "fixture_set_id": {"type": "string", "pattern": "^malicious_[A-Za-z0-9_-]{6,80}$"},
+        "seeded_test_required": {"const": true},
+        "false_approval_threshold_label": {"type": "string", "pattern": "^threshold_[A-Za-z0-9_-]{6,80}$"}
+      }
+    },
+    "pause_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["public_publication_pause_required", "reviewer_privilege_pause_required", "admission_pause_required"],
+      "properties": {
+        "public_publication_pause_required": {"const": true},
+        "reviewer_privilege_pause_required": {"const": true},
+        "admission_pause_required": {"const": true}
+      }
+    },
+    "enablement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reviewer_publish_enabled", "public_display_enabled", "high_risk_body_expansion_enabled", "blocked_until"],
+      "properties": {
+        "reviewer_publish_enabled": {"const": false},
+        "public_display_enabled": {"const": false},
+        "high_risk_body_expansion_enabled": {"const": false},
+        "blocked_until": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "dec_018_accepted",
+              "reviewer_lane_rfc_accepted",
+              "calibration_tests_pass",
+              "malicious_card_tests_pass",
+              "high_risk_reproduction_lab_pass",
+              "pause_rules_wired",
+              "reviewer_session_hardening_pass"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

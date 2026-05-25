@@ -1,0 +1,19 @@
+{
+  "title": "review-loop round status",
+  "type": "object",
+  "required": ["artifact_type", "schema_version", "run_id", "round", "engine", "status", "summary", "required_lanes_missing"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_type": { "type": "string", "enum": ["round-status"] },
+    "schema_version": { "type": "integer" },
+    "run_id": { "type": "string" },
+    "round": { "type": "integer" },
+    "engine": { "type": "string", "enum": ["adversarial-review", "coursework-review"] },
+    "status": { "type": "string", "enum": ["PASS", "FAIL", "DEGRADED", "BLOCKED", "PARKED"] },
+    "summary": { "type": "string" },
+    "report_ref": { "type": "string" },
+    "report_hash": { "type": "string" },
+    "required_lanes_missing": { "type": "array", "items": { "type": "string" } },
+    "remaining_findings": { "type": "array", "items": { "type": "object" } }
+  }
+}

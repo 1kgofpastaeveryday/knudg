@@ -1,0 +1,17 @@
+{
+  "title": "review-loop target manifest",
+  "type": "object",
+  "required": ["artifact_type", "schema_version", "run_id", "round", "target_class", "included_paths", "excluded_paths", "target_hashes"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_type": { "type": "string", "enum": ["target-manifest"] },
+    "schema_version": { "type": "integer" },
+    "run_id": { "type": "string" },
+    "round": { "type": "integer" },
+    "target_class": { "type": "string", "enum": ["ordinary-review-target", "untrusted-review-artifact"] },
+    "included_paths": { "type": "array", "items": { "type": "string" } },
+    "excluded_paths": { "type": "array", "items": { "type": "string" } },
+    "target_hashes": { "type": "array", "items": { "type": "object" } },
+    "manifest_hash": { "type": "string" }
+  }
+}

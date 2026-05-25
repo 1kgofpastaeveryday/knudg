@@ -1,0 +1,41 @@
+{
+  "schema_version": "auth-verifier-gate-v0",
+  "status": "draft_scaffold",
+  "gate_id": "PR-004",
+  "local_hs256": {
+    "allowed_environments": ["local"],
+    "production_enabled": false,
+    "team_or_staging_enabled": false,
+    "ci_assertion": "ci:m0-contract-split.local"
+  },
+  "non_local_profile": {
+    "profile_type": "unset",
+    "issuer_binding": false,
+    "audience_binding": false,
+    "resource_indicator_binding": false,
+    "sender_constrained_proof": "unset",
+    "nonce_replay_store": false,
+    "key_rotation": false,
+    "outage_behavior": "unset"
+  },
+  "negative_tests": [
+    "hs256_rejected_non_local",
+    "alg_none_rejected",
+    "wrong_audience_rejected",
+    "wrong_issuer_rejected",
+    "stale_key_rejected",
+    "stale_nonce_rejected",
+    "proof_key_mismatch_rejected",
+    "cross_resource_replay_rejected",
+    "rls_call_sites_unchanged"
+  ],
+  "blocked_until": [
+    "asymmetric_or_kms_profile_accepted",
+    "sender_constrained_profile_accepted",
+    "nonce_replay_store_implemented",
+    "key_rotation_tests_pass",
+    "negative_auth_tests_pass",
+    "environment_assertions_pass",
+    "request_context_backend_swap_tested"
+  ]
+}

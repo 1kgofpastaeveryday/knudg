@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.local/schemas/intake-safety-gate.schema.json",
+  "title": "PR-006 Intake Safety Gate Fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "gate_id",
+    "enablement",
+    "ingress_bounds",
+    "schemas",
+    "decision_outcomes",
+    "no_raw_value_guarantees",
+    "blocked_until"
+  ],
+  "properties": {
+    "schema_version": {"const": "intake-safety-gate-v0"},
+    "status": {"enum": ["draft_scaffold", "ready_for_review", "accepted"]},
+    "gate_id": {"const": "PR-006"},
+    "enablement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["non_synthetic_submit_enabled", "body_persistence_enabled", "review_escrow_enabled", "synthetic_bypass_requires_fixture_provenance"],
+      "properties": {
+        "non_synthetic_submit_enabled": {"const": false},
+        "body_persistence_enabled": {"const": false},
+        "review_escrow_enabled": {"const": false},
+        "synthetic_bypass_requires_fixture_provenance": {"const": true}
+      }
+    },
+    "ingress_bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_payload_bytes_ref", "accepted_content_types", "compression_policy", "archive_policy", "pre_parser_rejection", "non_oracular_rejection"],
+      "properties": {
+        "max_payload_bytes_ref": {"type": "string", "pattern": "^private-threshold:[A-Za-z0-9_.:-]{3,120}$"},
+        "accepted_content_types": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"enum": ["application/json"]},
+          "uniqueItems": true
+        },
+        "compression_policy": {"enum": ["reject_compressed", "bounded_decompress_then_scan"]},
+        "archive_policy": {"enum": ["reject_archives"]},
+        "pre_parser_rejection": {"const": true},
+        "non_oracular_rejection": {"const": true}
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["submit_candidate", "scanner_output", "classifier_output", "audit_event", "quarantine_metadata"],
+      "properties": {
+        "submit_candidate": {"type": "string", "pattern": "^schemas/[A-Za-z0-9_.-]+\\.schema\\.json$"},
+        "scanner_output": {"type": ["string", "null"], "pattern": "^schemas/[A-Za-z0-9_.-]+\\.schema\\.json$"},
+        "classifier_output": {"type": ["string", "null"], "pattern": "^schemas/[A-Za-z0-9_.-]+\\.schema\\.json$"},
+        "audit_event": {"type": ["string", "null"], "pattern": "^schemas/[A-Za-z0-9_.-]+\\.schema\\.json$"},
+        "quarantine_metadata": {"type": ["string", "null"], "pattern": "^schemas/[A-Za-z0-9_.-]+\\.schema\\.json$"}
+      }
+    },
+    "decision_outcomes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["decision", "stores_body", "creates_card", "indexes", "client_response_class"],
+        "properties": {
+          "decision": {"enum": ["accepted", "redact_then_retry", "human_review_required", "reject", "retry_later"]},
+          "stores_body": {"type": "boolean"},
+          "creates_card": {"type": "boolean"},
+          "indexes": {"type": "boolean"},
+          "client_response_class": {"enum": ["accepted", "needs_redaction", "deferred_generic", "rejected_generic", "retry_generic"]}
+        }
+      }
+    },
+    "no_raw_value_guarantees": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["audit", "client_response", "admin_search", "model_input", "validator_errors"],
+      "properties": {
+        "audit": {"const": true},
+        "client_response": {"const": true},
+        "admin_search": {"const": true},
+        "model_input": {"const": true},
+        "validator_errors": {"const": true}
+      }
+    },
+    "blocked_until": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "submit_candidate_schema_accepted",
+          "scanner_output_schema_accepted",
+          "classifier_schema_accepted",
+          "audit_event_schema_accepted",
+          "quarantine_schema_accepted",
+          "no_log_ingress_tests_pass",
+          "non_oracular_response_tests_pass",
+          "no_body_storage_negative_tests_pass",
+          "review_escrow_or_ambiguous_retry_policy_accepted",
+          "hmac_fingerprint_key_profile_accepted",
+          "route_level_search_hook_ingress_protection_accepted"
+        ]
+      },
+      "uniqueItems": true
+    }
+  }
+}

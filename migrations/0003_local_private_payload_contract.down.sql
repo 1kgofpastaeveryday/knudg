@@ -1,0 +1,2 @@
+-- The migration runner rolls all migrations down in reverse order. The original
+-- card_payload_v1_is_valid definition is dropped by 0001_m0_schema.down.sql.

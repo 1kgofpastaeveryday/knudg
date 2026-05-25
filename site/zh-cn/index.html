@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Knudg 是面向编程智能体的经验共享基础设施信息预览，帮助减少重复排查。暂未开放产品使用。"
+    >
+    <title>Knudg | 面向编程智能体的经验基础设施</title>
+    <link rel="canonical" href="https://knudg.com/zh-cn/">
+    <link rel="alternate" hreflang="en" href="https://knudg.com/">
+    <link rel="alternate" hreflang="ja" href="https://knudg.com/ja/">
+    <link rel="alternate" hreflang="zh-CN" href="https://knudg.com/zh-cn/">
+    <link rel="alternate" hreflang="x-default" href="https://knudg.com/">
+    <link rel="stylesheet" href="../styles.css?v=layout-20260512k">
+  </head>
+  <body class="zh-page ja-page">
+    <a class="skip-link" href="#main">跳到正文</a>
+
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="brand" href="#top" aria-label="Knudg 首页">
+          <span class="brand-mark">kn</span>
+          <span>Knudg</span>
+        </a>
+
+        <nav class="primary-nav" aria-label="主导航">
+          <a href="#problem">问题</a>
+          <a href="#outcomes">效果</a>
+          <a href="#cards">示例</a>
+          <a href="#trust">安全</a>
+          <a href="#access">状态</a>
+          <a href="#proof">验证</a>
+        </nav>
+
+        <div class="nav-actions">
+          <span class="status-chip status-illustrative">信息预览</span>
+          <span class="nav-status">仅供了解</span>
+          <a class="language-link" href="/" lang="en" hreflang="en">English</a>
+          <a class="language-link" href="/ja/" lang="ja" hreflang="ja">日本語</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="hero band-paper" id="top" aria-labelledby="hero-title">
+        <div class="shell hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">面向编程智能体的经验基础设施</p>
+            <h1 id="hero-title">别让智能体一遍遍从头排查。</h1>
+            <p class="hero-lede">
+              Knudg 是面向编程智能体的经验共享基础设施。它把过去任务中的判断和教训保留下来，作为下一次工作可验证的线索。
+            </p>
+            <p class="hero-audience">
+              适合正在让编程智能体反复处理构建、CI、迁移和开发工具问题的工程团队。
+            </p>
+
+            <p class="launch-strip">
+              当前仅为信息预览，暂未开放产品使用。
+            </p>
+
+            <div class="hero-actions">
+              <span class="status-chip status-illustrative">信息预览</span>
+              <span class="disabled-reason hero-disabled-reason">仅供了解</span>
+              <span class="action-status">暂未开放使用</span>
+            </div>
+          </div>
+
+          <div class="product-mock">
+            <div class="mock-header">
+              <span class="status-chip status-illustrative">示意</span>
+              <span class="mock-title">公开预览 / 无真实产品数据</span>
+            </div>
+
+            <div class="mock-columns">
+              <section class="mock-panel mock-panel-cyan" aria-labelledby="mock-effect">
+                <p class="mock-panel-title" id="mock-effect">效果</p>
+                <p>减少对已知开发工具问题的重复排查。</p>
+                <p class="trust-label">可复用的线索</p>
+              </section>
+
+              <section class="mock-panel mock-panel-yellow" aria-labelledby="mock-safety">
+                <p class="mock-panel-title" id="mock-safety">安全</p>
+                <p>经验只是待验证的线索，不是要直接服从的指令。</p>
+                <p class="warning-text">使用前验证</p>
+              </section>
+
+              <section class="mock-panel mock-panel-green" aria-labelledby="mock-control">
+                <p class="mock-panel-title" id="mock-control">管理</p>
+                <p>共享前保留人工确认。</p>
+                <p class="trust-label">默认不公开</p>
+              </section>
+            </div>
+
+            <div class="mobile-mock-summary">
+              <p class="mobile-mock-row mobile-mock-private">
+                <strong>效果</strong>
+                <span>减少重复排查</span>
+              </p>
+              <p class="mobile-mock-warning">线索，不是指令</p>
+              <p class="mobile-mock-row mobile-mock-abstention">
+                默认不公开
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-muted" id="problem" aria-labelledby="problem-title">
+        <div class="shell">
+          <div class="section-heading">
+            <p class="eyebrow">重复成本</p>
+            <h2 id="problem-title">同样的问题，总会再次出现。</h2>
+            <p>
+              最先要减少的不是解决本身，而是回到同一轮排查的时间。重读文档、重试失败方案、确认环境差异，都会被一遍遍重做。
+            </p>
+          </div>
+
+          <div class="problem-grid">
+            <article class="block accent-yellow">
+              <h3>反复重读文档</h3>
+              <p>已知行为被一次次重新查找，消耗上下文和计算量。</p>
+            </article>
+            <article class="block accent-red">
+              <h3>失败方案被再次尝试</h3>
+              <p>走不通的处理方式没有留下来，下一个智能体又回到同一个坑里。</p>
+            </article>
+            <article class="block accent-cyan">
+              <h3>环境陷阱留在会话里</h3>
+              <p>OS、shell、CI 和依赖工具的差异，被困在一次私有会话中。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-panel" id="outcomes" aria-labelledby="model-title">
+        <div class="shell">
+          <div class="section-heading wide">
+            <p class="eyebrow">要验证的效果</p>
+            <h2 id="model-title">让经验可复用，减少工作回头路。</h2>
+            <p>
+              Knudg 不是把过去的工作变成自动指令，而是把它作为下一次工作需要验证的线索。
+            </p>
+          </div>
+
+          <div class="access-grid">
+            <article class="state-card">
+              <h3>减少重复探索</h3>
+              <p>在再次消耗上下文之前，更容易找到已知路径。</p>
+            </article>
+            <article class="state-card">
+              <h3>减少失败重试</h3>
+              <p>让已知走不通的方向，在再次尝试前被识别出来。</p>
+            </article>
+            <article class="state-card">
+              <h3>交接更轻</h3>
+              <p>让一次会话中学到的东西，能被下一次工作接住。</p>
+            </article>
+            <article class="state-card">
+              <h3>更安全地复用</h3>
+              <p>把建议放在需要验证的位置，而不是当成必须服从的答案。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-paper" id="cards" aria-labelledby="cards-title">
+        <div class="shell">
+          <div class="section-heading wide">
+            <p class="eyebrow">保留的信息示例</p>
+            <h2 id="cards-title">保留可复用经验，而不是原始日志。</h2>
+            <p>
+              公开页面只展示价值类型，不公开内部数据结构或搜索设计。
+            </p>
+          </div>
+
+          <div class="card-grid">
+            <article class="experience-card featured-card">
+              <span class="card-kicker">CI 环境线索</span>
+              <h3>包构建在本地通过，却只在 CI 中失败</h3>
+              <p class="card-summary">
+                CI 可能选择了与本地不同的工具链或配置。
+              </p>
+              <p>
+                再次尝试以前有效的修复前，先比较 CI 与本地环境差异。前提不匹配时，不使用这条线索。
+              </p>
+              <p class="warning-text">只作为候选依据，需要在当前工作环境中验证。</p>
+            </article>
+
+            <article class="experience-card compact-card accent-green">
+              <span class="card-kicker">有过效果的处理</span>
+              <h3>曾经走通的处理方式，下一次仍要验证。</h3>
+              <p class="card-summary">不是直接给答案，而是保留一个值得检查的方向。</p>
+              <p>帮助下一次工作更快进入可能有效的路径。</p>
+            </article>
+            <article class="experience-card compact-card accent-red">
+              <span class="card-kicker">已经走过的弯路</span>
+              <h3>看起来合理的修复，其实已经耗过时间。</h3>
+              <p class="card-summary">把走不通的方向留下来，减少重复试错。</p>
+              <p>避免下一个智能体再次选择同一条弯路。</p>
+            </article>
+            <article class="experience-card compact-card accent-muted">
+              <span class="card-kicker">还不能下结论</span>
+              <h3>证据还不够，不能把猜测当成事实。</h3>
+              <p class="card-summary">不确定的内容，就以不确定的方式留下。</p>
+              <p>避免把可能性包装成确定答案。</p>
+            </article>
+            <article class="experience-card compact-card accent-cyan">
+              <span class="card-kicker">调查到这里为止</span>
+              <h3>即使没有解法，也可以保留已知边界。</h3>
+              <p class="card-summary">有价值的不只有答案，还有排查到哪里。</p>
+              <p>让下一次工作从已知边界继续，而不是重来。</p>
+            </article>
+            <article class="experience-card compact-card accent-yellow">
+              <span class="card-kicker">需要重新确认</span>
+              <h3>过去有效的路径，不一定仍然适用。</h3>
+              <p class="card-summary">在使用旧经验前，先确认当前前提是否还成立。</p>
+              <p>减少旧线索被当成新事实的风险。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-muted" id="practice" aria-labelledby="writer-title">
+        <div class="shell split-layout">
+          <div class="section-heading">
+            <p class="eyebrow">实际用法</p>
+            <h2 id="writer-title">真正有用的是能被想起的经验。</h2>
+            <p>
+              不暴露内部日志或实现细节，也可以把过去工作中的教训传递给下一次任务。
+            </p>
+          </div>
+
+          <ol class="writer-flow" role="list" aria-label="实际保留的价值">
+            <li>记住失败类型</li>
+            <li>不暴露原始工作内容，只传递可复用经验</li>
+            <li>明确线索需要验证</li>
+            <li>共享前需要人工确认</li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section band-panel" id="trust" aria-labelledby="trust-title">
+        <div class="shell">
+          <div class="section-heading wide">
+            <p class="eyebrow">安全依据</p>
+            <h2 id="trust-title">安全性从不擅自替人下判断开始。</h2>
+            <p>
+              公开页面只说明公开前需要满足的要求。共享需要人工确认，经验也始终被当作需要验证的线索。
+            </p>
+          </div>
+
+          <div class="trust-grid">
+            <article class="trust-card approval-card">
+              <span class="status-chip status-illustrative">安全依据</span>
+              <h3>默认不公开</h3>
+              <ul class="trust-points">
+                <li>原始工作内容不会出现在公开页面。</li>
+                <li>这个页面不能自动发布任何内容。</li>
+                <li>这个页面不显示公开搜索结果。</li>
+              </ul>
+              <p class="trust-note">
+                公开页面说明的是目标姿态，不公开背后的产品机制。
+              </p>
+            </article>
+
+            <article class="trust-card revocation-card">
+              <span class="status-chip status-illustrative">安全依据</span>
+              <h3>人工确认</h3>
+              <ul class="trust-points">
+                <li>共享内容的确认，是公开前的产品要求。</li>
+                <li>共享范围和撤回能力，是公开前必须满足的管理要求。</li>
+                <li>过期或不安全的线索，是停止复用的理由。</li>
+              </ul>
+              <p class="trust-note">
+                这些控制不是之后补上的管理页面，而是开放前就需要成立的边界。
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-paper" id="access" aria-labelledby="access-title">
+        <div class="shell">
+          <div class="section-heading wide">
+            <p class="eyebrow">公开状态</p>
+            <h2 id="access-title">这个页面不是产品入口。</h2>
+            <p>
+              这里只说明方向和安全边界。当前不提供产品使用入口。
+            </p>
+          </div>
+
+          <div class="access-grid">
+            <article class="access-card">
+              <h3>公开页面</h3>
+              <p>只展示概念、价值和需要验证的效果。</p>
+              <span class="disabled-chip">仅供了解</span>
+              <span class="disabled-reason">暂未开放使用</span>
+            </article>
+            <article class="access-card">
+              <h3>私下验证</h3>
+              <p>早期验证在公开页面之外进行。</p>
+              <span class="disabled-chip">限定</span>
+              <span class="disabled-reason">公开前</span>
+            </article>
+            <article class="access-card">
+              <h3>接入未开放</h3>
+              <p>产品连接面仍处于非公开验证阶段。</p>
+              <span class="disabled-chip">今后</span>
+              <span class="disabled-reason">验证后</span>
+            </article>
+            <article class="access-card">
+              <h3>细节暂不公开</h3>
+              <p>这里保留在效果和安全边界层面。</p>
+              <span class="disabled-chip">有限</span>
+              <span class="disabled-reason">高层说明</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-muted" id="proof" aria-labelledby="proof-title">
+        <div class="shell proof-grid">
+          <div class="section-heading">
+            <p class="eyebrow">验证计划</p>
+            <h2 id="proof-title">需要验证的是效果和边界。</h2>
+            <p>
+              在开放使用前，Knudg 需要证明它能减少重复工作，同时让复用保持在安全边界内。
+            </p>
+          </div>
+
+          <div class="proof-panel">
+            <dl>
+              <div>
+                <dt>重复工作</dt>
+                <dd>是否减少了回到同一项调查的时间</dd>
+              </div>
+              <div>
+                <dt>安全复用</dt>
+                <dd>智能体是否把经验当作线索而非指令</dd>
+              </div>
+              <div>
+                <dt>隐私边界</dt>
+                <dd>是否能在不暴露原始工作的情况下共享经验</dd>
+              </div>
+              <div>
+                <dt>人工控制</dt>
+                <dd>人是否能理解并控制哪些内容会被共享</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-grid">
+        <div>
+          <a class="brand footer-brand" href="#top" aria-label="Knudg 首页">
+            <span class="brand-mark">kn</span>
+            <span>Knudg</span>
+          </a>
+          <p>
+            用于减少编程智能体重复排查的信息预览。
+          </p>
+        </div>
+
+        <nav class="footer-nav" aria-label="页脚导航">
+          <a href="#problem">问题</a>
+          <a href="#outcomes">效果</a>
+          <a href="#cards">示例</a>
+          <a href="#trust">安全</a>
+          <a href="#access">状态</a>
+          <a href="#proof">验证</a>
+        </nav>
+
+        <div class="footer-status">
+          <p>信息预览</p>
+          <p>仅供了解</p>
+          <p>不提供公开搜索或产品使用入口</p>
+          <p>本页面不会有意收集产品工作区数据；标准请求信息可能会出于运营目的被处理</p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Knudg は、コーディングエージェント作業の同じ調査や失敗の繰り返しを減らすための情報プレビューです。製品へのアクセスは提供していません。"
+    >
+    <title>Knudg | エージェント向け経験インフラ</title>
+    <link rel="canonical" href="https://knudg.com/ja/">
+    <link rel="alternate" hreflang="en" href="https://knudg.com/">
+    <link rel="alternate" hreflang="ja" href="https://knudg.com/ja/">
+    <link rel="alternate" hreflang="zh-CN" href="https://knudg.com/zh-cn/">
+    <link rel="alternate" hreflang="x-default" href="https://knudg.com/">
+    <link rel="stylesheet" href="../styles.css?v=layout-20260512k">
+  </head>
+  <body class="ja-page">
+    <a class="skip-link" href="#main">本文へ移動</a>
+
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="brand" href="#top" aria-label="Knudg ホーム">
+          <span class="brand-mark">kn</span>
+          <span>Knudg</span>
+        </a>
+
+        <nav class="primary-nav" aria-label="主要ナビゲーション">
+          <a href="#problem">課題</a>
+          <a href="#outcomes">効果</a>
+          <a href="#cards">例</a>
+          <a href="#trust">安全性</a>
+          <a href="#access">状態</a>
+          <a href="#proof">検証</a>
+        </nav>
+
+        <div class="nav-actions">
+          <span class="status-chip status-illustrative">情報プレビュー</span>
+          <span class="nav-status">情報のみ</span>
+          <a class="language-link" href="/" lang="en" hreflang="en">English</a>
+          <a class="language-link" href="/zh-cn/" lang="zh-CN" hreflang="zh-CN">中文</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="hero band-paper" id="top" aria-labelledby="hero-title">
+        <div class="shell hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">エージェント向け経験インフラ</p>
+            <h1 id="hero-title">同じ調査に、何度も戻らない。</h1>
+            <p class="hero-lede">
+              Knudg は、コーディングエージェント向けの経験共有インフラです。
+              過去の作業で得た学びを、次の作業が検証できる手がかりとして残すことを目指します。
+            </p>
+            <p class="hero-audience">
+              ビルド、CI、移行、開発ツールまわりで、コーディングエージェントが同じ調査を繰り返しているチームのための仕組みです。
+            </p>
+
+            <p class="launch-strip">
+              現在は情報公開のみで、製品へのアクセスは提供していません。
+            </p>
+
+            <div class="hero-actions">
+              <span class="status-chip status-illustrative">情報プレビュー</span>
+              <span class="disabled-reason hero-disabled-reason">情報のみ</span>
+              <span class="action-status">製品アクセス未提供</span>
+            </div>
+          </div>
+
+          <div class="product-mock">
+            <div class="mock-header">
+              <span class="status-chip status-illustrative">表示例</span>
+              <span class="mock-title">公開プレビュー / 実データなし</span>
+            </div>
+
+            <div class="mock-columns">
+              <section class="mock-panel mock-panel-cyan" aria-labelledby="mock-effect">
+                <p class="mock-panel-title" id="mock-effect">効果</p>
+                <p>既知の開発ツール失敗を、もう一度探し直す時間を減らす設計です。</p>
+                <p class="trust-label">再利用できる手がかり</p>
+              </section>
+
+              <section class="mock-panel mock-panel-yellow" aria-labelledby="mock-safety">
+                <p class="mock-panel-title" id="mock-safety">安全性</p>
+                <p>過去の経験は命令ではなく、検証するための手がかり。</p>
+                <p class="warning-text">採用前に検証</p>
+              </section>
+
+              <section class="mock-panel mock-panel-green" aria-labelledby="mock-control">
+                <p class="mock-panel-title" id="mock-control">管理</p>
+                <p>共有は、人間が承認する前提で設計します。</p>
+                <p class="trust-label">非公開が基本</p>
+              </section>
+            </div>
+
+            <div class="mobile-mock-summary">
+              <p class="mobile-mock-row mobile-mock-private">
+                <strong>効果</strong>
+                <span>同じ調査に戻る時間を減らす設計</span>
+              </p>
+              <p class="mobile-mock-warning">命令ではなく、検証すべき手がかり</p>
+              <p class="mobile-mock-row mobile-mock-abstention">
+                非公開が基本
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-muted" id="problem" aria-labelledby="problem-title">
+        <div class="shell">
+          <div class="section-heading">
+            <p class="eyebrow">繰り返しの損失</p>
+            <h2 id="problem-title">同じ失敗が、毎回また起きる。</h2>
+            <p>
+              最初に減らすべきなのは、解決そのものではなく、同じ調査へ戻る時間です。
+              読み直し、再試行、環境差分の確認が毎回やり直しになります。
+            </p>
+          </div>
+
+          <div class="problem-grid">
+            <article class="block accent-yellow">
+              <h3>毎回ドキュメントを読み直す</h3>
+              <p>既知の挙動を、コンテキストと計算量を使って何度も探し直す。</p>
+            </article>
+            <article class="block accent-red">
+              <h3>失敗した直し方をまた試す</h3>
+              <p>だめだった道筋が残らず、次のエージェントが同じ罠へ戻る。</p>
+            </article>
+            <article class="block accent-cyan">
+              <h3>環境依存の罠が外に出ない</h3>
+              <p>OS、shell、CI、依存ツールの差分が、個別セッションの中に閉じる。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-panel" id="outcomes" aria-labelledby="model-title">
+        <div class="shell">
+          <div class="section-heading wide">
+            <p class="eyebrow">検証したい効果</p>
+            <h2 id="model-title">経験を再利用できるようにして、作業の戻りを減らす。</h2>
+            <p>
+              Knudg は、過去の作業を自動命令にするのではなく、次の作業が検証できる手がかりとして渡すことを目指します。
+            </p>
+          </div>
+
+          <div class="access-grid">
+            <article class="state-card">
+              <h3>再探索を減らす設計</h3>
+              <p>同じ調査に戻る前に、過去の手がかりを見つけやすくすることを目指します。</p>
+            </article>
+            <article class="state-card">
+              <h3>失敗の再試行を減らす設計</h3>
+              <p>一度だめだった道を、次の作業でまた踏みにくくすることを目指します。</p>
+            </article>
+            <article class="state-card">
+              <h3>引き継ぎを軽くする設計</h3>
+              <p>セッションの中だけに閉じていた学びを、次へ渡しやすくします。</p>
+            </article>
+            <article class="state-card">
+              <h3>安全に使う設計</h3>
+              <p>出てきた情報を、命令ではなく検証する前提の手がかりとして扱います。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-paper" id="cards" aria-labelledby="cards-title">
+        <div class="shell">
+          <div class="section-heading wide">
+            <p class="eyebrow">残す情報の例</p>
+            <h2 id="cards-title">残すのは、生ログではなく次に使える学び。</h2>
+            <p>
+              公開ページでは価値の種類だけを示し、内部のデータ構造や検索設計は出しません。
+            </p>
+          </div>
+
+          <div class="card-grid">
+            <article class="experience-card featured-card">
+              <span class="card-kicker">CI 環境の手がかり</span>
+              <h3>パッケージのビルドが、ローカルでは通るのに CI 上でだけ失敗する</h3>
+              <p class="card-summary">
+                CI では、ローカルとは異なるツールチェーンや設定が選ばれることがあります。
+              </p>
+              <p>
+                前に効いた修正を試す前に、CI とローカルの差分を確認します。前提が合わない場合は、この手がかりは使いません。
+              </p>
+              <p class="warning-text">候補となる根拠にとどめ、現在の作業環境で検証します。</p>
+            </article>
+
+            <article class="experience-card compact-card accent-green">
+              <span class="card-kicker">前に効いた道</span>
+              <h3>一度確かめた修正筋を、次が検証できる。</h3>
+              <p class="card-summary">答えとして渡さず、確認すべき候補として残す。</p>
+              <p>次の作業が、あり得る修正筋を検証しやすくする。</p>
+            </article>
+            <article class="experience-card compact-card accent-red">
+              <span class="card-kicker">試し済み</span>
+              <h3>よさそうに見えた修正が、実は遠回りだった。</h3>
+              <p class="card-summary">一度だめだった手順を、次の作業でまた試しにくくする。</p>
+              <p>一見よさそうな手順で、また時間を失うのを避ける。</p>
+            </article>
+            <article class="experience-card compact-card accent-muted">
+              <span class="card-kicker">まだ不明</span>
+              <h3>証拠が足りず、まだ結論にできない。</h3>
+              <p class="card-summary">分からなかったことを、分からないまま残す。</p>
+              <p>未確定の情報を、確定情報のように扱わない。</p>
+            </article>
+            <article class="experience-card compact-card accent-cyan">
+              <span class="card-kicker">分かった範囲</span>
+              <h3>解けていなくても、どこまで分かったかを残す。</h3>
+              <p class="card-summary">価値があるのは、答えだけではなく調査の境界。</p>
+              <p>次の作業が、既に分かっている地点から始められる。</p>
+            </article>
+            <article class="experience-card compact-card accent-yellow">
+              <span class="card-kicker">再確認</span>
+              <h3>古い道を、いまの前提で使ってよいか見直す。</h3>
+              <p class="card-summary">古い情報に戻る前に、確認が必要だと分かる。</p>
+              <p>前は正しかった道を、今も正しいものとして扱わない。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-muted" id="practice" aria-labelledby="writer-title">
+        <div class="shell split-layout">
+          <div class="section-heading">
+            <p class="eyebrow">実際の使われ方</p>
+            <h2 id="writer-title">価値があるのは、思い出せる学びです。</h2>
+            <p>
+              内部ログや実装詳細を公開しなくても、過去の作業から得た学びは次に渡せるはずです。
+            </p>
+          </div>
+
+          <ol class="writer-flow" role="list" aria-label="実際に残す価値">
+            <li>失敗の種類を覚える</li>
+            <li>元の作業内容を見せずに、学びだけを渡す</li>
+            <li>手がかりには検証が必要だと示す</li>
+            <li>共有する前に人間の承認を必要にする</li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section band-panel" id="trust" aria-labelledby="trust-title">
+        <div class="shell">
+          <div class="section-heading wide">
+            <p class="eyebrow">安全性の根拠</p>
+            <h2 id="trust-title">安全性の姿勢は、Knudg が勝手に決めないことから作る。</h2>
+            <p>
+              公開ページでは、公開前に満たすべき要件だけを示します。共有には人間の承認を必要とし、
+              出てくる経験は命令ではなく検証する手がかりとして扱います。
+            </p>
+          </div>
+
+          <div class="trust-grid">
+            <article class="trust-card approval-card">
+              <span class="status-chip status-illustrative">安全性の根拠</span>
+              <h3>非公開を前提に設計</h3>
+              <ul class="trust-points">
+                <li>生の作業内容を公開ページに出さない。</li>
+                <li>このページから自動公開はできない。</li>
+                <li>このページから検索結果を表示しない。</li>
+              </ul>
+              <p class="trust-note">
+                公開ページは目指す姿勢を説明する場所であり、仕組みの中身を公開する場所ではありません。
+              </p>
+            </article>
+
+            <article class="trust-card revocation-card">
+              <span class="status-chip status-illustrative">安全性の根拠</span>
+              <h3>人間の承認</h3>
+              <ul class="trust-points">
+                <li>共有する内容の確認は、公開前の製品要件として扱います。</li>
+                <li>共有範囲と取り消しは、公開前に必要な管理要件です。</li>
+                <li>古い手がかりや危険な手がかりは、再利用を止める理由として扱います。</li>
+              </ul>
+              <p class="trust-note">
+                これらの管理は、後から足す画面ではなく公開前から必要な要件です。
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-paper" id="access" aria-labelledby="access-title">
+        <div class="shell">
+          <div class="section-heading wide">
+            <p class="eyebrow">公開状態</p>
+            <h2 id="access-title">このページは、製品への入口ではありません。</h2>
+            <p>
+              このページは方向性と安全性の考え方を説明するだけです。製品アクセスは提供しません。
+            </p>
+          </div>
+
+          <div class="access-grid">
+            <article class="access-card">
+              <h3>公開ページ</h3>
+              <p>概要と検証したい効果だけを表示します。</p>
+              <span class="disabled-chip">情報のみ</span>
+              <span class="disabled-reason">公開アクセスなし</span>
+            </article>
+            <article class="access-card">
+              <h3>非公開検証</h3>
+              <p>初期の検証はページ外で行います。</p>
+              <span class="disabled-chip">限定</span>
+              <span class="disabled-reason">公開前</span>
+            </article>
+            <article class="access-card">
+              <h3>エージェント接続</h3>
+              <p>製品としての接続面は、非公開の検証後に扱います。</p>
+              <span class="disabled-chip">今後</span>
+              <span class="disabled-reason">検証後</span>
+            </article>
+            <article class="access-card">
+              <h3>技術詳細</h3>
+              <p>ここでは効果と安全性の境界だけを示します。</p>
+              <span class="disabled-chip">制限</span>
+              <span class="disabled-reason">高水準のみ</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section band-muted" id="proof" aria-labelledby="proof-title">
+        <div class="shell proof-grid">
+          <div class="section-heading">
+            <p class="eyebrow">検証計画</p>
+            <h2 id="proof-title">検証すべきなのは、効果と安全性です。</h2>
+            <p>
+              公開アクセスの前に、同じ作業を減らせることと、安全に境界を保てることを確かめます。
+            </p>
+          </div>
+
+          <div class="proof-panel">
+            <dl>
+              <div>
+                <dt>反復作業</dt>
+                <dd>同じ調査に戻る時間を減らせたか</dd>
+              </div>
+              <div>
+                <dt>安全な再利用</dt>
+                <dd>候補を命令ではなく手がかりとして扱えたか</dd>
+              </div>
+              <div>
+                <dt>プライバシー</dt>
+                <dd>生の作業内容を出さずに学びを共有できたか</dd>
+              </div>
+              <div>
+                <dt>人間の制御</dt>
+                <dd>共有内容を人間が理解し、制御できたか</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-grid">
+        <div>
+          <a class="brand footer-brand" href="#top" aria-label="Knudg ホーム">
+            <span class="brand-mark">kn</span>
+            <span>Knudg</span>
+          </a>
+          <p>
+            エージェント作業の反復失敗を減らすための情報プレビュー。
+          </p>
+        </div>
+
+        <nav class="footer-nav" aria-label="フッターナビゲーション">
+          <a href="#problem">課題</a>
+          <a href="#outcomes">効果</a>
+          <a href="#cards">例</a>
+          <a href="#trust">安全性</a>
+          <a href="#access">状態</a>
+          <a href="#proof">検証</a>
+        </nav>
+
+        <div class="footer-status">
+          <p>情報プレビュー</p>
+          <p>情報のみ</p>
+          <p>公開検索・製品アクセスなし</p>
+          <p>このページは製品ワークスペースデータを意図的に収集しません。標準的なリクエスト情報は運用目的で処理されることがあります</p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

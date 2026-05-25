@@ -1,0 +1,20 @@
+{
+  "name": "knudg-local",
+  "interface": {
+    "displayName": "Knudg Local"
+  },
+  "plugins": [
+    {
+      "name": "knudg",
+      "source": {
+        "source": "local",
+        "path": "./plugins/knudg"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

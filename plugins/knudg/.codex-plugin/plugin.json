@@ -1,0 +1,39 @@
+{
+  "name": "knudg",
+  "version": "0.1.0",
+  "description": "Local plugin wrapper for Knudg client dogfood commands.",
+  "author": {
+    "name": "Knudg",
+    "email": "local-dogfood@knudg.invalid",
+    "url": "https://knudg.com"
+  },
+  "homepage": "https://knudg.com",
+  "repository": "https://github.com/knudg/knudg",
+  "license": "UNLICENSED",
+  "keywords": [
+    "agents",
+    "experience",
+    "retrieval",
+    "knudg"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Knudg",
+    "shortDescription": "Run Knudg local client dogfood commands.",
+    "longDescription": "Use allowlisted short-lived Knudg CLI commands to configure a local server, check readiness, inspect capabilities, and run abstention-first retrieval fixture checks without running a background MCP process.",
+    "developerName": "Knudg",
+    "category": "Productivity",
+    "capabilities": [
+      "Run"
+    ],
+    "websiteURL": "https://knudg.com/",
+    "privacyPolicyURL": "https://knudg.com/privacy",
+    "termsOfServiceURL": "https://knudg.com/terms",
+    "defaultPrompt": [
+      "Check my Knudg local server.",
+      "Pin my Knudg local server.",
+      "Run a Knudg retrieval fixture check."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

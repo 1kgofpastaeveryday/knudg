@@ -13,12 +13,16 @@ Design anchors:
 
 - `README.md`: Product Positioning and Architecture Invariants
 - `docs/architecture/overview.md`: local state limits
+- `docs/architecture/summoned-roles.md`: subconscious is optional plumbing,
+  not the writer/searcher/nudger dependency
 - `docs/product/strategy.md`: monetization excludes local memory as the primary value
 
 Guardrail:
 
 - Local state is only current-work query material, pending writer approval, and short-lived cache metadata by default.
 - MVP value must be measured from the remote shared corpus excluding same-session local cache.
+- Writer/searcher/nudger must be usable through summoned roles without
+  completing a local subconscious sidecar.
 
 ## Agent-Readable Experience Infrastructure
 
@@ -31,12 +35,16 @@ Design anchors:
 
 - `README.md`: Core Roles and Initial MVP
 - `docs/architecture/agent-access.md`: transport, operation, token, hook, and response contracts
+- `docs/architecture/summoned-roles.md`: per-task role orchestration before
+  automatic hooks
 - `docs/architecture/retrieval.md`: injection contract and delivery modes
 
 Guardrail:
 
 - Every wedge must expose agent-native access contracts before human-facing knowledge-base polish.
 - Retrieved cards are evidence, not instructions.
+- Sub-agents may search, draft, nudge, or review in parallel with main-agent
+  work, but the main agent keeps task execution and final action authority.
 
 ## Thin Injection
 
@@ -47,14 +55,18 @@ Intent:
 
 Design anchors:
 
+- `docs/architecture/summoned-roles.md`: compact role verdicts outside the
+  acting prompt
 - `docs/architecture/retrieval.md`: Injection Contract
 - `docs/architecture/security-privacy.md`: Retrieved Card Trust Boundary
 - `docs/architecture/operations.md`: rollout controls
 
 Guardrail:
 
-- Default rollout moves through shadow and sidecar before inline hints.
+- Default rollout moves through shadow and retrieval-panel delivery before inline hints.
 - Inline injection has max cards, token budget, and no-suggestion fallback.
+- Summoned searcher/writer/nudger roles return bounded verdicts first; raw
+  card bodies or long historical context require an explicit panel or handoff.
 
 ## Consent and Transparency
 

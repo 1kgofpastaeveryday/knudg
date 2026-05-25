@@ -2,18 +2,34 @@
 
 Knudg is central infrastructure, not local-first storage. Local state should be limited to temporary current-work summaries, pending writer approval queues, and session-scoped retrieval cache metadata.
 
-Local retrieval cache must not become a personal memory layer. By default it stores only card IDs, card versions, freshness metadata, and ranking metadata. Card bodies may be cached only with explicit user or tenant policy, encryption at rest, short TTL, and purge on revocation.
+Local retrieval cache must not become a personal memory layer. In MVP it stores only card IDs, card versions, freshness metadata, and ranking metadata. Card body caching remains prohibited until a future accepted RFC updates DEC-010 with encryption, TTL, revocation invalidation, cache keys, and user controls.
 
 The central service manages:
 
 - public experience database
 - private/team namespaces
+- enterprise-managed directives, routing guidance, and guardrails
 - consent records
 - search indexes
 - quality signals
 - deprecation status
 - contributor/reviewer reputation
 - billing/rate limits
+
+Local observer projects, including `agent-subconscious`, are outside this
+canonical boundary. They may watch local agent work, extract candidate facts,
+and propose local drafts, but they do not own Knudg consent state, approval
+state, revocation fences, shared storage, retrieval contracts, or publication
+authority. Their output enters Knudg only through the same gated writer/intake
+contracts as any other candidate source.
+
+The first agent-native MVP does not require a local observer project. The
+preferred rollout is summoned roles: the main agent starts the user task and
+may run bounded Knudg searcher, writer, nudger, and reviewer roles in parallel.
+Those roles return compact structured verdicts, not raw experience bodies or
+instructions. A future subconscious adapter may feed the same role contracts,
+but it is not the canonical store and not a prerequisite for writer/searcher
+or nudger behavior.
 
 ## Recommended Early Architecture
 
@@ -31,13 +47,28 @@ Keyword search:
   Postgres FTS first
 
 Vector search:
-  pgvector first
+  pgvector first after M4 gates; no vector serving before DEC-005/RFC
 
 Queue:
   Postgres-backed queue for MVP, unless DEC-001 is changed
 ```
 
-For MVP deployment, the implementation must pin exact providers in an implementation RFC before any raw/source artifact storage is enabled. M0/M1 may store canonical metadata and redacted draft bodies in Postgres without choosing an object storage provider. When object storage is enabled, the invariant is an S3-compatible interface with immutable object manifests, encryption, tenant scoping, retention policy, signed access, purge path, and canonical DB linkage.
+Retrieval should be driven by structured current-work profiles, not by manual
+search strings alone. The searcher role compiles the active task, safe file and
+symbol signals, test failures, public package/tool identifiers, and explicit
+user text into bounded query views. Exact/FTS retrieval remains first-class
+because technical work depends on identifiers; vector search is added as a
+semantic signal after the relevant gates. See [Search Strategy](search-strategy.md).
+
+For MVP deployment, the implementation must pin exact providers in an
+implementation RFC before any raw/source artifact storage is enabled. M0/M1 may
+store canonical metadata and redacted draft bodies in Postgres without choosing
+an object storage provider only after the named
+`non_synthetic_body_persistence_gate` is active. Synthetic fixtures and
+model-only local drafts may run before that gate. When object storage is
+enabled, the invariant is an S3-compatible interface with immutable object
+manifests, encryption, tenant scoping, retention policy, signed access, purge
+path, and canonical DB linkage.
 
 ## Write Pipeline
 
@@ -52,6 +83,8 @@ State inventory:
 - `awaiting_user_approval`
 - `approved_private`
 - `approved_for_publication`
+- `discard_pending`
+- `publication_withdrawn`
 - `published`
 - `indexed_hot`
 - `indexed_main`
@@ -80,12 +113,16 @@ Queue processing is at-least-once. Every worker action must be idempotent at the
 Required worker rules:
 
 - each ingestion, approval challenge, redaction, review routing, indexing, compaction, deprecation, and revocation propagation job has an idempotency key and a purpose-bound worker role
+- non-synthetic candidate intake runs deterministic scanners and a no-tool model-assisted safety classifier before admission, storage of candidate body, redaction, review routing, or indexing
 - retries use bounded exponential backoff with jitter
 - poison jobs move to a dead-letter queue after the retry cap
 - stranded intermediate states are found by a sweeper
 - every derived index entry can be rebuilt from canonical events
 - duplicate queue delivery must not create duplicate cards, approvals, or index entries
-- state transitions are monotonic except for explicit rejection, deprecation, supersession, or revocation transitions
+- state transitions are monotonic except for explicit rejection, deprecation,
+  supersession, revocation, and the documented rework states in the data model:
+  redaction rework, withdrawal-to-approval, undo restore, and private/team index
+  projection eligibility
 - admission, dedupe, novelty, and review decisions are recorded as events and can be audited
 
 ## Scaling Principle

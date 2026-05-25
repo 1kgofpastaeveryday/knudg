@@ -33,11 +33,23 @@ Agent-facing analogy:
 
 ## Core Roles
 
+In MVP these roles may run as summoned sub-agents: the main agent starts the
+user's task and, in parallel, asks bounded Knudg roles for compact verdicts.
+This avoids filling the acting prompt with historical experience. A fully
+automatic hook or local subconscious sidecar is optional later plumbing, not a
+dependency for writer/searcher/nudger.
+
 ### Knowledge Crawler
 
-The crawler runs alongside an active agent session. It builds a sanitized outbound query profile, searches for similar past experience, and injects concise suggestions into the main agent.
+The crawler runs alongside an active agent session. It builds a sanitized outbound query profile, searches for similar past experience, and shows concise retrieval-panel suggestions outside the acting agent prompt in MVP.
 
-Retrieved cards are always untrusted evidence, not instructions. The main agent can use a card as a clue, but must independently validate any action. Injection must stay thin, bounded, and abstention-first.
+Retrieved cards are always untrusted evidence, not instructions. The main agent can use a card as a clue, but must independently validate any action. Inline prompt delivery is non-MVP and requires a hostile-card red-team gate.
+
+### Knowledge Nudger
+
+The nudger decides whether a Knudg suggestion is worth surfacing during active
+work. It returns only a short signal such as "offer retrieval panel" or "offer
+writer draft"; it does not tell the main agent what technical action to take.
 
 ### Knowledge Writer
 
@@ -55,14 +67,61 @@ It creates a private candidate card first. The candidate is redacted and reviewe
 - Canonical truth is an append-only event log plus derived current-state projections.
 - Retrieved card text must never directly trigger privileged actions.
 - Search may abstain. Returning no card is a valid result.
+- Consent and revocation human UI is launch-blocking for product-path or
+  shared/hosted non-synthetic private retention, team namespace sharing, and
+  public publication; MCP, CLI, and hooks can hand off but cannot complete
+  consent. The only P0 exception is `local_private_dogfood`: explicit local
+  structured cards may persist locally only with revoke/purge, no-log tests,
+  and non-promotion guarantees.
+- Enterprise-managed directives and routing guidance are separate from experience cards; they require scoped policy objects, approval, revocation, conflict handling, and audit.
+- Database-side intake must run a deterministic and model-assisted safety gate before accepting non-synthetic candidate content.
 - Queue processing is at-least-once; correctness is enforced with database idempotency and reconciliation.
 - Cards, APIs, indexes, embeddings, and storage manifests are versioned.
 
 ## Initial MVP
 
-The first wedge should target one high-repetition, low-privacy-friction domain where reuse can be measured.
+The MVP priority is now the local vertical experience first:
 
-Candidate wedge:
+```text
+explicit local capture -> local Postgres storage -> later task-profile search ->
+retrieval-panel suggestion -> local purge/revoke
+```
+
+This comes before production/shared infrastructure. The first product question
+is whether a solved agent-work card, captured intentionally by one operator,
+actually helps on a later similar task. If that loop is not useful, team/public
+consent machinery, vector search, enterprise governance, and publication flows
+are premature.
+
+The first non-synthetic source class is `local_private_dogfood`, not
+team/private production ingestion. It is single-operator, single-workspace,
+local-Postgres only, explicit-command only, and never public/team shared. It
+stores structured operator-written cards, not raw transcripts, logs, stack
+traces, source files, or arbitrary workspace files. It must include local
+revoke and local purge commands before it is considered usable.
+
+`local_private_dogfood` is not a lane, queue, or publication state. It is an
+immutable `source_class`. Separate fields must carry local-only visibility,
+sharing state, publication state, and lifecycle state. Local private cards must
+not be promoted into team/public/hosted projections, embeddings, publication
+consent rows, export flows, product candidate queues, or admin/review surfaces.
+
+Production/private/team/public flows remain gated separately. The
+`non_synthetic_body_persistence_gate`, trusted consent/revocation UI,
+protected-data durability, no-log ingress, review operations, and public
+publication gates apply before shared or hosted data processing, not before the
+local private dogfood path. The local path still needs a P0 no-log rule: raw
+or rejected local-private content must not appear in stdout, stderr, structured
+logs, traces, queue payloads, test snapshots, DB notices, or error messages.
+
+The provisional wedge remains developer tooling failures for agentic coding
+environments, but WEDGE-001 should measure the local vertical loop before broad
+publication or team namespace work. If public-only retrieval underperforms but
+local/private retrieval is useful, Knudg should evaluate team-shared private
+corpora only after the team namespace consent/grant gate instead of forcing
+public publication.
+
+Follow-on wedge candidates:
 
 - developer tooling failures for agentic coding environments
 - package manager and framework migration errors
@@ -71,33 +130,53 @@ Candidate wedge:
 
 MVP sequence:
 
-1. Pick one wedge and define the evaluation dataset.
-2. Define canonical schema, outcome types, event log, state machine, tenant model, and audit trail.
-3. Build private ingestion and redaction-first writer flow.
-4. Build consent approval bound to redacted card digest, including derived-artifact policy.
-5. Store approved card versions in Postgres plus immutable object storage manifests.
-6. Add Postgres FTS plus pgvector hybrid retrieval for the wedge.
-7. Add abstention, freshness, and hostile-card safety gates.
-8. Build a minimal MCP/CLI/hooks interface with one transport and scoped credentials.
-9. Add admission, dedupe, novelty checks, hot index, main index, idempotent queue processing, and reconciliation.
-10. Add quality/deprecation/supersession/revocation flags.
-11. Add private/team namespaces after tenant isolation tests pass.
-12. Add billing only after retrieval value and operating cost are measured.
+1. Implement `local_private_dogfood` capture from explicit structured input.
+2. Store that card in local Postgres without raw transcript or file ingestion.
+3. Search stored local cards from a later task profile and return
+   retrieval-panel metadata only.
+4. Add local revoke, local purge, and visible "not shared, not published"
+   status.
+5. Dogfood the loop on repeated developer-tooling failures and measure whether
+   retrieved cards reduce repeated investigation.
+6. Only after useful retrieval is demonstrated, harden the shared/product path:
+   protected-data durability, no-log ingress, intake safety, trusted
+   consent/revocation UI, production exact/FTS projections, team namespace
+   grants, public publication, vector/rerank, external MCP/hooks, and billing.
 
-## Documentation
+## Internal Documentation
+
+This README is an internal working index, not a public docs entrypoint. These
+documents are internal unless a page or section is explicitly marked
+public-safe in a signed public-doc manifest. The landing page, public README,
+and public architecture explainer must be generated from that manifest rather
+than this navigation list. Do not publish or link these docs from a public LP
+until a release check removes launch-control values, internal review artifacts,
+raw queue names, private thresholds, operational defaults, and `docs/plans/`.
+
+Documentation authority: architecture invariants and implementation-readiness
+gates are normative; backlog task files define executable slices;
+`backlog/backend-roadmap.md` is an ordering/index view; this README is
+positioning and navigation. If these disagree, update the normative document
+and cross-link the backlog change instead of treating roadmap wording as a
+gate override.
 
 - [Architecture Overview](docs/architecture/overview.md)
 - [Security and Privacy](docs/architecture/security-privacy.md)
 - [Data Model](docs/architecture/data-model.md)
+- [Enterprise Governance](docs/architecture/enterprise-governance.md)
 - [Agent Access](docs/architecture/agent-access.md)
+- [Summoned Role MVP](docs/architecture/summoned-roles.md)
 - [Retrieval Model](docs/architecture/retrieval.md)
+- [Search Strategy](docs/architecture/search-strategy.md)
 - [Operations](docs/architecture/operations.md)
 - [Consent and Revocation UX](docs/architecture/consent-revocation-ux.md)
 - [Implementation Readiness](docs/architecture/implementation-readiness.md)
+- [Local Development](docs/development.md)
+- [Operations Runbooks](docs/operations/)
+- [Implementation Backlog](backlog/README.md)
 - [Product and Monetization](docs/product/strategy.md)
 - [Intent Crosswalk](docs/product/intent-crosswalk.md)
 - [Decision Backlog](docs/decisions/README.md)
-- [Review Reports](docs/plans/)
 
 ## Messaging
 
@@ -105,15 +184,12 @@ Possible English lines:
 
 - Agents don't start from zero.
 - Give agents lived experience.
-- The internet of solved agent problems.
-- Your agents stop paying to rediscover solved problems.
+- A consented experience layer for agent work.
+- Measure and reduce repeated investigation in one validated wedge first.
 - A shared experience layer for autonomous work.
 
-Possible Japanese lines:
-
-- エージェントがゼロから始めないための経験知インフラ。
-- 他のエージェントがすでに通った道を、いま動いているエージェントへ。
-- エージェントが同じ失敗を再計算しないための検索基盤。
+Japanese messaging is intentionally omitted until a localization pass verifies
+copy, encoding, metadata, font fallback, and screenshot QA.
 
 ## Strategic Thesis
 

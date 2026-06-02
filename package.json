@@ -56,6 +56,6 @@
   },
   "devDependencies": {
     "playwright": "^1.56.1",
-    "wrangler": "4.90.0"
+    "wrangler": "4.97.0"
   }
 }

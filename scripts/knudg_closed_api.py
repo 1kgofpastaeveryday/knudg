@@ -515,7 +515,7 @@ def prepare_publication_candidate(card_id, *, workspace_id):
         "card_id": str(row["card_id"]),
         "card_version_id": str(row["card_version_id"]),
         "body_digest": row["body_digest"],
-        "payload_digest": row["payload_digest"],
+        "payload_digest": sha256_digest_ref(row["payload_digest"]),
         "candidate_digest": row["candidate_digest"],
         "candidate": row["candidate_json"],
         "surface_contracts": surface_contracts,
@@ -700,12 +700,18 @@ def uuid_from_digest(digest):
     return f"{raw[:8]}-{raw[8:12]}-4{raw[13:16]}-8{raw[17:20]}-{raw[20:32]}"
 
 
+def sha256_digest_ref(digest):
+    if isinstance(digest, str) and re.fullmatch(r"[a-f0-9]{64}", digest):
+        return "sha256:" + digest
+    return digest
+
+
 def public_exposure_contract(candidate_digest, payload_digest):
     return {
         "schema_version": "public-exposure-contract-v0",
         "contract_digest_binding": {
             "candidate_digest": candidate_digest,
-            "payload_digest": payload_digest,
+            "payload_digest": sha256_digest_ref(payload_digest),
         },
         "public_candidate_conversion": {
             "objective_item": 9,

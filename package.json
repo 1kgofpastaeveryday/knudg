@@ -55,7 +55,7 @@
     "gates:all": "npm run wedge:evidence -- validate --input fixtures/wedge-evidence.sample.json && npm run m3:gates && npm run review:gates && npm run circuit:gates && npm run runbook:manifest && npm run launch:gates && npm run intake:gates && npm run auth:gates && npm run consent:gates && npm run tns:audit && npm run experience:surfaces && npm run experience:activation && npm run experience:storage && npm run public:exposure && npm run public:candidate-conversion && npm run b2b:respondent-portal && npm run abuse:identity && npm run abuse:identity-enforcement && npm run raw:detail-escrow && npm run dashboard:company-store && npm run domain:policies && npm run domain:lookup && npm run candidate:facets && npm run future-surface:leaks"
   },
   "devDependencies": {
-    "playwright": "^1.56.1",
+    "playwright": "^1.60.0",
     "wrangler": "4.90.0"
   }
 }

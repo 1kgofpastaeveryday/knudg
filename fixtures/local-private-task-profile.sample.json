@@ -1,0 +1,11 @@
+{
+  "schema_version": "task_profile.v0",
+  "intent": "debug",
+  "explicit_query": "psycopg migration capture",
+  "repo_shape_category": "pytest-postgres",
+  "retrieval_domains": ["technical_work"],
+  "public_packages": ["psycopg"],
+  "error_fingerprints": ["migration-search-fixture"],
+  "coarse_os": "windows",
+  "recent_event_kinds": ["task_start"]
+}

@@ -1,0 +1,488 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/abuse-identity-enforcement-request-v0.schema.json",
+  "title": "Knudg Abuse Identity Enforcement Request v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "request_class",
+    "objective_item",
+    "surface",
+    "status",
+    "requested_operation",
+    "authorization_model",
+    "anti_enumeration_contract",
+    "identity_minimization_contract",
+    "identity_resolution",
+    "enforcement_model",
+    "required_gates",
+    "forbidden_outputs",
+    "output_contract",
+    "audit_event_contract",
+    "audit_event_mapping",
+    "appeal_recovery",
+    "appeal_recovery_contract",
+    "surface_enablement",
+    "result_contract",
+    "blocked_until"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string", "const": "abuse-identity-enforcement-request-v0"},
+    "request_class": {"type": "string", "const": "preflight_only"},
+    "objective_item": {"type": "integer", "const": 11},
+    "surface": {"type": "string", "const": "abuse_identity_ban_operations"},
+    "status": {"type": "string", "const": "blocked"},
+    "requested_operation": {
+      "type": "object",
+      "required": [
+        "action",
+        "case_digest",
+        "actor_ref",
+        "target_subject",
+        "purpose",
+        "reason_class",
+        "decision_digest",
+        "idempotency_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action": {"$ref": "#/$defs/action"},
+        "case_digest": {"$ref": "#/$defs/sha256_digest"},
+        "actor_ref": {
+          "type": "object",
+          "required": ["ref_kind", "ref_digest"],
+          "additionalProperties": false,
+          "properties": {
+            "ref_kind": {"type": "string", "const": "opaque_preflight_actor_ref"},
+            "ref_digest": {"$ref": "#/$defs/sha256_digest"}
+          }
+        },
+        "target_subject": {
+          "type": "object",
+          "required": ["ref_kind", "ref_digest"],
+          "additionalProperties": false,
+          "properties": {
+            "ref_kind": {"type": "string", "const": "opaque_preflight_subject_ref"},
+            "ref_digest": {"$ref": "#/$defs/sha256_digest"}
+          }
+        },
+        "purpose": {"type": "string", "const": "abuse_preflight"},
+        "reason_class": {"$ref": "#/$defs/reason_class"},
+        "decision_digest": {"$ref": "#/$defs/sha256_digest"},
+        "idempotency_digest": {"$ref": "#/$defs/sha256_digest"}
+      }
+    },
+    "authorization_model": {
+      "type": "object",
+      "required": [
+        "actor_role_model_accepted",
+        "high_risk_review_required_for",
+        "two_person_review_required_for",
+        "self_service_enforcement_allowed",
+        "service_account_enforcement_allowed"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "actor_role_model_accepted": {"type": "boolean", "const": false},
+        "high_risk_review_required_for": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["suspend", "ban"]}
+        },
+        "two_person_review_required_for": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["ban"]}
+        },
+        "self_service_enforcement_allowed": {"type": "boolean", "const": false},
+        "service_account_enforcement_allowed": {"type": "boolean", "const": false}
+      }
+    },
+    "anti_enumeration_contract": {
+      "type": "object",
+      "required": [
+        "no_subject_existence_disclosure",
+        "no_match_count_disclosure",
+        "positive_negative_response_equivalence",
+        "timing_equalization_required",
+        "generic_error_contract_required",
+        "lockout_status_disclosure",
+        "rate_limit_reason_disclosure"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "no_subject_existence_disclosure": {"type": "boolean", "const": true},
+        "no_match_count_disclosure": {"type": "boolean", "const": true},
+        "positive_negative_response_equivalence": {"type": "boolean", "const": true},
+        "timing_equalization_required": {"type": "boolean", "const": true},
+        "generic_error_contract_required": {"type": "boolean", "const": true},
+        "lockout_status_disclosure": {"type": "string", "const": "none"},
+        "rate_limit_reason_disclosure": {"type": "string", "const": "generic_only"}
+      }
+    },
+    "identity_minimization_contract": {
+      "type": "object",
+      "required": [
+        "raw_identifier_collection",
+        "protected_fingerprint_creation",
+        "subject_row_creation",
+        "identity_assurance_mode",
+        "purpose_binding",
+        "retention_profile_required_before_real_data"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "raw_identifier_collection": {"type": "string", "const": "forbidden"},
+        "protected_fingerprint_creation": {"type": "string", "const": "forbidden_in_preflight"},
+        "subject_row_creation": {"type": "string", "const": "forbidden_in_preflight"},
+        "identity_assurance_mode": {"type": "string", "const": "not_performed"},
+        "purpose_binding": {"type": "string", "const": "abuse_preflight_only"},
+        "retention_profile_required_before_real_data": {"type": "boolean", "const": true}
+      }
+    },
+    "identity_resolution": {
+      "type": "object",
+      "required": [
+        "mode",
+        "raw_identity_values",
+        "protected_fingerprint_profile",
+        "protected_fingerprint_created",
+        "subject_rows",
+        "real_subject_rows_created",
+        "match_status_disclosure",
+        "normalized_outward_response"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {"type": "string", "const": "not_performed"},
+        "raw_identity_values": {"type": "string", "const": "forbidden_in_fixture"},
+        "protected_fingerprint_profile": {
+          "type": "string",
+          "enum": ["required_before_real_data", "not_implemented"]
+        },
+        "protected_fingerprint_created": {"type": "boolean", "const": false},
+        "subject_rows": {"type": "string", "const": "none"},
+        "real_subject_rows_created": {"type": "boolean", "const": false},
+        "match_status_disclosure": {"type": "string", "const": "none"},
+        "normalized_outward_response": {"type": "string", "const": "generic_no_match_disclosure"}
+      }
+    },
+    "enforcement_model": {
+      "type": "object",
+      "required": ["real_enforcement_enabled", "transitions"],
+      "additionalProperties": false,
+      "properties": {
+        "real_enforcement_enabled": {"type": "boolean", "const": false},
+        "transitions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "required": ["action", "real_effect_enabled", "requires_audit_event"],
+            "additionalProperties": false,
+            "properties": {
+              "action": {"$ref": "#/$defs/action"},
+              "real_effect_enabled": {"type": "boolean", "const": false},
+              "requires_audit_event": {"type": "boolean", "const": true}
+            }
+          }
+        }
+      }
+    },
+    "required_gates": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "ED-006",
+          "TNS-001",
+          "AUTHORIZATION_ROLE_MODEL",
+          "HIGH_RISK_REVIEW_POLICY",
+          "IDEMPOTENCY_WRITE_BEFORE_EFFECT",
+          "ANTI_ENUMERATION_CONTRACT",
+          "IDENTITY_MINIMIZATION_POLICY",
+          "PROTECTED_FINGERPRINT_PROFILE",
+          "AUDIT_DURABILITY",
+          "NO_IDENTITY_DISCLOSURE_NEGATIVE_TESTS",
+          "RAW_IDENTITY_RETENTION_PURGE_POLICY",
+          "APPEAL_RECOVERY_PATH"
+        ]
+      }
+    },
+    "forbidden_outputs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/forbidden_output"}
+    },
+    "output_contract": {
+      "type": "object",
+      "required": ["requested_outputs", "withheld_outputs"],
+      "additionalProperties": false,
+      "properties": {
+        "requested_outputs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["redacted_case_status", "preflight_blocked_reason", "generic_status"]
+          }
+        },
+        "withheld_outputs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/forbidden_output"}
+        }
+      }
+    },
+    "audit_event_mapping": {
+      "type": "object",
+      "required": ["audit_event_write_enabled", "preflight_required_events", "transition_events"],
+      "additionalProperties": false,
+      "properties": {
+        "audit_event_write_enabled": {"type": "boolean", "const": false},
+        "preflight_required_events": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/audit_event_type"}
+        },
+        "transition_events": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "required": ["action", "audit_event_type"],
+            "additionalProperties": false,
+            "properties": {
+              "action": {"$ref": "#/$defs/action"},
+              "audit_event_type": {"$ref": "#/$defs/audit_event_type"}
+            }
+          }
+        }
+      }
+    },
+    "audit_event_contract": {
+      "type": "object",
+      "required": ["audit_write_mode", "required_event_fields", "raw_evidence_in_audit"],
+      "additionalProperties": false,
+      "properties": {
+        "audit_write_mode": {"type": "string", "const": "disabled_preflight_only"},
+        "required_event_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "case_id",
+              "actor_id",
+              "purpose",
+              "reason_class",
+              "decision_digest",
+              "subject_ref",
+              "appeal_ref",
+              "created_at"
+            ]
+          }
+        },
+        "raw_evidence_in_audit": {"type": "string", "const": "forbidden"}
+      }
+    },
+    "appeal_recovery": {
+      "type": "object",
+      "required": [
+        "required_for",
+        "appeal_path_required",
+        "reinstatement_path_required",
+        "appeal_path_accepted",
+        "reinstatement_path_accepted"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "required_for": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["suspend", "ban"]}
+        },
+        "appeal_path_required": {"type": "boolean", "const": true},
+        "reinstatement_path_required": {"type": "boolean", "const": true},
+        "appeal_path_accepted": {"type": "boolean", "const": false},
+        "reinstatement_path_accepted": {"type": "boolean", "const": false}
+      }
+    },
+    "appeal_recovery_contract": {
+      "type": "object",
+      "required": [
+        "generic_notice_required",
+        "appeal_ref_required_for",
+        "mistaken_identity_recovery_required",
+        "appeal_status_disclosure"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generic_notice_required": {"type": "boolean", "const": true},
+        "appeal_ref_required_for": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["suspend", "ban"]}
+        },
+        "mistaken_identity_recovery_required": {"type": "boolean", "const": true},
+        "appeal_status_disclosure": {"type": "string", "const": "generic_only"}
+      }
+    },
+    "surface_enablement": {
+      "type": "object",
+      "required": [
+        "identity_processing_enabled",
+        "real_enforcement_enabled",
+        "real_ban_operations_enabled",
+        "protected_fingerprint_creation_enabled",
+        "subject_row_creation_enabled",
+        "actual_experience_storage_enabled",
+        "public_candidate_conversion_enabled",
+        "public_serving_enabled",
+        "b2b_delivery_enabled",
+        "respondent_inquiry_enabled",
+        "dashboard_enabled",
+        "retrieval_enabled",
+        "export_enabled",
+        "ranking_enabled",
+        "raw_detail_escrow_enabled"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "identity_processing_enabled": {"type": "boolean", "const": false},
+        "real_enforcement_enabled": {"type": "boolean", "const": false},
+        "real_ban_operations_enabled": {"type": "boolean", "const": false},
+        "protected_fingerprint_creation_enabled": {"type": "boolean", "const": false},
+        "subject_row_creation_enabled": {"type": "boolean", "const": false},
+        "actual_experience_storage_enabled": {"type": "boolean", "const": false},
+        "public_candidate_conversion_enabled": {"type": "boolean", "const": false},
+        "public_serving_enabled": {"type": "boolean", "const": false},
+        "b2b_delivery_enabled": {"type": "boolean", "const": false},
+        "respondent_inquiry_enabled": {"type": "boolean", "const": false},
+        "dashboard_enabled": {"type": "boolean", "const": false},
+        "retrieval_enabled": {"type": "boolean", "const": false},
+        "export_enabled": {"type": "boolean", "const": false},
+        "ranking_enabled": {"type": "boolean", "const": false},
+        "raw_detail_escrow_enabled": {"type": "boolean", "const": false}
+      }
+    },
+    "result_contract": {
+      "type": "object",
+      "required": [
+        "command_effect",
+        "performs_identity_processing",
+        "stores_raw_identity",
+        "creates_subject_row",
+        "creates_protected_fingerprint",
+        "discloses_match_status",
+        "enforces_ban",
+        "enforces_rate_limit",
+        "creates_suspension",
+        "opens_appeal_case",
+        "opens_public_surface",
+        "delivers_to_b2b",
+        "serves_dashboard",
+        "stores_raw_detail",
+        "writes_audit_event"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "command_effect": {"type": "string", "const": "preflight_only"},
+        "performs_identity_processing": {"type": "boolean", "const": false},
+        "stores_raw_identity": {"type": "boolean", "const": false},
+        "creates_subject_row": {"type": "boolean", "const": false},
+        "creates_protected_fingerprint": {"type": "boolean", "const": false},
+        "discloses_match_status": {"type": "boolean", "const": false},
+        "enforces_ban": {"type": "boolean", "const": false},
+        "enforces_rate_limit": {"type": "boolean", "const": false},
+        "creates_suspension": {"type": "boolean", "const": false},
+        "opens_appeal_case": {"type": "boolean", "const": false},
+        "opens_public_surface": {"type": "boolean", "const": false},
+        "delivers_to_b2b": {"type": "boolean", "const": false},
+        "serves_dashboard": {"type": "boolean", "const": false},
+        "stores_raw_detail": {"type": "boolean", "const": false},
+        "writes_audit_event": {"type": "boolean", "const": false}
+      }
+    },
+    "blocked_until": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/blocker"}
+    }
+  },
+  "$defs": {
+    "action": {
+      "type": "string",
+      "enum": ["warn", "rate_limit", "hold_for_review", "suspend", "ban", "appeal", "reinstate", "revoke", "purge"]
+    },
+    "reason_class": {
+      "type": "string",
+      "enum": [
+        "spam",
+        "brigading",
+        "fake_experience",
+        "harassment",
+        "ban_evasion",
+        "mistaken_identity",
+        "policy_revocation"
+      ]
+    },
+    "audit_event_type": {
+      "type": "string",
+      "enum": [
+        "case_opened",
+        "identity_signal_reviewed",
+        "submission_held",
+        "account_warned",
+        "account_rate_limited",
+        "account_suspended",
+        "account_banned",
+        "appeal_opened",
+        "reinstated",
+        "artifact_revoked",
+        "artifact_purged"
+      ]
+    },
+    "forbidden_output": {
+      "type": "string",
+      "enum": [
+        "submitter_identity",
+        "raw_identity_values",
+        "subject_row",
+        "device_or_network_signal",
+        "reidentification_hint",
+        "protected_fingerprint",
+        "raw_source_material",
+        "source_metadata",
+        "raw_moderation_evidence",
+        "match_status",
+        "account_identifier",
+        "private_selection_status"
+      ]
+    },
+    "sha256_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "blocker": {
+      "type": "object",
+      "required": ["gate", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "gate": {"type": "string", "pattern": "^[A-Z0-9_-]+$"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 240}
+      }
+    }
+  }
+}

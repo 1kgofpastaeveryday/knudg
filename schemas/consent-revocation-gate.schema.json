@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.local/schemas/consent-revocation-gate.schema.json",
+  "title": "PR-003 Consent Revocation Gate Fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "gate_id", "enablement", "surfaces", "experience_domain_boundaries", "challenge_controls", "agent_boundaries", "blocked_until"],
+  "properties": {
+    "schema_version": {"const": "consent-revocation-gate-v0"},
+    "status": {"enum": ["draft_scaffold", "ready_for_review", "private_retention_accepted", "accepted"]},
+    "gate_id": {"const": "PR-003"},
+    "enablement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trusted_completion_enabled", "team_sharing_enabled", "public_publication_enabled", "terminal_publication_completion_enabled"],
+      "properties": {
+        "trusted_completion_enabled": {"type": "boolean"},
+        "team_sharing_enabled": {"const": false},
+        "public_publication_enabled": {"const": false},
+        "terminal_publication_completion_enabled": {"const": false}
+      }
+    },
+    "surfaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["surface_type", "canonical_scope", "status", "completion_transport", "requires_step_up", "requires_comprehension_gate"],
+        "properties": {
+          "surface_type": {
+            "enum": [
+              "private_candidate_collection_consent",
+              "private_retention_consent",
+              "team_namespace_grant_consent",
+              "public_publication_consent",
+              "intake_review_escrow_consent"
+            ]
+          },
+          "canonical_scope": {
+            "enum": [
+              "private_candidate_collection",
+              "private_retention",
+              "team_namespace_grant",
+              "public_publication",
+              "intake_review_escrow"
+            ]
+          },
+          "status": {"enum": ["disabled", "handoff_only", "trusted_completion_ready"]},
+          "completion_transport": {"enum": ["none", "trusted_browser_or_os_surface"]},
+          "requires_step_up": {"const": true},
+          "requires_comprehension_gate": {"const": true}
+        }
+      }
+    },
+    "experience_domain_boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "personal_reasoning",
+        "career_private",
+        "place_service_experience",
+        "public_experience_candidate",
+        "public_aggregate_signal"
+      ],
+      "properties": {
+        "personal_reasoning": {"$ref": "#/$defs/experience_domain_boundary"},
+        "career_private": {"$ref": "#/$defs/experience_domain_boundary"},
+        "place_service_experience": {"$ref": "#/$defs/experience_domain_boundary"},
+        "public_experience_candidate": {"$ref": "#/$defs/experience_domain_boundary"},
+        "public_aggregate_signal": {"$ref": "#/$defs/experience_domain_boundary"}
+      }
+    },
+    "challenge_controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["single_use", "digest_bound", "expiry_bound", "csrf_state_bound", "frame_ancestor_protected", "exact_origin_redirect", "anti_enumeration_failures"],
+      "properties": {
+        "single_use": {"const": true},
+        "digest_bound": {"const": true},
+        "expiry_bound": {"const": true},
+        "csrf_state_bound": {"const": true},
+        "frame_ancestor_protected": {"const": true},
+        "exact_origin_redirect": {"const": true},
+        "anti_enumeration_failures": {"const": true}
+      }
+    },
+    "agent_boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cli_mcp_can_create_handoff", "cli_mcp_can_complete_private_retention", "cli_mcp_can_complete_team_grant", "cli_mcp_can_complete_publication", "workers_can_complete_consent"],
+      "properties": {
+        "cli_mcp_can_create_handoff": {"const": true},
+        "cli_mcp_can_complete_private_retention": {"const": false},
+        "cli_mcp_can_complete_team_grant": {"const": false},
+        "cli_mcp_can_complete_publication": {"const": false},
+        "workers_can_complete_consent": {"const": false}
+      }
+    },
+    "blocked_until": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "trusted_ui_implemented",
+          "accessibility_baseline_pass",
+          "challenge_completion_schemas_accepted",
+          "csrf_and_clickjacking_tests_pass",
+          "exact_origin_redirect_tests_pass",
+          "anti_enumeration_tests_pass",
+          "serializable_consent_tombstone_audit_tests_pass",
+          "malicious_client_handoff_tests_pass"
+        ]
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "experience_domain_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "real_ingest_enabled",
+        "private_retention_completion_enabled",
+        "public_candidate_conversion_enabled",
+        "public_publication_completion_enabled",
+        "raw_source_retention_enabled",
+        "requires_domain_scoped_revocation"
+      ],
+      "properties": {
+        "real_ingest_enabled": {"type": "boolean"},
+        "private_retention_completion_enabled": {"type": "boolean"},
+        "public_candidate_conversion_enabled": {"const": false},
+        "public_publication_completion_enabled": {"const": false},
+        "raw_source_retention_enabled": {"const": false},
+        "requires_domain_scoped_revocation": {"const": true}
+      }
+    }
+  }
+}

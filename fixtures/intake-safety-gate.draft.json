@@ -1,0 +1,116 @@
+{
+  "schema_version": "intake-safety-gate-v0",
+  "status": "draft_scaffold",
+  "gate_id": "PR-006",
+  "enablement": {
+    "non_synthetic_submit_enabled": false,
+    "body_persistence_enabled": false,
+    "review_escrow_enabled": false,
+    "synthetic_bypass_requires_fixture_provenance": true
+  },
+  "ingress_bounds": {
+    "max_payload_bytes_ref": "private-threshold:intake.max-payload-bytes",
+    "accepted_content_types": ["application/json"],
+    "compression_policy": "reject_compressed",
+    "archive_policy": "reject_archives",
+    "pre_parser_rejection": true,
+    "non_oracular_rejection": true
+  },
+  "domain_coverage": {
+    "technical_work": "closed_launch_structured_only",
+    "personal_reasoning": "typed_only_no_ingest",
+    "career_private": "typed_only_no_ingest",
+    "place_service_experience": "typed_only_no_ingest",
+    "public_experience_candidate": "blocked_no_conversion",
+    "public_aggregate_signal": "blocked_no_dashboard"
+  },
+  "surface_coverage": {
+    "actual_experience_storage": "blocked_no_storage",
+    "public_candidate_conversion": "blocked_no_conversion",
+    "b2b_respondent_portal": "blocked_no_surface",
+    "abuse_identity_ban_operations": "blocked_no_identity_processing",
+    "raw_detail_escrow": "blocked_no_raw_escrow",
+    "company_store_dashboard": "blocked_no_dashboard"
+  },
+  "raw_escrow_fallback_policy": {
+    "when_review_escrow_disabled": "no_raw_storage",
+    "allowed_decisions": ["redact_then_retry", "retry_later"]
+  },
+  "schemas": {
+    "submit_candidate": "schemas/card-payload-v1.schema.json",
+    "scanner_output": null,
+    "classifier_output": null,
+    "audit_event": null,
+    "quarantine_metadata": null
+  },
+  "decision_outcomes": [
+    {
+      "decision": "accepted",
+      "stores_body": false,
+      "creates_card": false,
+      "indexes": false,
+      "client_response_class": "accepted"
+    },
+    {
+      "decision": "redact_then_retry",
+      "stores_body": false,
+      "creates_card": false,
+      "indexes": false,
+      "client_response_class": "needs_redaction"
+    },
+    {
+      "decision": "human_review_required",
+      "stores_body": false,
+      "creates_card": false,
+      "indexes": false,
+      "client_response_class": "deferred_generic"
+    },
+    {
+      "decision": "reject",
+      "stores_body": false,
+      "creates_card": false,
+      "indexes": false,
+      "client_response_class": "rejected_generic"
+    },
+    {
+      "decision": "retry_later",
+      "stores_body": false,
+      "creates_card": false,
+      "indexes": false,
+      "client_response_class": "retry_generic"
+    }
+  ],
+  "no_raw_value_guarantees": {
+    "audit": true,
+    "client_response": true,
+    "admin_search": true,
+    "model_input": true,
+    "validator_errors": true
+  },
+  "synthetic_raw_escrow_preflight_cases": [
+    {
+      "case_id": "synthetic-raw-escrow:ambiguous-001",
+      "domain": "public_experience_candidate",
+      "decision": "human_review_required",
+      "client_response_class": "deferred_generic",
+      "stores_body": false,
+      "escrow_handle_created": false,
+      "model_input_includes_raw": false,
+      "validator_errors_include_raw": false,
+      "audit_detail": "synthetic-detail:raw-escrow-deferred"
+    }
+  ],
+  "blocked_until": [
+    "submit_candidate_schema_accepted",
+    "scanner_output_schema_accepted",
+    "classifier_schema_accepted",
+    "audit_event_schema_accepted",
+    "quarantine_schema_accepted",
+    "no_log_ingress_tests_pass",
+    "non_oracular_response_tests_pass",
+    "no_body_storage_negative_tests_pass",
+    "review_escrow_or_ambiguous_retry_policy_accepted",
+    "hmac_fingerprint_key_profile_accepted",
+    "route_level_search_hook_ingress_protection_accepted"
+  ]
+}

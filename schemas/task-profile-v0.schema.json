@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/task-profile-v0.schema.json",
+  "title": "Knudg Task Profile v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "intent",
+    "explicit_query",
+    "repo_shape_category",
+    "recent_event_kinds"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "task_profile.v0"
+    },
+    "explicit_query": {
+      "$ref": "#/$defs/safe_text",
+      "maxLength": 240
+    },
+    "intent": {
+      "type": "string",
+      "enum": ["debug", "implement", "review", "docs", "migration", "test", "research"]
+    },
+    "repo_shape_category": {
+      "$ref": "#/$defs/token"
+    },
+    "retrieval_domains": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "const": "technical_work"
+      }
+    },
+    "subsystems": {
+      "type": "array",
+      "maxItems": 12,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/token"}
+    },
+    "safe_file_refs": {
+      "type": "array",
+      "maxItems": 24,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/relative_path"}
+    },
+    "symbols": {
+      "type": "array",
+      "maxItems": 40,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/symbol"}
+    },
+    "error_fingerprints": {
+      "type": "array",
+      "maxItems": 12,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/fingerprint"}
+    },
+    "public_packages": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/package_ref"}
+    },
+    "public_frameworks_tools": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/token"}
+    },
+    "language_runtime": {
+      "$ref": "#/$defs/token"
+    },
+    "coarse_os": {
+      "type": "string",
+      "enum": ["windows", "macos", "linux", "ios", "android", "web", "unknown"]
+    },
+    "dependency_major_versions": {
+      "type": "array",
+      "maxItems": 20,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/dependency_major"}
+    },
+    "risk_tags": {
+      "type": "array",
+      "maxItems": 12,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "auth",
+          "database",
+          "privacy",
+          "security",
+          "publication",
+          "migration",
+          "deployment",
+          "billing",
+          "destructive_action",
+          "user_data",
+          "public_api",
+          "correctness"
+        ]
+      }
+    },
+    "recent_event_kinds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "task_start",
+          "before_edit",
+          "after_edit",
+          "test_failure",
+          "test_success",
+          "tool_failure",
+          "tool_success",
+          "review",
+          "approval_handoff",
+          "before_write_candidate"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "safe_text": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "anyOf": [
+          {"pattern": "https?://"},
+          {"pattern": "[A-Za-z]:\\\\"},
+          {"pattern": "(^|\\s)/(Users|home|var|etc|tmp)/"},
+          {"pattern": "(?i)(password|secret|token|api[_-]?key|credential|private[_-]?key)"},
+          {"pattern": "[\\u0000-\\u001F\\u007F]"}
+        ]
+      }
+    },
+    "token": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:+-]*$"
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_./:+-]*$",
+      "not": {
+        "anyOf": [
+          {"pattern": "^/"},
+          {"pattern": "^[A-Za-z]:\\\\"},
+          {"pattern": "\\\\"},
+          {"pattern": "(^|/)\\.\\.(/|$)"},
+          {"pattern": "(^|/)(Users|home|var|etc|tmp)(/|$)"},
+          {"pattern": "(?i)(secret|token|credential|private[_-]?key)"}
+        ]
+      }
+    },
+    "symbol": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[A-Za-z0-9_.$:#/@+-]+$",
+      "not": {
+        "anyOf": [
+          {"pattern": "[A-Za-z]:\\\\"},
+          {"pattern": "(?i)(password|secret|token|api[_-]?key|credential)"}
+        ]
+      }
+    },
+    "fingerprint": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+      "not": {
+        "anyOf": [
+          {"pattern": "https?://"},
+          {"pattern": "[A-Za-z]:\\\\"},
+          {"pattern": "(?i)(password|secret|token|api[_-]?key|credential)"}
+        ]
+      }
+    },
+    "package_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^(npm|pypi|cargo|go|maven|nuget|gem|homebrew|apt|docker):[A-Za-z0-9][A-Za-z0-9_.:/@+-]*$",
+      "not": {
+        "anyOf": [
+          {"pattern": "https?://"},
+          {"pattern": "(?i)(password|secret|token|api[_-]?key|credential)"}
+        ]
+      }
+    },
+    "dependency_major": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^[A-Za-z0-9_.:+/@-]+:[0-9]+$"
+    }
+  }
+}

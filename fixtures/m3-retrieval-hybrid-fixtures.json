@@ -1,0 +1,42 @@
+{
+  "schema_version": "m3-retrieval-hybrid-fixtures-v0",
+  "fixture_class": "synthetic",
+  "fusion": "rrf_v0",
+  "query_view_names": [
+    "exact_identifiers",
+    "sparse_keywords",
+    "semantic_summary",
+    "hypothetical_relevant_card",
+    "structured_filters"
+  ],
+  "abstention_min_score": 2,
+  "offline_metric_floors": {
+    "exact_identifier_recall_at_3": 1.0,
+    "hybrid_recall_at_10": 1.0,
+    "ndcg_at_10": 0.8,
+    "abstention_accuracy": 1.0,
+    "stale_or_harmful_suggestion_rate": 0.0
+  },
+  "cases": [
+    {
+      "case_id": "exact_identifier_preferred",
+      "expected_top_card": "card_exact",
+      "description": "Exact error/tool identifiers outrank looser semantic overlap when both cards are authorized synthetic cards."
+    },
+    {
+      "case_id": "disputed_card_abstains_when_below_threshold",
+      "expected_decision": "no_suggestion",
+      "description": "Disputed or weak-quality cards can fall below the local abstention threshold even when they share terms."
+    }
+  ],
+  "forbidden_data_classes": [
+    "raw_transcript",
+    "full_stack_trace",
+    "absolute_path",
+    "hostname",
+    "username",
+    "secret",
+    "token",
+    "private_repository"
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "schema_version": "domain-policy-registry-v0",
+  "status": "draft",
+  "default_task_retrieval_domains": ["technical_work"],
+  "domains": {
+    "technical_work": {
+      "domain": "technical_work",
+      "allowed_intents": ["solved_path", "failed_path", "environment_trap", "deprecated_approach", "unknown"],
+      "default_visibility": "private",
+      "default_retrieval_policy": "automatic_technical_only",
+      "ingest_enablement": "closed_launch_structured_only",
+      "public_eligible": false,
+      "redaction_class": "technical",
+      "ttl_class": "default",
+      "cross_domain_search": "deny_by_default"
+    },
+    "personal_reasoning": {
+      "domain": "personal_reasoning",
+      "allowed_intents": ["decision_revisited", "repeated_pattern", "personal_constraint"],
+      "default_visibility": "private",
+      "default_retrieval_policy": "explicit_or_contextual",
+      "ingest_enablement": "disabled_until_gate",
+      "public_eligible": false,
+      "redaction_class": "personal_reasoning",
+      "ttl_class": "policy_defined",
+      "cross_domain_search": "explicit_authorization_required"
+    },
+    "career_private": {
+      "domain": "career_private",
+      "allowed_intents": ["career_positioning", "company_experience", "interview_experience"],
+      "default_visibility": "private",
+      "default_retrieval_policy": "explicit_or_contextual",
+      "ingest_enablement": "disabled_until_gate",
+      "public_eligible": false,
+      "redaction_class": "career",
+      "ttl_class": "policy_defined",
+      "cross_domain_search": "explicit_authorization_required"
+    },
+    "place_service_experience": {
+      "domain": "place_service_experience",
+      "allowed_intents": ["place_experience", "service_quality_signal"],
+      "default_visibility": "private",
+      "default_retrieval_policy": "explicit_or_contextual",
+      "ingest_enablement": "disabled_until_gate",
+      "public_eligible": false,
+      "redaction_class": "place_service",
+      "ttl_class": "policy_defined",
+      "cross_domain_search": "explicit_authorization_required"
+    },
+    "public_experience_candidate": {
+      "domain": "public_experience_candidate",
+      "allowed_intents": ["company_experience", "place_experience", "service_quality_signal"],
+      "default_visibility": "candidate_only",
+      "default_retrieval_policy": "never_public_until_published",
+      "ingest_enablement": "disabled_until_gate",
+      "public_eligible": false,
+      "redaction_class": "public_candidate",
+      "ttl_class": "short",
+      "cross_domain_search": "deny_by_default"
+    },
+    "public_aggregate_signal": {
+      "domain": "public_aggregate_signal",
+      "allowed_intents": ["public_aggregate_signal"],
+      "default_visibility": "public",
+      "default_retrieval_policy": "public_after_gates",
+      "ingest_enablement": "reviewer_only_after_gate",
+      "public_eligible": true,
+      "redaction_class": "public_aggregate",
+      "ttl_class": "policy_defined",
+      "cross_domain_search": "public_only"
+    }
+  },
+  "blocked_until": [
+    {
+      "gate": "PR-003",
+      "reason": "Trusted consent/revocation UI is required before broader private retention or publication."
+    },
+    {
+      "gate": "PR-006",
+      "reason": "Core intake safety is required before non-synthetic broader-domain candidate bodies."
+    },
+    {
+      "gate": "TNS-001",
+      "reason": "Trust-and-safety audit schema is required before abuse or respondent-facing surfaces."
+    }
+  ]
+}

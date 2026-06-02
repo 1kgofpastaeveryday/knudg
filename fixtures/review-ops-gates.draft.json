@@ -1,0 +1,63 @@
+{
+  "schema_version": "review-ops-gates-v0",
+  "status": "draft_scaffold",
+  "decision_id": "DEC-018",
+  "accepted_review_ops_artifact": null,
+  "reviewer_lanes": [
+    {
+      "lane_id": "lane_low_risk_v0",
+      "risk_band": "low",
+      "dual_review_required": false,
+      "calibration_fixture_set_id": "calibration_low_risk_v0"
+    },
+    {
+      "lane_id": "lane_high_risk_v0",
+      "risk_band": "high",
+      "dual_review_required": true,
+      "calibration_fixture_set_id": "calibration_high_risk_v0"
+    }
+  ],
+  "assignment": {
+    "policy_id": "assignment_conflict_checked_v0",
+    "conflict_check_required": true,
+    "escalation_pool_id": "escalation_review_ops_v0"
+  },
+  "high_risk_verification": {
+    "required": true,
+    "two_person_approval_required": true,
+    "reproduction_lab_profile_id": "lab_high_risk_containment_v0",
+    "verification_expiry_days": 90,
+    "reverification_triggers": [
+      "dependency_major_change",
+      "provider_model_change",
+      "package_ownership_change",
+      "malicious_report",
+      "verification_expired",
+      "security_policy_change"
+    ]
+  },
+  "malicious_card_tests": {
+    "fixture_set_id": "malicious_seeded_cards_v0",
+    "seeded_test_required": true,
+    "false_approval_threshold_label": "threshold_unaccepted_false_approval_v0"
+  },
+  "pause_rules": {
+    "public_publication_pause_required": true,
+    "reviewer_privilege_pause_required": true,
+    "admission_pause_required": true
+  },
+  "enablement": {
+    "reviewer_publish_enabled": false,
+    "public_display_enabled": false,
+    "high_risk_body_expansion_enabled": false,
+    "blocked_until": [
+      "dec_018_accepted",
+      "reviewer_lane_rfc_accepted",
+      "calibration_tests_pass",
+      "malicious_card_tests_pass",
+      "high_risk_reproduction_lab_pass",
+      "pause_rules_wired",
+      "reviewer_session_hardening_pass"
+    ]
+  }
+}

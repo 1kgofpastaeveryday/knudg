@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/candidate-payload-facets-v0.schema.json",
+  "title": "Knudg Candidate Payload Facets v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "domain",
+    "experience_intent",
+    "subject",
+    "claim_type",
+    "evidence_strength",
+    "sensitivity",
+    "retrieval_policy",
+    "source_policy"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string", "const": "candidate-payload-facets-v0"},
+    "domain": {
+      "type": "string",
+      "enum": [
+        "technical_work",
+        "personal_reasoning",
+        "career_private",
+        "place_service_experience",
+        "public_experience_candidate",
+        "public_aggregate_signal"
+      ]
+    },
+    "experience_intent": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "subject": {
+      "type": "object",
+      "required": ["type", "public_name"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["technical_environment", "company", "place", "service", "product", "person_private", "aggregate_subject"]
+        },
+        "public_name": {"type": ["string", "null"], "maxLength": 160},
+        "aliases": {
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 120}
+        }
+      }
+    },
+    "claim_type": {
+      "type": "string",
+      "enum": ["factual_observation", "subjective_impression", "inference", "aggregate_summary", "unverified_report"]
+    },
+    "evidence_strength": {
+      "type": "string",
+      "enum": ["single_observation", "repeated_personal_observation", "corroborated", "public_source_supported", "operator_judgment"]
+    },
+    "sensitivity": {"type": "string", "enum": ["low", "medium", "high"]},
+    "retrieval_policy": {
+      "type": "string",
+      "enum": ["automatic_technical_only", "explicit_or_contextual", "never_public_until_published", "public_after_gates"]
+    },
+    "source_policy": {
+      "type": "object",
+      "required": ["raw_source_retention", "publication_eligible", "ingest_enablement"],
+      "additionalProperties": false,
+      "properties": {
+        "raw_source_retention": {"type": "string", "enum": ["none", "escrow_only", "policy_defined"]},
+        "publication_eligible": {"type": "boolean"},
+        "ingest_enablement": {"type": "string", "enum": ["closed_launch_structured_only", "disabled_until_gate", "reviewer_only_after_gate"]}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"domain": {"const": "technical_work"}}},
+      "then": {
+        "properties": {
+          "retrieval_policy": {"const": "automatic_technical_only"},
+          "source_policy": {
+            "properties": {
+              "raw_source_retention": {"const": "none"},
+              "publication_eligible": {"const": false},
+              "ingest_enablement": {"const": "closed_launch_structured_only"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"domain": {"enum": ["personal_reasoning", "career_private", "place_service_experience"]}}},
+      "then": {
+        "properties": {
+          "retrieval_policy": {"const": "explicit_or_contextual"},
+          "source_policy": {
+            "properties": {
+              "raw_source_retention": {"const": "none"},
+              "publication_eligible": {"const": false},
+              "ingest_enablement": {"const": "disabled_until_gate"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "subject": {
+            "properties": {"type": {"const": "person_private"}},
+            "required": ["type"]
+          }
+        },
+        "required": ["subject"]
+      },
+      "then": {
+        "properties": {
+          "subject": {
+            "properties": {
+              "public_name": {"const": null},
+              "aliases": {
+                "type": "array",
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"domain": {"const": "public_experience_candidate"}}},
+      "then": {
+        "properties": {
+          "subject": {
+            "properties": {
+              "type": {"not": {"const": "person_private"}}
+            }
+          },
+          "retrieval_policy": {"const": "never_public_until_published"},
+          "source_policy": {
+            "properties": {
+              "raw_source_retention": {"const": "none"},
+              "publication_eligible": {"const": false},
+              "ingest_enablement": {"const": "disabled_until_gate"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"domain": {"const": "public_aggregate_signal"}}},
+      "then": {
+        "properties": {
+          "subject": {
+            "properties": {
+              "type": {"not": {"const": "person_private"}}
+            }
+          },
+          "retrieval_policy": {"const": "public_after_gates"},
+          "source_policy": {
+            "properties": {
+              "raw_source_retention": {"const": "none"},
+              "publication_eligible": {"const": true},
+              "ingest_enablement": {"const": "reviewer_only_after_gate"}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

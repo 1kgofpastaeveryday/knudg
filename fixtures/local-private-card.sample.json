@@ -1,0 +1,16 @@
+{
+  "source_class": "local_private_dogfood",
+  "title": "Psycopg migration capture path",
+  "human_summary": {
+    "content": "Local database migration cards need a bounded capture and search path.",
+    "redaction_summary": "Removed private paths, hostnames, usernames, env values, and raw logs."
+  },
+  "problem_summary": "The local database migration search fixture needed a reusable capture path.",
+  "solution_summary": "Apply the current migrations, keep the sanitized body in the local side table, and search with the bounded task profile.",
+  "public_packages": ["psycopg", "pytest"],
+  "environment_tags": ["windows", "postgres"],
+  "public_reference_urls": ["https://docs.python.org/3/library/json.html"],
+  "command_labels": ["pytest", "migrate status"],
+  "error_fingerprints": ["migration-search-fixture"],
+  "lessons": ["Keep local private bodies in the side table."]
+}

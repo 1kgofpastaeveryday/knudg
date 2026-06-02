@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/domain-policy-registry-v0.schema.json",
+  "title": "Knudg Domain Policy Registry v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "default_task_retrieval_domains",
+    "domains",
+    "blocked_until"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string", "const": "domain-policy-registry-v0"},
+    "status": {"type": "string", "enum": ["draft", "active"]},
+    "default_task_retrieval_domains": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "uniqueItems": true,
+      "items": {"const": "technical_work"}
+    },
+    "domains": {
+      "type": "object",
+      "required": [
+        "technical_work",
+        "personal_reasoning",
+        "career_private",
+        "place_service_experience",
+        "public_experience_candidate",
+        "public_aggregate_signal"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "technical_work": {"$ref": "#/$defs/domain_policy"},
+        "personal_reasoning": {"$ref": "#/$defs/domain_policy"},
+        "career_private": {"$ref": "#/$defs/domain_policy"},
+        "place_service_experience": {"$ref": "#/$defs/domain_policy"},
+        "public_experience_candidate": {"$ref": "#/$defs/domain_policy"},
+        "public_aggregate_signal": {"$ref": "#/$defs/domain_policy"}
+      }
+    },
+    "blocked_until": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/blocker"}
+    }
+  },
+  "$defs": {
+    "domain_policy": {
+      "type": "object",
+      "required": [
+        "domain",
+        "allowed_intents",
+        "default_visibility",
+        "default_retrieval_policy",
+        "ingest_enablement",
+        "public_eligible",
+        "redaction_class",
+        "ttl_class",
+        "cross_domain_search"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "domain": {
+          "type": "string",
+          "enum": [
+            "technical_work",
+            "personal_reasoning",
+            "career_private",
+            "place_service_experience",
+            "public_experience_candidate",
+            "public_aggregate_signal"
+          ]
+        },
+        "allowed_intents": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}
+        },
+        "default_visibility": {
+          "type": "string",
+          "enum": ["private", "candidate_only", "public"]
+        },
+        "default_retrieval_policy": {
+          "type": "string",
+          "enum": ["automatic_technical_only", "explicit_or_contextual", "never_public_until_published", "public_after_gates"]
+        },
+        "ingest_enablement": {
+          "type": "string",
+          "enum": ["closed_launch_structured_only", "disabled_until_gate", "reviewer_only_after_gate"]
+        },
+        "public_eligible": {"type": "boolean"},
+        "redaction_class": {
+          "type": "string",
+          "enum": ["technical", "personal_reasoning", "career", "place_service", "public_candidate", "public_aggregate"]
+        },
+        "ttl_class": {"type": "string", "enum": ["default", "short", "long", "policy_defined"]},
+        "cross_domain_search": {
+          "type": "string",
+          "enum": ["deny_by_default", "explicit_authorization_required", "public_only"]
+        }
+      }
+    },
+    "blocker": {
+      "type": "object",
+      "required": ["gate", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "gate": {"type": "string", "pattern": "^[A-Z0-9_-]+$"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 240}
+      }
+    }
+  }
+}

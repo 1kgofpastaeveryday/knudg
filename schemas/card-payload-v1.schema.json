@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/card-payload-v1.schema.json",
+  "title": "Knudg Card Payload v1",
+  "type": "object",
+  "additionalProperties": false,
+  "propertyNames": {
+    "pattern": "^[\\u0000-\\u007f]+$"
+  },
+  "$defs": {
+    "portableValue": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "string"},
+        {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "array",
+          "items": {"$ref": "#/$defs/portableValue"}
+        },
+        {"$ref": "#/$defs/portableObject"}
+      ]
+    },
+    "portableObject": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[\\u0000-\\u007f]+$"
+      },
+      "additionalProperties": {"$ref": "#/$defs/portableValue"}
+    }
+  },
+  "required": [
+    "outcome_type",
+    "goal",
+    "symptom",
+    "environment",
+    "context_fingerprint",
+    "failed_paths",
+    "known_unknowns",
+    "scope_limits",
+    "evidence_strength",
+    "quality_state",
+    "safety",
+    "privacy",
+    "provenance"
+  ],
+  "properties": {
+    "outcome_type": {
+      "type": "string",
+      "enum": ["solved", "failed_only", "inconclusive", "unknown_clarified"]
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1
+    },
+    "symptom": {
+      "type": "string",
+      "minLength": 1
+    },
+    "environment": {
+      "$ref": "#/$defs/portableObject"
+    },
+    "context_fingerprint": {
+      "$ref": "#/$defs/portableObject"
+    },
+    "successful_path": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "failed_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "known_unknowns": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "scope_limits": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "evidence_strength": {
+      "type": "string",
+      "enum": ["single_session", "multi_session", "reproduced", "external_reference", "operator_judgment"]
+    },
+    "twist": {
+      "type": ["string", "null"]
+    },
+    "quality_state": {
+      "type": "string",
+      "enum": ["unreviewed", "solved_once", "solved_many", "verified", "disputed"]
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "safety_class",
+        "review_state",
+        "executable_advice",
+        "mentions_urls",
+        "mentions_packages",
+        "mentions_repositories",
+        "credential_risk",
+        "billing_risk",
+        "deletion_risk",
+        "network_call_risk",
+        "verification_state",
+        "withheld_reason"
+      ],
+      "properties": {
+        "safety_class": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "review_state": {
+          "type": "string",
+          "enum": ["unreviewed", "quarantined", "cleared", "blocked"]
+        },
+        "executable_advice": {
+          "type": "boolean"
+        },
+        "mentions_urls": {
+          "type": "boolean"
+        },
+        "mentions_packages": {
+          "type": "boolean"
+        },
+        "mentions_repositories": {
+          "type": "boolean"
+        },
+        "credential_risk": {
+          "type": "boolean"
+        },
+        "billing_risk": {
+          "type": "boolean"
+        },
+        "deletion_risk": {
+          "type": "boolean"
+        },
+        "network_call_risk": {
+          "type": "boolean"
+        },
+        "verification_state": {
+          "type": "string",
+          "enum": ["unverified", "single_session", "reproduced", "external_reference"]
+        },
+        "withheld_reason": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "privacy": {
+      "allOf": [
+        {"$ref": "#/$defs/portableObject"},
+        {
+          "type": "object",
+          "required": ["source_class"],
+          "properties": {
+            "source_class": {"type": "string", "const": "synthetic"}
+          }
+        }
+      ]
+    },
+    "provenance": {
+      "allOf": [
+        {"$ref": "#/$defs/portableObject"},
+        {
+          "type": "object",
+          "required": ["source_class"],
+          "properties": {
+            "source_class": {"type": "string", "const": "synthetic"}
+          }
+        }
+      ]
+    },
+    "deprecation": {
+      "$ref": "#/$defs/portableObject"
+    },
+    "supersession": {
+      "$ref": "#/$defs/portableObject"
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "embedding_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/portableObject"
+      }
+    }
+  },
+  "not": {
+    "anyOf": [
+      {"required": ["tenant_id"]},
+      {"required": ["namespace_id"]},
+      {"required": ["visibility"]},
+      {"required": ["visibility_view"]},
+      {"required": ["status"]},
+      {"required": ["current_version_id"]},
+      {"required": ["created_at"]},
+      {"required": ["updated_at"]},
+      {"required": ["quality_score"]},
+      {"required": ["card_id"]},
+      {"required": ["card_schema_version"]}
+    ]
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome_type": {"const": "solved"}
+        },
+        "required": ["outcome_type"]
+      },
+      "then": {
+        "required": ["successful_path"],
+        "properties": {
+          "successful_path": {
+            "type": "array",
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome_type": {"const": "failed_only"}
+        },
+        "required": ["outcome_type"]
+      },
+      "then": {
+        "properties": {
+          "successful_path": {
+            "anyOf": [
+              {"type": "null"},
+              {"type": "array", "maxItems": 0}
+            ]
+          },
+          "failed_paths": {
+            "type": "array",
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "outcome_type": {"const": "unknown_clarified"}
+        },
+        "required": ["outcome_type"]
+      },
+      "then": {
+        "properties": {
+          "known_unknowns": {
+            "type": "array",
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

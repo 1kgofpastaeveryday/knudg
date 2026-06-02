@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/private-use-notice-v0.schema.json",
+  "title": "Knudg Private Use Notice v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "notice_id",
+    "status",
+    "surface",
+    "purpose",
+    "collection_enabled",
+    "allowed_source_classes",
+    "collected_fields",
+    "forbidden_fields",
+    "default_ttl_days",
+    "readers",
+    "data_leaves_local_workspace",
+    "opt_out_path",
+    "discard_path",
+    "purge_path",
+    "publication_enabled",
+    "acknowledgement_required_before_collection"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string", "const": "private-use-notice-v0"},
+    "notice_id": {"type": "string", "pattern": "^notice_[A-Za-z0-9_-]{6,80}$"},
+    "status": {"type": "string", "enum": ["draft_disabled", "active"]},
+    "surface": {"type": "string", "enum": ["closed_launch_private", "team_alpha", "public_pilot"]},
+    "purpose": {"type": "string", "minLength": 1, "maxLength": 500},
+    "collection_enabled": {"type": "boolean"},
+    "allowed_source_classes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "enum": ["synthetic", "employee_approved_private", "design_partner_approved_private"]},
+      "uniqueItems": true
+    },
+    "collected_fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1, "maxLength": 120},
+      "uniqueItems": true
+    },
+    "forbidden_fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1, "maxLength": 120},
+      "uniqueItems": true
+    },
+    "default_ttl_days": {"type": "integer", "minimum": 1, "maximum": 14},
+    "readers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "enum": ["originating_user", "local_operator", "assigned_reviewer"]},
+      "uniqueItems": true
+    },
+    "data_leaves_local_workspace": {"type": "boolean"},
+    "opt_out_path": {"type": "string", "minLength": 1, "maxLength": 240},
+    "discard_path": {"type": "string", "minLength": 1, "maxLength": 240},
+    "purge_path": {"type": "string", "minLength": 1, "maxLength": 240},
+    "publication_enabled": {"type": "boolean"},
+    "acknowledgement_required_before_collection": {"type": "boolean"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "draft_disabled"}}},
+      "then": {
+        "properties": {
+          "collection_enabled": {"const": false},
+          "publication_enabled": {"const": false}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"surface": {"const": "closed_launch_private"}}},
+      "then": {
+        "properties": {
+          "data_leaves_local_workspace": {"const": false},
+          "publication_enabled": {"const": false}
+        }
+      }
+    }
+  ]
+}

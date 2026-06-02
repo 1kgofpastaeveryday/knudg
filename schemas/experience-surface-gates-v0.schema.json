@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/experience-surface-gates-v0.schema.json",
+  "title": "Knudg Experience Surface Gates v0",
+  "type": "object",
+  "required": ["schema_version", "status", "surfaces"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string", "const": "experience-surface-gates-v0"},
+    "status": {"type": "string", "enum": ["draft_blocked", "ready_for_review", "accepted"]},
+    "surfaces": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/surface_gate"}
+    }
+  },
+  "$defs": {
+    "domain_key": {
+      "type": "string",
+      "enum": [
+        "technical_work",
+        "personal_reasoning",
+        "career_private",
+        "place_service_experience",
+        "public_experience_candidate",
+        "public_aggregate_signal"
+      ]
+    },
+    "surface_key": {
+      "type": "string",
+      "enum": [
+        "actual_experience_storage",
+        "public_candidate_conversion",
+        "b2b_respondent_portal",
+        "abuse_identity_ban_operations",
+        "raw_detail_escrow",
+        "company_store_dashboard"
+      ]
+    },
+    "enablement": {
+      "type": "object",
+      "required": [
+        "real_data_ingest_enabled",
+        "public_serving_enabled",
+        "b2b_delivery_enabled",
+        "identity_processing_enabled",
+        "raw_detail_escrow_enabled",
+        "dashboard_enabled"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "real_data_ingest_enabled": {"const": false},
+        "public_serving_enabled": {"const": false},
+        "b2b_delivery_enabled": {"const": false},
+        "identity_processing_enabled": {"const": false},
+        "raw_detail_escrow_enabled": {"const": false},
+        "dashboard_enabled": {"const": false}
+      }
+    },
+    "blocker": {
+      "type": "object",
+      "required": ["gate", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "gate": {"type": "string", "pattern": "^[A-Z0-9_-]+$"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 240}
+      }
+    },
+    "surface_gate": {
+      "type": "object",
+      "required": [
+        "surface",
+        "objective_item",
+        "status",
+        "domains",
+        "enablement",
+        "required_gates",
+        "forbidden_outputs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "surface": {"$ref": "#/$defs/surface_key"},
+        "objective_item": {"type": "integer", "minimum": 8, "maximum": 13},
+        "status": {"type": "string", "enum": ["blocked", "model_only", "accepted"]},
+        "domains": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/domain_key"}
+        },
+        "enablement": {"$ref": "#/$defs/enablement"},
+        "required_gates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/blocker"}
+        },
+        "forbidden_outputs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "submitter_identity",
+              "raw_identity_values",
+              "subject_row",
+              "raw_source_material",
+              "device_or_network_signal",
+              "reidentification_hint",
+              "private_selection_status",
+              "staff_identity",
+              "protected_fingerprint",
+              "raw_review_body",
+              "non_public_operational_detail",
+              "source_metadata",
+              "raw_moderation_evidence",
+              "match_status",
+              "account_identifier",
+              "escrow_ciphertext",
+              "escrow_handle",
+              "escrow_key_material",
+              "reviewer_private_note",
+              "account_identifier",
+              "match_status",
+              "individual_claim",
+              "single_observation_detail",
+              "respondent_visible_user_attribution"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

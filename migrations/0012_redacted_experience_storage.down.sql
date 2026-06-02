@@ -1,0 +1,13 @@
+revoke all on function knudg_closed_api_purge_redacted_experience(text, uuid, text) from knudg_api_app;
+revoke all on function knudg_closed_api_revoke_redacted_experience(text, uuid, text) from knudg_api_app;
+drop function if exists knudg_closed_api_purge_redacted_experience(text, uuid, text);
+drop function if exists knudg_closed_api_revoke_redacted_experience(text, uuid, text);
+drop function if exists knudg_closed_api_complete_private_retention(text, uuid, text, text, uuid, text, text, text, boolean, boolean, boolean);
+drop function if exists knudg_closed_api_store_redacted_experience(text, jsonb);
+revoke select on redacted_private_experience_records from knudg_readonly_ops;
+drop trigger if exists redacted_private_experience_consent_binding on redacted_private_experience_records;
+drop table if exists redacted_private_experience_records;
+drop function if exists knudg_private.enforce_redacted_private_experience_consent_binding();
+drop function if exists knudg_private.text_array_matches_none(text[], text);
+drop function if exists knudg_private.text_array_items_within_bounds(text[], integer, integer);
+drop function if exists knudg_private.text_array_has_duplicates(text[]);

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/local-private-card-v0.schema.json",
+  "title": "Knudg Local Private Card v0",
+  "type": "object",
+  "additionalProperties": false,
+  "propertyNames": {
+    "pattern": "^[\\u0000-\\u007f]+$"
+  },
+  "required": [
+    "source_class",
+    "title",
+    "human_summary",
+    "problem_summary",
+    "solution_summary",
+    "public_packages",
+    "environment_tags",
+    "public_reference_urls",
+    "command_labels",
+    "error_fingerprints",
+    "lessons"
+  ],
+  "properties": {
+    "source_class": {
+      "type": "string",
+      "const": "local_private_dogfood"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 120
+    },
+    "human_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content", "redaction_summary"],
+      "properties": {
+        "content": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 240
+        },
+        "redaction_summary": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 240
+        }
+      }
+    },
+    "problem_summary": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 600
+    },
+    "solution_summary": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 900
+    },
+    "public_packages": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80
+      }
+    },
+    "environment_tags": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 40
+      }
+    },
+    "public_reference_urls": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2048,
+        "pattern": "^https://"
+      }
+    },
+    "command_labels": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80
+      }
+    },
+    "error_fingerprints": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "lessons": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      }
+    }
+  }
+}

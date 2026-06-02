@@ -1,0 +1,41 @@
+{
+  "schema_version": "m3-retrieval-gates-v0",
+  "status": "draft_scaffold",
+  "exact_fts": {
+    "canonical_sql_fixture_id": "fixture_exact_fts_contract_v0",
+    "tokenizer_profile": "unset",
+    "rank_formula": "unset",
+    "abstention_threshold_label": "threshold_unaccepted_v0",
+    "score_normalization": "unset",
+    "replay_fixture_set_id": "replay_unaccepted_v0",
+    "baseline_set_id": "baseline_unaccepted_v0",
+    "accepted_spec_artifact": null
+  },
+  "proof_profile": {
+    "decision_id": "DEC-014A",
+    "status": "open",
+    "default_profile": "DPoP",
+    "accepted_profile": null,
+    "accepted_profile_artifact": null,
+    "required_tests": [
+      "audience_bound",
+      "method_url_body_digest_signed",
+      "nonce_replay_rejected",
+      "stale_timestamp_rejected",
+      "wrong_key_rejected",
+      "cross_resource_replay_rejected",
+      "refresh_token_absent"
+    ]
+  },
+  "protected_data_enablement": {
+    "enabled": false,
+    "allowed_fixture_classes": ["synthetic", "public"],
+    "blocked_until": [
+      "exact_fts_spec_accepted",
+      "dec_014a_accepted",
+      "auth_interop_tests_pass",
+      "revocation_fence_tests_pass",
+      "operator_circuit_runbook_pass"
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+# OS/editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and temporary files
+*.log
+tmp/
+temp/
+.playwright-mcp/
+playwright-report/
+test-results/
+coverage/
+dist/
+build/
+screenshots/
+videos/
+knudg-*-live.png
+workingknudg.codexknudglp-replay-shots/
+*.har
+*.webm
+trace.zip
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.sqlite-shm
+*.sqlite-wal
+*.dump
+*.dump.gz
+*.bak
+*.backup
+*.sql.gz
+
+# Dependency and tool caches
+node_modules/
+.pytest_cache/
+.wrangler/
+__pycache__/
+*.py[cod]
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# Browser/auth session state
+storage-state*.json
+*-storage-state.json
+*.auth.json
+
+# Local operator/agent state
+public/
+.agents/
+.codex/
+.letta/
+user-said.md
+operator-notes/
+knudg-log-mining/
+
+# Deprecated split-public export workspace
+scripts/export_public_repo.ps1

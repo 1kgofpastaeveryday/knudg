@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Knudg Operator</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>Knudg Operator</h1>
+        <p id="api-status">Checking backend...</p>
+      </div>
+      <button id="refresh-status" type="button">Refresh</button>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Write Review</h2>
+        <form id="write-form">
+          <label>
+            Title
+            <input name="title" required minlength="8" maxlength="120" value="Closed beta frontend write path" />
+          </label>
+          <label>
+            Problem
+            <textarea name="problem_summary" required minlength="20" maxlength="600">The local operator frontend needed a direct write path into the closed beta backend.</textarea>
+          </label>
+          <label>
+            Solution
+            <textarea name="solution_summary" required minlength="20" maxlength="900">Use the local operator UI through its same-origin proxy, review the exact digest, and store the sanitized private card in the closed backend.</textarea>
+          </label>
+          <div class="grid">
+            <label>
+              Packages
+              <input name="public_packages" value="python, postgres" />
+            </label>
+            <label>
+              Environment
+              <input name="environment_tags" value="windows, greencloud" />
+            </label>
+          </div>
+          <label>
+            Reference URLs
+            <input name="public_reference_urls" value="https://docs.python.org/3/library/http.server.html" />
+          </label>
+          <div class="grid">
+            <label>
+              Command Labels
+              <input name="command_labels" value="frontend smoke, closed api" />
+            </label>
+            <label>
+              Error Fingerprints
+              <input name="error_fingerprints" value="operator-frontend-smoke" />
+            </label>
+          </div>
+          <label>
+            Lessons
+            <input name="lessons" value="Keep sensitive operator auth in the local proxy process." />
+          </label>
+          <div class="actions">
+            <button type="submit">Stage Write</button>
+            <button id="approve-write" type="button" disabled>Completion Disabled</button>
+          </div>
+        </form>
+        <pre id="write-output" class="output"></pre>
+      </section>
+
+      <section class="panel">
+        <h2>Search</h2>
+        <form id="search-form">
+          <label>
+            Query
+            <input name="explicit_query" required value="operator frontend smoke" />
+          </label>
+          <div class="grid">
+            <label>
+              Intent
+              <select name="intent">
+                <option value="debug">debug</option>
+                <option value="implement">implement</option>
+                <option value="operate">operate</option>
+              </select>
+            </label>
+            <label>
+              Repo Shape
+              <input name="repo_shape_category" required value="python-postgres" />
+            </label>
+          </div>
+          <div class="grid">
+            <label>
+              Packages
+              <input name="public_packages" value="python" />
+            </label>
+            <label>
+              Fingerprints
+              <input name="error_fingerprints" value="operator-frontend-smoke" />
+            </label>
+          </div>
+          <button type="submit">Search</button>
+        </form>
+        <div id="search-results" class="results"></div>
+      </section>
+
+      <section class="panel wide">
+        <div class="section-heading">
+          <div>
+            <h2>Consent Gate</h2>
+            <p id="consent-summary">Loading review surface...</p>
+          </div>
+          <button id="refresh-consent" type="button">Refresh</button>
+        </div>
+        <div id="consent-review" class="consent-review"></div>
+      </section>
+
+      <section class="panel wide">
+        <h2>Experience Storage</h2>
+        <form id="experience-form">
+          <div class="grid">
+            <label>
+              Domain
+              <select name="domain">
+                <option value="career_private">career_private</option>
+                <option value="place_service_experience">place_service_experience</option>
+              </select>
+            </label>
+            <label>
+              Subject Type
+              <select name="subject_type">
+                <option value="company">company</option>
+                <option value="place">place</option>
+                <option value="service">service</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            Public Name
+            <input name="public_name" required maxlength="160" value="Example Company" />
+          </label>
+          <label>
+            Title
+            <input name="title" required minlength="8" maxlength="120" value="Interview process felt slow" />
+          </label>
+          <label>
+            Summary
+            <textarea name="summary" required minlength="20" maxlength="600">A redacted career experience record that keeps the company name but removes selection status, people, dates, and raw messages.</textarea>
+          </label>
+          <label>
+            Observations
+            <input name="observations" required value="The process cadence felt slower than expected., The role explanation was useful but operational details were unclear." />
+          </label>
+          <label>
+            Impressions
+            <input name="subjective_impressions" value="The experience felt somewhat disorganized from the candidate side." />
+          </label>
+          <div class="grid">
+            <label>
+              Consent ID
+              <input name="consent_id" required value="11111111-1111-4111-8111-111111111111" />
+            </label>
+            <label>
+              Handoff ID
+              <input name="handoff_id" required value="22222222-2222-4222-8222-222222222222" />
+            </label>
+          </div>
+          <div class="grid">
+            <label>
+              Challenge ID
+              <input name="challenge_id" required value="33333333-3333-4333-8333-333333333333" />
+            </label>
+            <label>
+              Card ID
+              <input name="card_id" required value="44444444-4444-4444-8444-444444444444" />
+            </label>
+          </div>
+          <label>
+            Card Version ID
+            <input name="card_version_id" required value="55555555-5555-4555-8555-555555555555" />
+          </label>
+          <div class="grid">
+            <label>
+              Artifact Digest
+              <input name="artifact_digest" required value="sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" />
+            </label>
+            <label>
+              Handoff Digest
+              <input name="handoff_digest" required value="sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" />
+            </label>
+          </div>
+          <div class="grid">
+            <label>
+              Policy Digest
+              <input name="policy_digest" required value="sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" />
+            </label>
+            <label>
+              Challenge Digest
+              <input name="challenge_digest" required value="sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" />
+            </label>
+          </div>
+          <label>
+            Policy Version
+            <input name="policy_version" required value="private-retention-v1" />
+          </label>
+          <button type="submit">Store Redacted</button>
+        </form>
+        <pre id="experience-output" class="output"></pre>
+      </section>
+
+      <section class="panel wide">
+        <h2>View</h2>
+        <div id="view-empty" class="empty">Select a search result.</div>
+        <pre id="view-output" class="output hidden"></pre>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

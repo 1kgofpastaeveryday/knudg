@@ -1,0 +1,16 @@
+{
+  "title": "review-loop ledger record",
+  "type": "object",
+  "required": ["artifact_type", "schema_version", "run_id", "engine", "stop_conditions", "rounds", "final_status"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_type": { "type": "string", "enum": ["ledger-record"] },
+    "schema_version": { "type": "integer" },
+    "run_id": { "type": "string" },
+    "engine": { "type": "string", "enum": ["adversarial-review", "coursework-review"] },
+    "stop_conditions": { "type": "array", "items": { "type": "string" } },
+    "rounds": { "type": "array", "items": { "type": "object" } },
+    "final_status": { "type": "string", "enum": ["PASS", "DEGRADED", "BLOCKED", "PARKED", "IN_PROGRESS"] },
+    "recovery_notes": { "type": "string" }
+  }
+}

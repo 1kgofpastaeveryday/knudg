@@ -1,0 +1,222 @@
+{
+  "schema_version": "company-store-dashboard-request-v0",
+  "request_class": "preflight_only",
+  "objective_item": 13,
+  "surface": "company_store_dashboard",
+  "status": "blocked",
+  "dashboard_subject": {
+    "subject_type": "company",
+    "domain": "public_aggregate_signal",
+    "subject_public_name": "Example Company",
+    "subject_ref_digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "claim_scope": "public_aggregate_signal"
+  },
+  "aggregate_signal_request": {
+    "aggregate_signal_available": false,
+    "minimum_group_size_met": false,
+    "single_observation_display_enabled": false,
+    "negative_review_suppression_enabled": false,
+    "review_suppression_surface_enabled": false,
+    "manipulation_response_controls_enabled": false,
+    "manipulation_review_enabled": false,
+    "freshness_policy_accepted": false,
+    "stale_signal_expiry_accepted": false
+  },
+  "disclosure_policy": {
+    "public_b2b_disclosure_policy_accepted": false,
+    "respondent_inquiry_policy_accepted": false,
+    "no_identity_leakage_tests_passed": false,
+    "correction_takedown_workflow_accepted": false,
+    "source_count_threshold_label": "private-threshold:dashboard.source-count-minimum",
+    "allowed_display_units": [
+      "redacted_aggregate_summary",
+      "trend_bucket",
+      "freshness_bucket",
+      "response_status_summary"
+    ]
+  },
+  "aggregate_privacy_contract": {
+    "aggregation_mode": "aggregate_only_preflight",
+    "minimum_source_count_policy_accepted": false,
+    "cell_suppression_required": true,
+    "drilldown_to_source_allowed": false,
+    "segment_breakdown_allowed": false,
+    "confidence_and_freshness_labels_required": true
+  },
+  "review_integrity_contract": {
+    "favorability_neutral_processing_required": true,
+    "negative_review_suppression_allowed": false,
+    "respondent_self_service_suppression_allowed": false,
+    "manipulation_checks_required": true,
+    "manipulation_response_controls_allowed": false,
+    "correction_takedown_policy_accepted": false
+  },
+  "dashboard_display_contract": {
+    "view_model_state": "model_only_not_served",
+    "display_mode": "aggregate_preview_only",
+    "single_observation_display_allowed": false,
+    "raw_detail_display_allowed": false,
+    "identity_state_display_allowed": false,
+    "escrow_artifact_display_allowed": false,
+    "ranking_or_sorting_enabled": false
+  },
+  "dashboard_delivery_contract": {
+    "route_allocation": "none",
+    "access_token_issued": false,
+    "api_serving_enabled": false,
+    "export_download_enabled": false,
+    "b2b_delivery_enabled": false,
+    "public_serving_enabled": false,
+    "dashboard_snapshot_enabled": false
+  },
+  "required_gates": [
+    "AGGREGATE_SIGNAL_POLICY",
+    "PUBLIC_B2B_DISCLOSURE_POLICY",
+    "MODERATION_WORKFLOW",
+    "NO_IDENTITY_LEAKAGE_TESTS",
+    "MIN_SOURCE_COUNT_POLICY",
+    "MANIPULATION_RESISTANCE_POLICY",
+    "NO_SINGLE_OBSERVATION_DISPLAY_TESTS",
+    "NO_SUPPRESSION_SURFACE_TESTS",
+    "CORRECTION_TAKEDOWN_POLICY",
+    "AGGREGATE_PRIVACY_THRESHOLD_POLICY",
+    "FAIR_REVIEW_PRESENTATION_POLICY",
+    "DASHBOARD_DISPLAY_POLICY",
+    "NO_ESCROW_ARTIFACT_DISPLAY_TESTS",
+    "DASHBOARD_EXPORT_DOWNLOAD_POLICY"
+  ],
+  "forbidden_outputs": [
+    "submitter_identity",
+    "raw_source_material",
+    "raw_review_body",
+    "device_or_network_signal",
+    "reidentification_hint",
+    "protected_fingerprint",
+    "private_selection_status",
+    "staff_identity",
+    "source_metadata",
+    "raw_moderation_evidence",
+    "escrow_ciphertext",
+    "escrow_handle",
+    "escrow_key_material",
+    "account_identifier",
+    "match_status",
+    "individual_claim",
+    "single_observation_detail",
+    "reviewer_private_note",
+    "non_public_operational_detail"
+  ],
+  "output_contract": {
+    "requested_outputs": ["redacted_dashboard_preflight_status", "preflight_blocked_reason", "digest_only_reference"],
+    "withheld_outputs": [
+      "submitter_identity",
+      "raw_source_material",
+      "raw_review_body",
+      "device_or_network_signal",
+      "reidentification_hint",
+      "protected_fingerprint",
+      "private_selection_status",
+      "staff_identity",
+      "source_metadata",
+      "raw_moderation_evidence",
+      "escrow_ciphertext",
+      "escrow_handle",
+      "escrow_key_material",
+      "account_identifier",
+      "match_status",
+      "individual_claim",
+      "single_observation_detail",
+      "reviewer_private_note",
+      "non_public_operational_detail"
+    ]
+  },
+  "surface_enablement": {
+    "dashboard_enabled": false,
+    "dashboard_serving_enabled": false,
+    "aggregate_signal_query_enabled": false,
+    "single_observation_display_enabled": false,
+    "public_serving_enabled": false,
+    "b2b_delivery_enabled": false,
+    "respondent_portal_enabled": false,
+    "identity_processing_enabled": false,
+    "raw_detail_escrow_enabled": false,
+    "retrieval_enabled": false,
+    "export_enabled": false,
+    "ranking_enabled": false
+  },
+  "result_contract": {
+    "command_effect": "preflight_only",
+    "serves_dashboard": false,
+    "creates_dashboard_view": false,
+    "queries_aggregate_signal": false,
+    "shows_single_observation": false,
+    "suppresses_negative_reviews": false,
+    "suppresses_or_hides_reviews": false,
+    "opens_public_surface": false,
+    "delivers_to_b2b": false,
+    "opens_respondent_portal": false,
+    "performs_identity_processing": false,
+    "stores_raw_detail": false,
+    "makes_retrievable": false,
+    "exports_dashboard_data": false,
+    "writes_audit_event": false
+  },
+  "blocked_until": [
+    {
+      "gate": "AGGREGATE_SIGNAL_POLICY",
+      "reason": "Aggregate signal policy is not accepted."
+    },
+    {
+      "gate": "PUBLIC_B2B_DISCLOSURE_POLICY",
+      "reason": "Public and B2B disclosure policy is not accepted."
+    },
+    {
+      "gate": "MODERATION_WORKFLOW",
+      "reason": "Moderation, reporting, correction, and takedown workflow is not accepted."
+    },
+    {
+      "gate": "NO_IDENTITY_LEAKAGE_TESTS",
+      "reason": "No-identity-leakage dashboard tests are not accepted."
+    },
+    {
+      "gate": "MIN_SOURCE_COUNT_POLICY",
+      "reason": "Minimum source-count policy is not accepted."
+    },
+    {
+      "gate": "MANIPULATION_RESISTANCE_POLICY",
+      "reason": "Manipulation resistance policy is not accepted."
+    },
+    {
+      "gate": "NO_SINGLE_OBSERVATION_DISPLAY_TESTS",
+      "reason": "No-single-observation display tests are not accepted."
+    },
+    {
+      "gate": "NO_SUPPRESSION_SURFACE_TESTS",
+      "reason": "No review-suppression surface tests are not accepted."
+    },
+    {
+      "gate": "CORRECTION_TAKEDOWN_POLICY",
+      "reason": "Correction and takedown policy is not accepted."
+    },
+    {
+      "gate": "AGGREGATE_PRIVACY_THRESHOLD_POLICY",
+      "reason": "Aggregate privacy threshold and cell suppression policy is not accepted."
+    },
+    {
+      "gate": "FAIR_REVIEW_PRESENTATION_POLICY",
+      "reason": "Favorability-neutral review presentation policy is not accepted."
+    },
+    {
+      "gate": "DASHBOARD_DISPLAY_POLICY",
+      "reason": "Dashboard display contract is not accepted."
+    },
+    {
+      "gate": "NO_ESCROW_ARTIFACT_DISPLAY_TESTS",
+      "reason": "No-escrow-artifact display tests are not accepted."
+    },
+    {
+      "gate": "DASHBOARD_EXPORT_DOWNLOAD_POLICY",
+      "reason": "Dashboard export and download policy is not accepted."
+    }
+  ]
+}

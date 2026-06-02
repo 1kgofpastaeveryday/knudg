@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/knudg-role-verdict-v0.schema.json",
+  "title": "Knudg Summoned Role Verdict v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "role",
+    "status",
+    "confidence",
+    "risk",
+    "reason_summary",
+    "recommended_action"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "knudg_role_verdict.v0"
+    },
+    "role": {
+      "type": "string",
+      "enum": ["searcher", "writer", "nudger", "reviewer"]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "abstain",
+        "no_actionable_signal",
+        "suggestion_available",
+        "draft_candidate_possible",
+        "approval_handoff_possible",
+        "degraded"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["none", "low", "medium", "high"]
+    },
+    "risk": {
+      "type": "string",
+      "enum": ["none", "low", "medium", "high", "privacy", "security", "correctness", "scope", "ux"]
+    },
+    "reason_summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "not": {
+        "anyOf": [
+          {"pattern": "https?://"},
+          {"pattern": "[A-Za-z]:\\\\"},
+          {"pattern": "/Users/|/home/|/var/|/etc/"},
+          {"pattern": "(?i)(password|secret|token|api[_-]?key|credential)"},
+          {"pattern": "(?i)(npm install|pip install|curl |rm -rf|git clone)"}
+        ]
+      }
+    },
+    "recommended_action": {
+      "type": "string",
+      "enum": [
+        "do_nothing",
+        "offer_retrieval_panel",
+        "offer_writer_draft",
+        "offer_approval_handoff",
+        "ask_user_before_continuing"
+      ]
+    },
+    "refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "card_refs": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {"$ref": "#/$defs/opaque_ref"}
+        },
+        "draft_ref": {"$ref": "#/$defs/opaque_ref"},
+        "approval_handoff_ref": {"$ref": "#/$defs/opaque_ref"},
+        "panel_ref": {"$ref": "#/$defs/opaque_ref"}
+      },
+      "minProperties": 1
+    },
+    "suppressed_detail": {
+      "type": "string",
+      "enum": ["none", "raw_or_private", "executable", "high_risk", "not_authorized"]
+    }
+  },
+  "$defs": {
+    "opaque_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"const": "abstain"}}
+      },
+      "then": {
+        "properties": {
+          "confidence": {"const": "none"},
+          "recommended_action": {"const": "do_nothing"}
+        },
+        "not": {"required": ["refs"]}
+      }
+    },
+    {
+      "if": {
+        "properties": {"status": {"const": "no_actionable_signal"}}
+      },
+      "then": {
+        "properties": {
+          "confidence": {"const": "none"},
+          "recommended_action": {"const": "do_nothing"}
+        },
+        "not": {"required": ["refs"]}
+      }
+    },
+    {
+      "if": {
+        "properties": {"status": {"const": "degraded"}}
+      },
+      "then": {
+        "properties": {
+          "recommended_action": {"const": "do_nothing"}
+        },
+        "not": {"required": ["refs"]}
+      }
+    },
+    {
+      "if": {
+        "properties": {"status": {"const": "suggestion_available"}}
+      },
+      "then": {
+        "properties": {
+          "role": {"enum": ["searcher", "nudger", "reviewer"]},
+          "recommended_action": {"const": "offer_retrieval_panel"}
+        },
+        "required": ["refs"]
+      }
+    },
+    {
+      "if": {
+        "properties": {"status": {"const": "draft_candidate_possible"}}
+      },
+      "then": {
+        "properties": {
+          "role": {"enum": ["writer", "nudger"]},
+          "recommended_action": {"const": "offer_writer_draft"}
+        },
+        "required": ["refs"]
+      }
+    },
+    {
+      "if": {
+        "properties": {"status": {"const": "approval_handoff_possible"}}
+      },
+      "then": {
+        "properties": {
+          "recommended_action": {"const": "offer_approval_handoff"}
+        },
+        "required": ["refs"]
+      }
+    }
+  ]
+}

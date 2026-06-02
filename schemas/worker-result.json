@@ -1,0 +1,17 @@
+{
+  "title": "review-loop worker result",
+  "type": "object",
+  "required": ["artifact_type", "schema_version", "run_id", "worker_id", "state", "owned_paths", "changed_paths"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_type": { "type": "string", "enum": ["worker-result"] },
+    "schema_version": { "type": "integer" },
+    "run_id": { "type": "string" },
+    "worker_id": { "type": "string" },
+    "state": { "type": "string", "enum": ["planned", "launched", "completed", "failed", "timed_out", "canceled", "superseded", "integrated", "rejected"] },
+    "owned_paths": { "type": "array", "items": { "type": "string" } },
+    "changed_paths": { "type": "array", "items": { "type": "string" } },
+    "base_hashes": { "type": "array", "items": { "type": "object" } },
+    "summary": { "type": "string" }
+  }
+}

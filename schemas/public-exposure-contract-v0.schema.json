@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/public-exposure-contract-v0.schema.json",
+  "title": "Knudg Public Exposure Contract v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "contract_digest_binding",
+    "public_candidate_conversion",
+    "b2b_respondent_portal",
+    "company_store_dashboard",
+    "forbidden_outputs"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string", "const": "public-exposure-contract-v0"},
+    "contract_digest_binding": {
+      "type": "object",
+      "required": ["candidate_digest", "payload_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "candidate_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "payload_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+      }
+    },
+    "public_candidate_conversion": {"$ref": "#/$defs/public_candidate_conversion"},
+    "b2b_respondent_portal": {"$ref": "#/$defs/b2b_respondent_portal"},
+    "company_store_dashboard": {"$ref": "#/$defs/company_store_dashboard"},
+    "forbidden_outputs": {
+      "type": "object",
+      "required": ["public_candidate_conversion", "b2b_respondent_portal", "company_store_dashboard"],
+      "additionalProperties": false,
+      "properties": {
+        "public_candidate_conversion": {"$ref": "#/$defs/forbidden_output_list"},
+        "b2b_respondent_portal": {"$ref": "#/$defs/forbidden_output_list"},
+        "company_store_dashboard": {"$ref": "#/$defs/forbidden_output_list"}
+      }
+    }
+  },
+  "$defs": {
+    "gate_list": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z0-9_-]+$"}
+    },
+    "forbidden_output": {
+      "type": "string",
+      "enum": [
+        "submitter_identity",
+        "raw_source_material",
+        "device_or_network_signal",
+        "reidentification_hint",
+        "private_selection_status",
+        "staff_identity",
+        "protected_fingerprint",
+        "raw_review_body",
+        "non_public_operational_detail",
+        "source_metadata",
+        "raw_moderation_evidence",
+        "escrow_ciphertext",
+        "escrow_handle",
+        "escrow_key_material",
+        "reviewer_private_note",
+        "account_identifier",
+        "match_status",
+        "individual_claim",
+        "single_observation_detail",
+        "respondent_visible_user_attribution"
+      ]
+    },
+    "forbidden_output_list": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/forbidden_output"}
+    },
+    "public_candidate_conversion": {
+      "type": "object",
+      "required": ["objective_item", "enabled", "serving_enabled", "stored_public_card", "required_gates"],
+      "additionalProperties": false,
+      "properties": {
+        "objective_item": {"const": 9},
+        "enabled": {"const": false},
+        "serving_enabled": {"const": false},
+        "stored_public_card": {"const": false},
+        "required_gates": {"$ref": "#/$defs/gate_list"}
+      }
+    },
+    "b2b_respondent_portal": {
+      "type": "object",
+      "required": ["objective_item", "enabled", "b2b_delivery_enabled", "response_available", "required_gates"],
+      "additionalProperties": false,
+      "properties": {
+        "objective_item": {"const": 10},
+        "enabled": {"const": false},
+        "b2b_delivery_enabled": {"const": false},
+        "response_available": {"const": false},
+        "required_gates": {"$ref": "#/$defs/gate_list"}
+      }
+    },
+    "company_store_dashboard": {
+      "type": "object",
+      "required": ["objective_item", "enabled", "dashboard_enabled", "aggregate_signal_available", "required_gates"],
+      "additionalProperties": false,
+      "properties": {
+        "objective_item": {"const": 13},
+        "enabled": {"const": false},
+        "dashboard_enabled": {"const": false},
+        "aggregate_signal_available": {"const": false},
+        "required_gates": {"$ref": "#/$defs/gate_list"}
+      }
+    }
+  }
+}

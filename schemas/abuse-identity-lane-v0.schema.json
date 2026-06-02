@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/abuse-identity-lane-v0.schema.json",
+  "title": "Knudg Abuse Identity Lane v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "lane_id",
+    "identity_storage",
+    "operation_model",
+    "allowed_actions",
+    "forbidden_surfaces",
+    "audit_requirements",
+    "audit_event_mapping",
+    "blocked_until"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string", "const": "abuse-identity-lane-v0"},
+    "status": {"type": "string", "enum": ["draft", "blocked", "active"]},
+    "lane_id": {"type": "string", "const": "abuse_identity_enforcement"},
+    "identity_storage": {
+      "type": "object",
+      "required": ["raw_identity_values", "protected_fingerprints", "real_subject_rows"],
+      "additionalProperties": false,
+      "properties": {
+        "raw_identity_values": {"type": "string", "const": "forbidden_in_fixture"},
+        "protected_fingerprints": {"type": "string", "enum": ["required_before_real_data", "not_implemented"]},
+        "real_subject_rows": {"type": "string", "const": "none"}
+      }
+    },
+    "allowed_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["warn", "rate_limit", "hold_for_review", "suspend", "ban", "appeal", "reinstate", "revoke", "purge"]
+      }
+    },
+    "operation_model": {
+      "type": "object",
+      "required": [
+        "mode",
+        "transitions",
+        "normalized_outward_response",
+        "appeal_recovery_required_for",
+        "real_enforcement_enabled"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {"type": "string", "const": "simulation_only"},
+        "real_enforcement_enabled": {"type": "boolean", "const": false},
+        "normalized_outward_response": {"type": "string", "const": "generic_no_match_disclosure"},
+        "appeal_recovery_required_for": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "enum": ["suspend", "ban"]}
+        },
+        "transitions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "required": ["action", "real_effect_enabled", "requires_audit_event"],
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": ["warn", "rate_limit", "hold_for_review", "suspend", "ban", "appeal", "reinstate", "revoke", "purge"]
+              },
+              "real_effect_enabled": {"type": "boolean", "const": false},
+              "requires_audit_event": {"type": "boolean", "const": true}
+            }
+          }
+        }
+      }
+    },
+    "forbidden_surfaces": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "retrieval",
+          "actual_experience_storage",
+          "raw_detail_escrow",
+          "public_card",
+          "aggregate_report",
+          "b2b_dashboard",
+          "b2b_respondent_portal",
+          "company_store_dashboard",
+          "public_candidate_conversion",
+          "respondent_inquiry",
+          "export",
+          "ranking_feature"
+        ]
+      }
+    },
+    "audit_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}
+    },
+    "audit_event_mapping": {
+      "type": "object",
+      "required": ["preflight_required_events", "transition_events"],
+      "additionalProperties": false,
+      "properties": {
+        "preflight_required_events": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "case_opened",
+              "identity_signal_reviewed",
+              "submission_held",
+              "account_warned",
+              "account_rate_limited",
+              "account_suspended",
+              "account_banned",
+              "appeal_opened",
+              "reinstated",
+              "artifact_revoked",
+              "artifact_purged"
+            ]
+          }
+        },
+        "transition_events": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "required": ["action", "audit_event_type"],
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": ["warn", "rate_limit", "hold_for_review", "suspend", "ban", "appeal", "reinstate", "revoke", "purge"]
+              },
+              "audit_event_type": {
+                "type": "string",
+                "enum": [
+                  "case_opened",
+                  "identity_signal_reviewed",
+                  "submission_held",
+                  "account_warned",
+                  "account_rate_limited",
+                  "account_suspended",
+                  "account_banned",
+                  "appeal_opened",
+                  "reinstated",
+                  "artifact_revoked",
+                  "artifact_purged"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "blocked_until": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/blocker"}
+    }
+  },
+  "$defs": {
+    "blocker": {
+      "type": "object",
+      "required": ["gate", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "gate": {"type": "string", "pattern": "^[A-Z0-9_-]+$"},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 240}
+      }
+    }
+  }
+}

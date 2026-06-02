@@ -1,0 +1,52 @@
+{
+  "schema_version": "private-use-notice-v0",
+  "notice_id": "notice_closed_launch_private_20260531",
+  "status": "draft_disabled",
+  "surface": "closed_launch_private",
+  "purpose": "Prepare the future private writer flow by documenting what a closed-launch private candidate may collect after explicit acknowledgement. This draft does not enable non-synthetic collection.",
+  "collection_enabled": false,
+  "allowed_source_classes": [
+    "synthetic",
+    "employee_approved_private"
+  ],
+  "collected_fields": [
+    "redacted goal",
+    "redacted symptom",
+    "coarse environment",
+    "public package or tool coordinates",
+    "outcome type",
+    "successful path summary",
+    "failed path summary",
+    "known unknown summary",
+    "scope limits",
+    "safety flags",
+    "source class",
+    "artifact digest"
+  ],
+  "forbidden_fields": [
+    "raw transcript",
+    "raw log",
+    "full stack trace",
+    "source file body",
+    "absolute path",
+    "username",
+    "hostname",
+    "private repository name",
+    "customer name",
+    "secret",
+    "token",
+    "credential",
+    "unredacted command output"
+  ],
+  "default_ttl_days": 14,
+  "readers": [
+    "originating_user",
+    "local_operator"
+  ],
+  "data_leaves_local_workspace": false,
+  "opt_out_path": "Do not acknowledge collection; keep using synthetic writer drafts only.",
+  "discard_path": "Discard the pending candidate before it is retained.",
+  "purge_path": "Purge local draft metadata and any expired approval handoff artifact.",
+  "publication_enabled": false,
+  "acknowledgement_required_before_collection": true
+}

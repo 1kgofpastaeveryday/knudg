@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/retrieval-panel-v0.schema.json",
+  "title": "Knudg Retrieval Panel Response v0",
+  "type": "object",
+  "required": ["decision", "delivery_mode", "served_from", "latency_budget_ms", "cards"],
+  "additionalProperties": false,
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": ["cards_found", "no_suggestion"]
+    },
+    "delivery_mode": {
+      "type": "string",
+      "enum": ["retrieval_panel", "no_suggestion"]
+    },
+    "abstention_reason": {
+      "type": "string",
+      "enum": ["low_confidence", "no_authorized_match", "safety_gate", "stale_index", "rate_limited", "service_degraded", "payload_rejected"]
+    },
+    "served_from": {
+      "type": "string",
+      "enum": ["closed_private_exact_fts", "none"]
+    },
+    "latency_budget_ms": {
+      "type": ["integer", "null"],
+      "minimum": 1
+    },
+    "cards": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "card_id",
+          "card_version_id",
+          "namespace_id",
+          "outcome_type",
+          "quality_state",
+          "evidence_strength",
+          "withheld",
+          "digest",
+          "local_only_status",
+          "freshness_bucket",
+          "match_score",
+          "coarse_match_reason",
+          "handoff_ref",
+          "provenance"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "card_id": {"type": "string", "minLength": 1},
+          "card_version_id": {"type": "string", "minLength": 1},
+          "namespace_id": {"type": "string", "minLength": 1},
+          "outcome_type": {
+            "type": "string",
+            "enum": ["solved", "failed_only", "inconclusive", "unknown_clarified"]
+          },
+          "quality_state": {
+            "type": "string",
+            "enum": ["unreviewed", "solved_once", "solved_many", "verified", "disputed"]
+          },
+          "evidence_strength": {
+            "type": "string",
+            "enum": ["single_session", "multi_session", "reproduced", "external_reference", "operator_judgment"]
+          },
+          "withheld": {"type": "boolean"},
+          "digest": {
+            "type": "string",
+            "minLength": 1
+          },
+          "local_only_status": {
+            "type": "string",
+            "enum": ["local_private"]
+          },
+          "freshness_bucket": {
+            "type": "string",
+            "enum": ["local_private_current"]
+          },
+          "match_score": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "coarse_match_reason": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "handoff_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "provenance": {
+            "type": "object",
+            "required": ["source", "source_class"],
+            "additionalProperties": false,
+            "properties": {
+              "source": {"type": "string", "minLength": 1, "maxLength": 240},
+              "source_class": {"type": "string", "const": "local_private_dogfood"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"decision": {"const": "cards_found"}}
+      },
+      "then": {
+        "properties": {
+          "delivery_mode": {"const": "retrieval_panel"},
+          "cards": {"minItems": 1}
+        },
+        "not": {"required": ["abstention_reason"]}
+      }
+    },
+    {
+      "if": {
+        "properties": {"decision": {"const": "no_suggestion"}}
+      },
+      "then": {
+        "required": ["abstention_reason"],
+        "properties": {
+          "delivery_mode": {"const": "no_suggestion"},
+          "cards": {"maxItems": 0}
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,231 @@
+{
+  "schema_version": "raw-detail-escrow-request-v0",
+  "request_class": "preflight_only",
+  "objective_item": 12,
+  "surface": "raw_detail_escrow",
+  "status": "blocked",
+  "source_context": {
+    "domain": "career_private",
+    "source_record_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "redacted_artifact_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "raw_payload_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+  },
+  "escrow_request": {
+    "reason": "human_review_required",
+    "mode": "not_created",
+    "raw_source_material": "forbidden_in_fixture",
+    "raw_review_body": "forbidden_in_fixture",
+    "escrow_handle_created": false,
+    "encrypted_blob_created": false,
+    "reviewer_access_enabled": false,
+    "reviewer_lease_created": false,
+    "decrypt_operation_enabled": false
+  },
+  "escrow_policy_contract": {
+    "purpose_binding": "intake_review_only",
+    "allowed_review_reasons": ["human_review_required", "legal_review_required", "safety_review_required"],
+    "public_release_allowed": false,
+    "b2b_release_allowed": false,
+    "respondent_release_allowed": false,
+    "model_training_allowed": false
+  },
+  "consent_revocation": {
+    "required_scope": "intake_review_escrow",
+    "trusted_consent_completion_enabled": false,
+    "escrow_consent_completed": false,
+    "revocation_supported_required": true,
+    "purge_path_accepted": false,
+    "ttl_policy_accepted": false
+  },
+  "protected_storage": {
+    "encryption_profile": "required_before_real_data",
+    "key_management_profile": "required_before_real_data",
+    "key_material": "forbidden_in_fixture",
+    "durable_storage_enabled": false,
+    "backup_retention_enabled": false,
+    "restore_quarantine_enabled": false,
+    "access_audit_enabled": false
+  },
+  "cryptographic_envelope_contract": {
+    "envelope_created": false,
+    "aead_profile": "required_before_real_data",
+    "key_wrapping_profile": "required_before_real_data",
+    "key_separation_required": true,
+    "aad_binds_source_and_consent": true,
+    "nonce_uniqueness_required": true,
+    "plaintext_digest_only_reference": true,
+    "key_rotation_policy_accepted": false
+  },
+  "reviewer_access_contract": {
+    "step_up_required": true,
+    "lease_mode": "disabled_preflight_only",
+    "lease_ttl_policy_accepted": false,
+    "two_person_access_required_for_legal": true,
+    "copy_export_allowed": false,
+    "bulk_access_allowed": false,
+    "access_reason_required": true
+  },
+  "retention_purge_contract": {
+    "retention_mode": "no_retention_preflight",
+    "ttl_required_before_real_data": true,
+    "revocation_purge_required": true,
+    "backup_purge_required": true,
+    "restore_quarantine_required": true,
+    "purge_receipt_required": true,
+    "legal_hold_policy_accepted": false
+  },
+  "audit_echo_contract": {
+    "audit_reference_mode": "digest_only",
+    "raw_in_audit": "forbidden",
+    "raw_in_model_input": "forbidden",
+    "raw_in_validator_errors": "forbidden",
+    "raw_in_client_response": "forbidden",
+    "raw_in_b2b_or_dashboard": "forbidden",
+    "digest_fields_required": ["source_record_digest", "redacted_artifact_digest", "raw_payload_digest"]
+  },
+  "required_gates": [
+    "PR-003",
+    "PR-006",
+    "PROTECTED_DATA_DURABILITY",
+    "PURGE_PATH",
+    "ESCROW_TTL_POLICY",
+    "REVIEWER_ACCESS_POLICY",
+    "NO_RAW_ECHO_NEGATIVE_TESTS",
+    "KEY_PROFILE_ACCEPTED",
+    "RAW_DETAIL_PURPOSE_BINDING",
+    "CRYPTOGRAPHIC_ENVELOPE_PROFILE",
+    "ACCESS_LEASE_POLICY",
+    "RESTORE_BACKUP_PURGE_POLICY",
+    "AUDIT_DIGEST_ONLY_POLICY"
+  ],
+  "forbidden_outputs": [
+    "submitter_identity",
+    "raw_source_material",
+    "raw_review_body",
+    "device_or_network_signal",
+    "reidentification_hint",
+    "protected_fingerprint",
+    "private_selection_status",
+    "staff_identity",
+    "source_metadata",
+    "raw_moderation_evidence",
+    "escrow_ciphertext",
+    "escrow_handle",
+    "escrow_key_material",
+    "reviewer_private_note",
+    "non_public_operational_detail"
+  ],
+  "output_contract": {
+    "requested_outputs": ["redacted_escrow_preflight_status", "preflight_blocked_reason", "digest_only_reference"],
+    "withheld_outputs": [
+      "submitter_identity",
+      "raw_source_material",
+      "raw_review_body",
+      "device_or_network_signal",
+      "reidentification_hint",
+      "protected_fingerprint",
+      "private_selection_status",
+      "staff_identity",
+      "source_metadata",
+      "raw_moderation_evidence",
+      "escrow_ciphertext",
+      "escrow_handle",
+      "escrow_key_material",
+      "reviewer_private_note",
+      "non_public_operational_detail"
+    ]
+  },
+  "surface_enablement": {
+    "raw_detail_escrow_enabled": false,
+    "escrow_write_enabled": false,
+    "encrypted_blob_storage_enabled": false,
+    "reviewer_access_enabled": false,
+    "decrypt_operation_enabled": false,
+    "reviewer_lease_creation_enabled": false,
+    "model_input_includes_raw": false,
+    "validator_errors_include_raw": false,
+    "audit_or_client_response_includes_raw": false,
+    "real_data_ingest_enabled": false,
+    "public_serving_enabled": false,
+    "b2b_delivery_enabled": false,
+    "identity_processing_enabled": false,
+    "dashboard_enabled": false,
+    "retrieval_enabled": false,
+    "export_enabled": false,
+    "ranking_enabled": false
+  },
+  "result_contract": {
+    "command_effect": "preflight_only",
+    "stores_raw_detail": false,
+    "creates_escrow_handle": false,
+    "creates_encrypted_blob": false,
+    "stores_key_material": false,
+    "opens_reviewer_access": false,
+    "creates_reviewer_lease": false,
+    "decrypts_escrow": false,
+    "sends_raw_to_model_input": false,
+    "echoes_raw_in_validator_errors": false,
+    "echoes_raw_in_audit_or_client_response": false,
+    "opens_public_surface": false,
+    "delivers_to_b2b": false,
+    "serves_dashboard": false,
+    "performs_identity_processing": false,
+    "makes_retrievable": false,
+    "exports_raw_detail": false,
+    "writes_audit_event": false
+  },
+  "blocked_until": [
+    {
+      "gate": "PR-003",
+      "reason": "Exact intake-review escrow consent is not accepted."
+    },
+    {
+      "gate": "PR-006",
+      "reason": "Core intake safety is not accepted for ambiguous raw bodies."
+    },
+    {
+      "gate": "PROTECTED_DATA_DURABILITY",
+      "reason": "Protected-data durability is not accepted for encrypted raw detail storage."
+    },
+    {
+      "gate": "PURGE_PATH",
+      "reason": "Raw escrow expiry and withdrawal purge path is not accepted."
+    },
+    {
+      "gate": "ESCROW_TTL_POLICY",
+      "reason": "Raw escrow TTL policy is not accepted."
+    },
+    {
+      "gate": "REVIEWER_ACCESS_POLICY",
+      "reason": "Reviewer step-up access policy is not accepted."
+    },
+    {
+      "gate": "NO_RAW_ECHO_NEGATIVE_TESTS",
+      "reason": "No-raw-echo negative tests are not accepted."
+    },
+    {
+      "gate": "KEY_PROFILE_ACCEPTED",
+      "reason": "Escrow encryption key profile is not accepted."
+    },
+    {
+      "gate": "RAW_DETAIL_PURPOSE_BINDING",
+      "reason": "Raw detail purpose-binding policy is not accepted."
+    },
+    {
+      "gate": "CRYPTOGRAPHIC_ENVELOPE_PROFILE",
+      "reason": "AEAD envelope, key wrapping, and AAD binding profile is not accepted."
+    },
+    {
+      "gate": "ACCESS_LEASE_POLICY",
+      "reason": "Reviewer access lease and step-up policy is not accepted."
+    },
+    {
+      "gate": "RESTORE_BACKUP_PURGE_POLICY",
+      "reason": "Backup purge and restore quarantine policy is not accepted."
+    },
+    {
+      "gate": "AUDIT_DIGEST_ONLY_POLICY",
+      "reason": "Digest-only audit and client response policy is not accepted."
+    }
+  ]
+}

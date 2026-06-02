@@ -1,0 +1,347 @@
+import json
+import os
+import subprocess
+import sys
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib import request
+from urllib.error import HTTPError
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class UpstreamHandler(BaseHTTPRequestHandler):
+    token_seen = False
+    approved_digest_seen = None
+    publish_requests = 0
+    force_store_on_stage = False
+
+    def log_message(self, format, *args):
+        return
+
+    def _read_json(self):
+        length = int(self.headers.get("content-length") or "0")
+        return json.loads(self.rfile.read(length).decode("utf-8")) if length else {}
+
+    def _write_json(self, payload, status=200):
+        body = json.dumps(payload).encode("utf-8")
+        self.send_response(status)
+        self.send_header("content-type", "application/json")
+        self.send_header("content-length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        if self.path == "/health/ready":
+            self._write_json({"status": "ready"})
+            return
+        self._write_json({"status": "not_found"}, status=404)
+
+    def do_POST(self):
+        UpstreamHandler.token_seen = self.headers.get("authorization") == "Bearer test-token"
+        payload = self._read_json()
+        if self.path == "/v1/private/cards:publish":
+            UpstreamHandler.publish_requests += 1
+            digest = self.headers.get("x-knudg-artifact-digest")
+            UpstreamHandler.approved_digest_seen = digest
+            if UpstreamHandler.force_store_on_stage and not digest:
+                self._write_json({"status": "private_published", "stored": True}, status=201)
+                return
+            if not digest:
+                self._write_json({"status": "approval_required", "artifact_digest": "sha256:test"}, status=409)
+                return
+            self._write_json({"status": "private_published", "card_id": "11111111-1111-4111-8111-111111111111"}, status=201)
+            return
+        if self.path == "/v1/private/search":
+            self._write_json(
+                {
+                    "status": "ok",
+                    "result": {
+                        "decision": "cards_found",
+                        "cards": [
+                            {
+                                "card_id": "11111111-1111-4111-8111-111111111111",
+                                "coarse_match_reason": ["operator-frontend-smoke"],
+                            }
+                        ],
+                    },
+                    "echo_workspace": payload.get("workspace"),
+                }
+            )
+            return
+        if self.path == "/v1/private/experience-records:store":
+            self._write_json(
+                {
+                    "status": "redacted_experience_stored",
+                    "stored": True,
+                    "record_id": "44444444-4444-4444-8444-444444444444",
+                    "record_visible_to_retrieval": False,
+                    "public_candidate_conversion_enabled": False,
+                },
+                status=201,
+            )
+            return
+        if self.path == "/v1/private/experience-records/44444444-4444-4444-8444-444444444444:revoke":
+            self._write_json(
+                {
+                    "status": "redacted_experience_revoked",
+                    "record_id": "44444444-4444-4444-8444-444444444444",
+                    "revoked": True,
+                    "lifecycle_status": "revoked",
+                    "publication_enabled": False,
+                }
+            )
+            return
+        if self.path == "/v1/private/approval-handoffs/11111111-1111-4111-8111-111111111111:complete-private-retention":
+            self._write_json(
+                {
+                    "status": "private_retention_consent_completed",
+                    "handoff_id": "11111111-1111-4111-8111-111111111111",
+                    "consent_id": "55555555-5555-4555-8555-555555555555",
+                    "public_publication_enabled": False,
+                }
+            )
+            return
+        if self.path == "/v1/private/cards/11111111-1111-4111-8111-111111111111:view":
+            self._write_json({"status": "private_card", "card": {"title": "Viewed card"}})
+            return
+        self._write_json({"status": "not_found"}, status=404)
+
+
+def serve_upstream():
+    UpstreamHandler.token_seen = False
+    UpstreamHandler.approved_digest_seen = None
+    UpstreamHandler.publish_requests = 0
+    UpstreamHandler.force_store_on_stage = False
+    server = ThreadingHTTPServer(("127.0.0.1", 0), UpstreamHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server
+
+
+def read_startup_line(process, timeout_seconds=5):
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        line = process.stdout.readline()
+        if line:
+            return json.loads(line)
+    raise AssertionError("local frontend did not print a startup line")
+
+
+def post_json(url, payload):
+    req = request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"content-type": "application/json"},
+        method="POST",
+    )
+    try:
+        with request.urlopen(req, timeout=5) as response:
+            return response.status, json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        return exc.code, json.loads(exc.read().decode("utf-8"))
+
+
+def get_json(url):
+    with request.urlopen(url, timeout=5) as response:
+        return response.status, json.loads(response.read().decode("utf-8"))
+
+
+def stop_process(process):
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
+
+
+def test_local_frontend_stages_write_search_and_view_without_browser_token():
+    upstream = serve_upstream()
+    env = {
+        **os.environ,
+        "KNUDG_OPERATOR_TOKEN": "test-token",
+        "KNUDG_FRONTEND_API_BASE_URL": f"http://127.0.0.1:{upstream.server_port}",
+    }
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_local_frontend.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        startup = read_startup_line(process)
+        base_url = startup["url"]
+
+        with request.urlopen(f"{base_url}/api/status", timeout=5) as response:
+            status = json.loads(response.read().decode("utf-8"))
+        assert status["status"] == "ready"
+
+        code, approval = post_json(f"{base_url}/api/cards:publish", {"workspace": "closed-beta-test", "card": {}})
+        assert code == 409
+        assert approval["artifact_digest"] == "sha256:test"
+
+        code, completion = post_json(
+            f"{base_url}/api/cards:publish",
+            {"workspace": "closed-beta-test", "card": {}, "approved_digest": "sha256:test"},
+        )
+        assert code == 409
+        assert completion["status"] == "completion_disabled"
+        assert UpstreamHandler.token_seen is True
+        assert UpstreamHandler.approved_digest_seen is None
+        assert UpstreamHandler.publish_requests == 1
+
+        code, searched = post_json(f"{base_url}/api/search", {"workspace": "closed-beta-test", "task_profile": {}})
+        assert code == 200
+        assert searched["result"]["cards"][0]["coarse_match_reason"] == ["operator-frontend-smoke"]
+
+        code, viewed = post_json(f"{base_url}/api/cards/11111111-1111-4111-8111-111111111111:view", {"workspace": "closed-beta-test"})
+        assert code == 200
+        assert viewed["card"]["title"] == "Viewed card"
+
+        code, stored = post_json(
+            f"{base_url}/api/experience-records:store",
+            {"workspace": "closed-beta-test", "record": {"schema_version": "experience-storage-record-v0"}},
+        )
+        assert code == 201
+        assert stored["status"] == "redacted_experience_stored"
+        assert stored["stored"] is True
+        assert stored["record_visible_to_retrieval"] is False
+
+        code, revoked_experience = post_json(
+            f"{base_url}/api/experience-records/44444444-4444-4444-8444-444444444444:revoke",
+            {"workspace": "closed-beta-test", "reason": "closed beta revoke"},
+        )
+        assert code == 200
+        assert revoked_experience["status"] == "redacted_experience_revoked"
+        assert revoked_experience["revoked"] is True
+        assert revoked_experience["publication_enabled"] is False
+
+        code, completed = post_json(
+            f"{base_url}/api/approval-handoffs/11111111-1111-4111-8111-111111111111:complete-private-retention",
+            {
+                "workspace": "closed-beta-test",
+                "idempotency_key": "consent-complete-001",
+                "comprehension_confirmed": True,
+                "private_retention_scope_confirmed": True,
+                "no_publication_confirmed": True,
+            },
+        )
+        assert code == 200
+        assert completed["status"] == "private_retention_consent_completed"
+        assert completed["public_publication_enabled"] is False
+    finally:
+        stop_process(process)
+        upstream.shutdown()
+
+
+def test_local_frontend_exposes_private_retention_consent_review_surface():
+    upstream = serve_upstream()
+    env = {
+        **os.environ,
+        "KNUDG_OPERATOR_TOKEN": "test-token",
+        "KNUDG_FRONTEND_API_BASE_URL": f"http://127.0.0.1:{upstream.server_port}",
+    }
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_local_frontend.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        startup = read_startup_line(process)
+        code, review = get_json(f"{startup['url']}/api/consent-review")
+
+        assert code == 200
+        assert review["schema_version"] == "consent-review-surface-v0"
+        assert review["source_gate_id"] == "PR-003"
+        assert review["review_only"] is False
+        assert review["completion_actions_enabled"] is True
+        assert review["private_retention_completion_ready"] is True
+        assert review["trusted_completion_enabled"] is True
+        assert review["public_publication_enabled"] is False
+        assert review["enabled_flags"] == ["trusted_completion_enabled"]
+        private_surface = next(surface for surface in review["surfaces"] if surface["surface_type"] == "private_retention_consent")
+        assert private_surface["completion_action"] == "complete_private_retention"
+        assert private_surface["completion_transport"] == "trusted_browser_or_os_surface"
+        assert all(
+            surface["completion_action"] == "disabled"
+            for surface in review["surfaces"]
+            if surface["surface_type"] != "private_retention_consent"
+        )
+        assert all(
+            boundary["public_candidate_conversion_enabled"] is False
+            and boundary["public_candidate_conversion_enabled"] is False
+            and boundary["raw_source_retention_enabled"] is False
+            and boundary["requires_domain_scoped_revocation"] is True
+            for boundary in review["experience_domain_boundaries"]
+        )
+    finally:
+        stop_process(process)
+        upstream.shutdown()
+
+
+def test_local_frontend_fails_closed_when_stage_writes_upstream():
+    upstream = serve_upstream()
+    UpstreamHandler.force_store_on_stage = True
+    env = {
+        **os.environ,
+        "KNUDG_OPERATOR_TOKEN": "test-token",
+        "KNUDG_FRONTEND_API_BASE_URL": f"http://127.0.0.1:{upstream.server_port}",
+    }
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_local_frontend.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        startup = read_startup_line(process)
+        code, rejected = post_json(f"{startup['url']}/api/cards:publish", {"workspace": "closed-beta-test", "card": {}})
+
+        assert code == 502
+        assert rejected["status"] == "rejected"
+        assert rejected["upstream_status"] == 201
+    finally:
+        stop_process(process)
+        upstream.shutdown()
+
+
+def test_operator_ui_renders_review_only_consent_controls():
+    index = (ROOT / "operator-ui" / "index.html").read_text(encoding="utf-8")
+    app = (ROOT / "operator-ui" / "app.js").read_text(encoding="utf-8")
+
+    assert 'id="consent-review"' in index
+    assert 'id="experience-form"' in index
+    assert "/api/consent-review" in app
+    assert "/api/experience-records:store" in app
+    assert "Private retention ready" in app
+    assert "complete_private_retention" in app
+    assert "pendingWrite.approved_digest" not in app

@@ -1,0 +1,19 @@
+{
+  "schema_version": "candidate-payload-facets-v0",
+  "domain": "technical_work",
+  "experience_intent": "solved_path",
+  "subject": {
+    "type": "technical_environment",
+    "public_name": null,
+    "aliases": []
+  },
+  "claim_type": "factual_observation",
+  "evidence_strength": "single_observation",
+  "sensitivity": "low",
+  "retrieval_policy": "automatic_technical_only",
+  "source_policy": {
+    "raw_source_retention": "none",
+    "publication_eligible": false,
+    "ingest_enablement": "closed_launch_structured_only"
+  }
+}

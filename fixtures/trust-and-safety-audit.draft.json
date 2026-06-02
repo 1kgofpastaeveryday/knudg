@@ -1,0 +1,271 @@
+{
+  "schema_version": "trust-and-safety-audit-v0",
+  "status": "draft",
+  "gate_id": "TNS-001",
+  "real_identity_processing_enabled": false,
+  "operational_enablement": {
+    "real_ban_operations_enabled": false,
+    "respondent_inquiry_enabled": false,
+    "b2b_dashboard_enabled": false,
+    "raw_detail_escrow_enabled": false,
+    "public_candidate_publication_enabled": false,
+    "public_candidate_conversion_enabled": false,
+    "b2b_respondent_portal_enabled": false,
+    "company_store_dashboard_enabled": false
+  },
+  "covered_domains": [
+    "technical_work",
+    "personal_reasoning",
+    "career_private",
+    "place_service_experience",
+    "public_experience_candidate",
+    "public_aggregate_signal"
+  ],
+  "event_types": [
+    "case_opened",
+    "identity_signal_reviewed",
+    "submission_held",
+    "account_warned",
+    "account_rate_limited",
+    "account_suspended",
+    "account_banned",
+    "appeal_opened",
+    "reinstated",
+    "artifact_revoked",
+    "artifact_purged"
+  ],
+  "required_event_fields": [
+    "case_id",
+    "actor_id",
+    "purpose",
+    "reason_class",
+    "decision_digest",
+    "subject_ref",
+    "appeal_ref",
+    "created_at"
+  ],
+  "synthetic_audit_event_contract": {
+    "case_id": "case:synthetic-preflight-001",
+    "actor_id": "actor:synthetic-reviewer-001",
+    "purpose": "abuse_preflight",
+    "reason_class": "fake_experience",
+    "decision_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "subject_ref": "subject-ref:synthetic-subject-001",
+    "appeal_ref": null,
+    "created_at": "fixture-time:synthetic-created-001"
+  },
+  "synthetic_events": [
+    {
+      "event_type": "case_opened",
+      "case_id": "synthetic-case:tns-001",
+      "actor_id": "synthetic-actor:reviewer-001",
+      "purpose": "abuse_preflight",
+      "reason_class": "fake_experience",
+      "decision_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "subject_ref": "synthetic-subject:opaque-001",
+      "appeal_ref": "synthetic-appeal:none",
+      "created_at": "fixture-time:tns-case-opened-001",
+      "audit_events_projection": {
+        "action": "tns_case_opened",
+        "target_type": "tns_case",
+        "reason_code": "fake_experience",
+        "sanitized_detail": "synthetic-detail:case-opened"
+      }
+    },
+    {
+      "event_type": "identity_signal_reviewed",
+      "case_id": "synthetic-case:tns-001",
+      "actor_id": "synthetic-actor:reviewer-001",
+      "purpose": "abuse_preflight",
+      "reason_class": "ban_evasion",
+      "decision_digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "subject_ref": "synthetic-subject:opaque-001",
+      "appeal_ref": "synthetic-appeal:none",
+      "created_at": "fixture-time:tns-signal-reviewed-001",
+      "audit_events_projection": {
+        "action": "tns_identity_signal_reviewed",
+        "target_type": "tns_subject",
+        "reason_code": "ban_evasion",
+        "sanitized_detail": "synthetic-detail:identity-signal-reviewed"
+      }
+    },
+    {
+      "event_type": "submission_held",
+      "case_id": "synthetic-case:tns-001",
+      "actor_id": "synthetic-actor:reviewer-001",
+      "purpose": "abuse_preflight",
+      "reason_class": "spam",
+      "decision_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "subject_ref": "synthetic-subject:opaque-002",
+      "appeal_ref": "synthetic-appeal:none",
+      "created_at": "fixture-time:tns-submission-held-001",
+      "audit_events_projection": {
+        "action": "tns_submission_held",
+        "target_type": "experience_artifact",
+        "reason_code": "spam",
+        "sanitized_detail": "synthetic-detail:submission-held"
+      }
+    },
+    {
+      "event_type": "account_warned",
+      "case_id": "synthetic-case:tns-002",
+      "actor_id": "synthetic-actor:reviewer-001",
+      "purpose": "abuse_preflight",
+      "reason_class": "harassment",
+      "decision_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "subject_ref": "synthetic-subject:opaque-003",
+      "appeal_ref": "synthetic-appeal:none",
+      "created_at": "fixture-time:tns-account-warned-001",
+      "audit_events_projection": {
+        "action": "tns_account_warned",
+        "target_type": "tns_subject",
+        "reason_code": "harassment",
+        "sanitized_detail": "synthetic-detail:account-warned"
+      }
+    },
+    {
+      "event_type": "account_rate_limited",
+      "case_id": "synthetic-case:tns-002",
+      "actor_id": "synthetic-actor:reviewer-001",
+      "purpose": "abuse_preflight",
+      "reason_class": "spam",
+      "decision_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "subject_ref": "synthetic-subject:opaque-003",
+      "appeal_ref": "synthetic-appeal:none",
+      "created_at": "fixture-time:tns-account-rate-limited-001",
+      "audit_events_projection": {
+        "action": "tns_account_rate_limited",
+        "target_type": "tns_subject",
+        "reason_code": "spam",
+        "sanitized_detail": "synthetic-detail:account-rate-limited"
+      }
+    },
+    {
+      "event_type": "account_suspended",
+      "case_id": "synthetic-case:tns-002",
+      "actor_id": "synthetic-actor:reviewer-001",
+      "purpose": "abuse_preflight",
+      "reason_class": "brigading",
+      "decision_digest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "subject_ref": "synthetic-subject:opaque-003",
+      "appeal_ref": "synthetic-appeal:appeal-001",
+      "created_at": "fixture-time:tns-account-suspended-001",
+      "audit_events_projection": {
+        "action": "tns_account_suspended",
+        "target_type": "tns_subject",
+        "reason_code": "brigading",
+        "sanitized_detail": "synthetic-detail:account-suspended"
+      }
+    },
+    {
+      "event_type": "account_banned",
+      "case_id": "synthetic-case:tns-003",
+      "actor_id": "synthetic-actor:reviewer-001",
+      "purpose": "abuse_preflight",
+      "reason_class": "ban_evasion",
+      "decision_digest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "subject_ref": "synthetic-subject:opaque-004",
+      "appeal_ref": "synthetic-appeal:appeal-002",
+      "created_at": "fixture-time:tns-account-banned-001",
+      "audit_events_projection": {
+        "action": "tns_account_banned",
+        "target_type": "tns_subject",
+        "reason_code": "ban_evasion",
+        "sanitized_detail": "synthetic-detail:account-banned"
+      }
+    },
+    {
+      "event_type": "appeal_opened",
+      "case_id": "synthetic-case:tns-003",
+      "actor_id": "synthetic-actor:reviewer-002",
+      "purpose": "appeal_review",
+      "reason_class": "mistaken_identity",
+      "decision_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "subject_ref": "synthetic-subject:opaque-004",
+      "appeal_ref": "synthetic-appeal:appeal-002",
+      "created_at": "fixture-time:tns-appeal-opened-001",
+      "audit_events_projection": {
+        "action": "tns_appeal_opened",
+        "target_type": "appeal",
+        "reason_code": "mistaken_identity",
+        "sanitized_detail": "synthetic-detail:appeal-opened"
+      }
+    },
+    {
+      "event_type": "reinstated",
+      "case_id": "synthetic-case:tns-003",
+      "actor_id": "synthetic-actor:reviewer-002",
+      "purpose": "appeal_review",
+      "reason_class": "mistaken_identity",
+      "decision_digest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+      "subject_ref": "synthetic-subject:opaque-004",
+      "appeal_ref": "synthetic-appeal:appeal-002",
+      "created_at": "fixture-time:tns-reinstated-001",
+      "audit_events_projection": {
+        "action": "tns_reinstated",
+        "target_type": "appeal",
+        "reason_code": "mistaken_identity",
+        "sanitized_detail": "synthetic-detail:reinstated"
+      }
+    },
+    {
+      "event_type": "artifact_revoked",
+      "case_id": "synthetic-case:tns-004",
+      "actor_id": "synthetic-actor:reviewer-001",
+      "purpose": "artifact_revocation",
+      "reason_class": "policy_revocation",
+      "decision_digest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "subject_ref": "synthetic-subject:opaque-005",
+      "appeal_ref": "synthetic-appeal:none",
+      "created_at": "fixture-time:tns-artifact-revoked-001",
+      "audit_events_projection": {
+        "action": "tns_artifact_revoked",
+        "target_type": "experience_artifact",
+        "reason_code": "policy_revocation",
+        "sanitized_detail": "synthetic-detail:artifact-revoked"
+      }
+    },
+    {
+      "event_type": "artifact_purged",
+      "case_id": "synthetic-case:tns-004",
+      "actor_id": "synthetic-actor:reviewer-001",
+      "purpose": "purge_verification",
+      "reason_class": "policy_revocation",
+      "decision_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "subject_ref": "synthetic-subject:opaque-005",
+      "appeal_ref": "synthetic-appeal:none",
+      "created_at": "fixture-time:tns-artifact-purged-001",
+      "audit_events_projection": {
+        "action": "tns_artifact_purged",
+        "target_type": "experience_artifact",
+        "reason_code": "policy_revocation",
+        "sanitized_detail": "synthetic-detail:artifact-purged"
+      }
+    }
+  ],
+  "identity_controls": {
+    "raw_identity_values": "forbidden_in_fixture",
+    "protected_fingerprints": "required_before_real_data",
+    "subject_rows": "none"
+  },
+  "forbidden_disclosures": [
+    "business_dashboard",
+    "actual_experience_storage",
+    "raw_detail_escrow",
+    "respondent_inquiry",
+    "b2b_respondent_portal",
+    "company_store_dashboard",
+    "public_candidate_conversion",
+    "public_card",
+    "retrieval_panel",
+    "export",
+    "ranking_feature"
+  ],
+  "blocked_until": [
+    "PR-006",
+    "TNS_ROLE_MODEL",
+    "PROTECTED_FINGERPRINT_PROFILE",
+    "APPEAL_RECOVERY_PATH",
+    "NO_DISCLOSURE_NEGATIVE_TESTS"
+  ]
+}

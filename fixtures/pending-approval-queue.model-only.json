@@ -1,0 +1,22 @@
+{
+  "schema_version": "pending-approval-queue-v0",
+  "queue_item_id": "paq_model_local_20260515",
+  "state": "model_only",
+  "storage_enabled": false,
+  "source_class": "synthetic",
+  "tenant_id": "tenant_local",
+  "namespace_id": "ns_local",
+  "candidate_id": "candidate_local_model_only",
+  "card_digest": "sha256:jcs-rfc8785:v1:0000000000000000000000000000000000000000000000000000000000000000",
+  "artifact_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "consent_scope": "private_candidate_collection",
+  "preview_ref": {
+    "kind": "digest_only",
+    "body_included": false,
+    "location": "model-only local fixture"
+  },
+  "created_at": "2026-05-15T00:00:00Z",
+  "expires_at": "2026-05-29T00:00:00Z",
+  "discard_path": "Discard candidate before retention.",
+  "purge_path": "Purge local draft metadata after expiry or explicit user request."
+}

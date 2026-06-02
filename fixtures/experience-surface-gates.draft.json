@@ -1,0 +1,231 @@
+{
+  "schema_version": "experience-surface-gates-v0",
+  "status": "draft_blocked",
+  "surfaces": [
+    {
+      "surface": "actual_experience_storage",
+      "objective_item": 8,
+      "status": "blocked",
+      "domains": ["career_private", "place_service_experience"],
+      "enablement": {
+        "real_data_ingest_enabled": false,
+        "public_serving_enabled": false,
+        "b2b_delivery_enabled": false,
+        "identity_processing_enabled": false,
+        "raw_detail_escrow_enabled": false,
+        "dashboard_enabled": false
+      },
+      "required_gates": [
+        {"gate": "PR-003", "reason": "Trusted consent and revocation UI must exist before broader private retention."},
+        {"gate": "PR-006", "reason": "Intake safety must exist before non-synthetic broader-domain bodies."},
+        {"gate": "ED-001", "reason": "Domain policy enforcement must be active before broader-domain storage."},
+        {"gate": "ED-002", "reason": "Candidate payload facets must be enforced before broader-domain storage."}
+      ],
+      "forbidden_outputs": [
+        "submitter_identity",
+        "raw_source_material",
+        "private_selection_status",
+        "staff_identity",
+        "raw_review_body"
+      ]
+    },
+    {
+      "surface": "public_candidate_conversion",
+      "objective_item": 9,
+      "status": "blocked",
+      "domains": ["public_experience_candidate"],
+      "enablement": {
+        "real_data_ingest_enabled": false,
+        "public_serving_enabled": false,
+        "b2b_delivery_enabled": false,
+        "identity_processing_enabled": false,
+        "raw_detail_escrow_enabled": false,
+        "dashboard_enabled": false
+      },
+      "required_gates": [
+        {"gate": "PR-003", "reason": "Exact-artifact consent must exist before public candidate conversion."},
+        {"gate": "PR-005", "reason": "Public search and publication gates must pass before serving public candidates."},
+        {"gate": "PR-006", "reason": "Intake safety must pass before non-synthetic public candidates."},
+        {"gate": "REVIEWER_PUBLISH", "reason": "Reviewer publish workflow must exist before public conversion."}
+      ],
+      "forbidden_outputs": [
+        "submitter_identity",
+        "raw_source_material",
+        "private_selection_status",
+        "staff_identity",
+        "raw_review_body",
+        "non_public_operational_detail"
+      ]
+    },
+    {
+      "surface": "b2b_respondent_portal",
+      "objective_item": 10,
+      "status": "blocked",
+      "domains": ["public_experience_candidate", "public_aggregate_signal"],
+      "enablement": {
+        "real_data_ingest_enabled": false,
+        "public_serving_enabled": false,
+        "b2b_delivery_enabled": false,
+        "identity_processing_enabled": false,
+        "raw_detail_escrow_enabled": false,
+        "dashboard_enabled": false
+      },
+      "required_gates": [
+        {"gate": "ED-005", "reason": "Public candidate gate must pass before respondent inquiry."},
+        {"gate": "NO_DISCLOSURE_NEGATIVE_TESTS", "reason": "Negative tests must prove respondent surfaces cannot expose identity or raw source material."},
+        {"gate": "RESPONDENT_POLICY", "reason": "Respondent inquiry policy must define allowed redacted responses."},
+        {"gate": "MODERATION_WORKFLOW", "reason": "Moderation, reporting, correction, and takedown workflow must exist."}
+      ],
+      "forbidden_outputs": [
+        "submitter_identity",
+        "raw_source_material",
+        "device_or_network_signal",
+        "reidentification_hint",
+        "protected_fingerprint",
+        "raw_review_body",
+        "source_metadata",
+        "raw_moderation_evidence",
+        "respondent_visible_user_attribution"
+      ]
+    },
+    {
+      "surface": "abuse_identity_ban_operations",
+      "objective_item": 11,
+      "status": "blocked",
+      "domains": ["career_private", "place_service_experience", "public_experience_candidate", "public_aggregate_signal"],
+      "enablement": {
+        "real_data_ingest_enabled": false,
+        "public_serving_enabled": false,
+        "b2b_delivery_enabled": false,
+        "identity_processing_enabled": false,
+        "raw_detail_escrow_enabled": false,
+        "dashboard_enabled": false
+      },
+      "required_gates": [
+        {"gate": "ED-006", "reason": "Abuse identity lane scaffold must be accepted before real enforcement."},
+        {"gate": "TNS-001", "reason": "Trust-and-safety audit gate must be accepted before real identity processing."},
+        {"gate": "AUTHORIZATION_ROLE_MODEL", "reason": "Actor role model must be accepted before any real enforcement actor can operate."},
+        {"gate": "HIGH_RISK_REVIEW_POLICY", "reason": "High-risk and two-person review policy must exist before bans affect outputs."},
+        {"gate": "IDEMPOTENCY_WRITE_BEFORE_EFFECT", "reason": "Idempotent write-before-effect controls must exist before real enforcement."},
+        {"gate": "ANTI_ENUMERATION_CONTRACT", "reason": "Generic response and no-match-disclosure controls must exist before identity checks."},
+        {"gate": "IDENTITY_MINIMIZATION_POLICY", "reason": "Identity minimization policy must exist before real identity signals are collected."},
+        {"gate": "PROTECTED_FINGERPRINT_PROFILE", "reason": "Protected fingerprint profile must exist before identity matching."},
+        {"gate": "AUDIT_DURABILITY", "reason": "Durable audit write-before-effect path must exist before real enforcement."},
+        {"gate": "NO_IDENTITY_DISCLOSURE_NEGATIVE_TESTS", "reason": "Negative tests must prove respondent/dashboard surfaces cannot disclose identity state."},
+        {"gate": "RAW_IDENTITY_RETENTION_PURGE_POLICY", "reason": "Raw identity retention, access audit, and purge policy must exist before any raw identity escrow."},
+        {"gate": "APPEAL_RECOVERY_PATH", "reason": "Appeal and mistaken-identity recovery must exist before bans affect outputs."}
+      ],
+      "forbidden_outputs": [
+        "submitter_identity",
+        "raw_identity_values",
+        "subject_row",
+        "raw_source_material",
+        "device_or_network_signal",
+        "reidentification_hint",
+        "protected_fingerprint",
+        "source_metadata",
+        "raw_moderation_evidence",
+        "match_status",
+        "account_identifier",
+        "private_selection_status"
+      ]
+    },
+    {
+      "surface": "raw_detail_escrow",
+      "objective_item": 12,
+      "status": "blocked",
+      "domains": ["career_private", "place_service_experience", "public_experience_candidate"],
+      "enablement": {
+        "real_data_ingest_enabled": false,
+        "public_serving_enabled": false,
+        "b2b_delivery_enabled": false,
+        "identity_processing_enabled": false,
+        "raw_detail_escrow_enabled": false,
+        "dashboard_enabled": false
+      },
+      "required_gates": [
+        {"gate": "PR-003", "reason": "Exact intake-review escrow consent must exist before raw detail escrow."},
+        {"gate": "PR-006", "reason": "Intake safety must pass before any ambiguous raw body can enter escrow."},
+        {"gate": "PROTECTED_DATA_DURABILITY", "reason": "Protected-data durability must exist before encrypted raw detail storage."},
+        {"gate": "PURGE_PATH", "reason": "Expiry and withdrawal must purge raw escrow content."},
+        {"gate": "ESCROW_TTL_POLICY", "reason": "Raw escrow TTL policy must exist before any raw body can enter escrow."},
+        {"gate": "REVIEWER_ACCESS_POLICY", "reason": "Reviewer access lease and step-up policy must exist before raw review."},
+        {"gate": "NO_RAW_ECHO_NEGATIVE_TESTS", "reason": "Negative tests must prove raw detail cannot echo into model, audit, client, B2B, or dashboard output."},
+        {"gate": "KEY_PROFILE_ACCEPTED", "reason": "Escrow key profile must be accepted before encrypted raw detail storage."},
+        {"gate": "RAW_DETAIL_PURPOSE_BINDING", "reason": "Raw detail purpose-binding policy must prohibit public, B2B, respondent, and training release."},
+        {"gate": "CRYPTOGRAPHIC_ENVELOPE_PROFILE", "reason": "AEAD envelope, key wrapping, nonce, and AAD binding profile must be accepted."},
+        {"gate": "ACCESS_LEASE_POLICY", "reason": "Reviewer lease, TTL, step-up, and copy/export policy must be accepted."},
+        {"gate": "RESTORE_BACKUP_PURGE_POLICY", "reason": "Backup purge and restore quarantine policy must be accepted."},
+        {"gate": "AUDIT_DIGEST_ONLY_POLICY", "reason": "Audit and client responses must be digest-only before raw escrow exists."}
+      ],
+      "forbidden_outputs": [
+        "submitter_identity",
+        "raw_source_material",
+        "raw_review_body",
+        "device_or_network_signal",
+        "reidentification_hint",
+        "protected_fingerprint",
+        "private_selection_status",
+        "staff_identity",
+        "source_metadata",
+        "raw_moderation_evidence",
+        "escrow_ciphertext",
+        "escrow_handle",
+        "escrow_key_material",
+        "reviewer_private_note",
+        "non_public_operational_detail"
+      ]
+    },
+    {
+      "surface": "company_store_dashboard",
+      "objective_item": 13,
+      "status": "blocked",
+      "domains": ["public_aggregate_signal"],
+      "enablement": {
+        "real_data_ingest_enabled": false,
+        "public_serving_enabled": false,
+        "b2b_delivery_enabled": false,
+        "identity_processing_enabled": false,
+        "raw_detail_escrow_enabled": false,
+        "dashboard_enabled": false
+      },
+      "required_gates": [
+        {"gate": "AGGREGATE_SIGNAL_POLICY", "reason": "Aggregate signal policy must define source-count, freshness, and manipulation checks."},
+        {"gate": "PUBLIC_B2B_DISCLOSURE_POLICY", "reason": "Public/B2B disclosure policy must define allowed dashboard fields."},
+        {"gate": "MODERATION_WORKFLOW", "reason": "Abuse reporting, correction, and takedown workflow must exist."},
+        {"gate": "NO_IDENTITY_LEAKAGE_TESTS", "reason": "Negative tests must prove dashboards cannot expose identity or raw source material."},
+        {"gate": "MIN_SOURCE_COUNT_POLICY", "reason": "Minimum source-count policy must exist before aggregate dashboard display."},
+        {"gate": "MANIPULATION_RESISTANCE_POLICY", "reason": "Manipulation resistance policy must exist before dashboard responses."},
+        {"gate": "NO_SINGLE_OBSERVATION_DISPLAY_TESTS", "reason": "Negative tests must prove dashboards cannot display single observations."},
+        {"gate": "NO_SUPPRESSION_SURFACE_TESTS", "reason": "Negative tests must prove dashboards cannot suppress negative reviews."},
+        {"gate": "CORRECTION_TAKEDOWN_POLICY", "reason": "Correction and takedown workflow must exist before dashboard display."},
+        {"gate": "AGGREGATE_PRIVACY_THRESHOLD_POLICY", "reason": "Aggregate privacy threshold and cell suppression policy must exist."},
+        {"gate": "FAIR_REVIEW_PRESENTATION_POLICY", "reason": "Favorability-neutral review presentation policy must exist."},
+        {"gate": "DASHBOARD_DISPLAY_POLICY", "reason": "Dashboard display contract must be accepted."},
+        {"gate": "NO_ESCROW_ARTIFACT_DISPLAY_TESTS", "reason": "Negative tests must prove dashboard cannot display escrow artifacts."},
+        {"gate": "DASHBOARD_EXPORT_DOWNLOAD_POLICY", "reason": "Export and download policy must exist before dashboard delivery."}
+      ],
+      "forbidden_outputs": [
+        "submitter_identity",
+        "raw_source_material",
+        "device_or_network_signal",
+        "reidentification_hint",
+        "protected_fingerprint",
+        "raw_review_body",
+        "private_selection_status",
+        "staff_identity",
+        "source_metadata",
+        "raw_moderation_evidence",
+        "escrow_ciphertext",
+        "escrow_handle",
+        "escrow_key_material",
+        "account_identifier",
+        "match_status",
+        "individual_claim",
+        "single_observation_detail",
+        "reviewer_private_note",
+        "non_public_operational_detail"
+      ]
+    }
+  ]
+}

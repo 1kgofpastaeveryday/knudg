@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.com/schemas/pending-approval-queue-v0.schema.json",
+  "title": "Knudg Pending Approval Queue Item v0",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "queue_item_id",
+    "state",
+    "storage_enabled",
+    "source_class",
+    "tenant_id",
+    "namespace_id",
+    "candidate_id",
+    "card_digest",
+    "artifact_digest",
+    "consent_scope",
+    "preview_ref",
+    "created_at",
+    "expires_at",
+    "discard_path",
+    "purge_path"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string", "const": "pending-approval-queue-v0"},
+    "queue_item_id": {"type": "string", "pattern": "^paq_[A-Za-z0-9_-]{6,80}$"},
+    "state": {
+      "type": "string",
+      "enum": ["model_only", "pending_acknowledgement", "pending_review", "awaiting_user_approval", "discard_pending", "purge_pending", "completed", "expired"]
+    },
+    "storage_enabled": {"type": "boolean"},
+    "source_class": {
+      "type": "string",
+      "enum": ["synthetic", "employee_approved_private", "design_partner_approved_private"]
+    },
+    "tenant_id": {"type": "string", "minLength": 1},
+    "namespace_id": {"type": "string", "minLength": 1},
+    "candidate_id": {"type": "string", "minLength": 1},
+    "card_digest": {"type": "string", "pattern": "^sha256:jcs-rfc8785:v1:[a-f0-9]{64}$"},
+    "artifact_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "consent_scope": {
+      "type": "string",
+      "enum": ["private_candidate_collection", "private_retention", "public_publication"]
+    },
+    "preview_ref": {
+      "type": "object",
+      "required": ["kind", "body_included", "location"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"type": "string", "enum": ["digest_only", "terminal_safe_preview", "trusted_browser_handoff"]},
+        "body_included": {"type": "boolean"},
+        "location": {"type": "string", "minLength": 1, "maxLength": 240}
+      }
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "discard_path": {"type": "string", "minLength": 1, "maxLength": 240},
+    "purge_path": {"type": "string", "minLength": 1, "maxLength": 240}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"state": {"const": "model_only"}}},
+      "then": {
+        "properties": {
+          "storage_enabled": {"const": false}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"preview_ref": {"properties": {"kind": {"const": "digest_only"}}}}},
+      "then": {
+        "properties": {
+          "preview_ref": {
+            "properties": {
+              "body_included": {"const": false}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

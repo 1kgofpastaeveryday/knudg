@@ -1,0 +1,211 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://knudg.local/schemas/intake-safety-gate.schema.json",
+  "title": "PR-006 Intake Safety Gate Fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "gate_id",
+    "enablement",
+    "ingress_bounds",
+    "domain_coverage",
+    "surface_coverage",
+    "raw_escrow_fallback_policy",
+    "schemas",
+    "decision_outcomes",
+    "no_raw_value_guarantees",
+    "synthetic_raw_escrow_preflight_cases",
+    "blocked_until"
+  ],
+  "properties": {
+    "schema_version": {"const": "intake-safety-gate-v0"},
+    "status": {"enum": ["draft_scaffold", "ready_for_review", "accepted"]},
+    "gate_id": {"const": "PR-006"},
+    "enablement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["non_synthetic_submit_enabled", "body_persistence_enabled", "review_escrow_enabled", "synthetic_bypass_requires_fixture_provenance"],
+      "properties": {
+        "non_synthetic_submit_enabled": {"const": false},
+        "body_persistence_enabled": {"const": false},
+        "review_escrow_enabled": {"const": false},
+        "synthetic_bypass_requires_fixture_provenance": {"const": true}
+      }
+    },
+    "ingress_bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_payload_bytes_ref", "accepted_content_types", "compression_policy", "archive_policy", "pre_parser_rejection", "non_oracular_rejection"],
+      "properties": {
+        "max_payload_bytes_ref": {"type": "string", "pattern": "^private-threshold:[A-Za-z0-9_.:-]{3,120}$"},
+        "accepted_content_types": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"enum": ["application/json"]},
+          "uniqueItems": true
+        },
+        "compression_policy": {"enum": ["reject_compressed", "bounded_decompress_then_scan"]},
+        "archive_policy": {"enum": ["reject_archives"]},
+        "pre_parser_rejection": {"const": true},
+        "non_oracular_rejection": {"const": true}
+      }
+    },
+    "domain_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "technical_work",
+        "personal_reasoning",
+        "career_private",
+        "place_service_experience",
+        "public_experience_candidate",
+        "public_aggregate_signal"
+      ],
+      "properties": {
+        "technical_work": {"enum": ["closed_launch_structured_only"]},
+        "personal_reasoning": {"enum": ["typed_only_no_ingest"]},
+        "career_private": {"enum": ["typed_only_no_ingest"]},
+        "place_service_experience": {"enum": ["typed_only_no_ingest"]},
+        "public_experience_candidate": {"enum": ["blocked_no_conversion"]},
+        "public_aggregate_signal": {"enum": ["blocked_no_dashboard"]}
+      }
+    },
+    "surface_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actual_experience_storage",
+        "public_candidate_conversion",
+        "b2b_respondent_portal",
+        "abuse_identity_ban_operations",
+        "raw_detail_escrow",
+        "company_store_dashboard"
+      ],
+      "properties": {
+        "actual_experience_storage": {"const": "blocked_no_storage"},
+        "public_candidate_conversion": {"const": "blocked_no_conversion"},
+        "b2b_respondent_portal": {"const": "blocked_no_surface"},
+        "abuse_identity_ban_operations": {"const": "blocked_no_identity_processing"},
+        "raw_detail_escrow": {"const": "blocked_no_raw_escrow"},
+        "company_store_dashboard": {"const": "blocked_no_dashboard"}
+      }
+    },
+    "raw_escrow_fallback_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["when_review_escrow_disabled", "allowed_decisions"],
+      "properties": {
+        "when_review_escrow_disabled": {"const": "no_raw_storage"},
+        "allowed_decisions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["redact_then_retry", "retry_later"]}
+        }
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["submit_candidate", "scanner_output", "classifier_output", "audit_event", "quarantine_metadata"],
+      "properties": {
+        "submit_candidate": {"type": "string", "pattern": "^schemas/[A-Za-z0-9_.-]+\\.schema\\.json$"},
+        "scanner_output": {"type": ["string", "null"], "pattern": "^schemas/[A-Za-z0-9_.-]+\\.schema\\.json$"},
+        "classifier_output": {"type": ["string", "null"], "pattern": "^schemas/[A-Za-z0-9_.-]+\\.schema\\.json$"},
+        "audit_event": {"type": ["string", "null"], "pattern": "^schemas/[A-Za-z0-9_.-]+\\.schema\\.json$"},
+        "quarantine_metadata": {"type": ["string", "null"], "pattern": "^schemas/[A-Za-z0-9_.-]+\\.schema\\.json$"}
+      }
+    },
+    "decision_outcomes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["decision", "stores_body", "creates_card", "indexes", "client_response_class"],
+        "properties": {
+          "decision": {"enum": ["accepted", "redact_then_retry", "human_review_required", "reject", "retry_later"]},
+          "stores_body": {"type": "boolean"},
+          "creates_card": {"type": "boolean"},
+          "indexes": {"type": "boolean"},
+          "client_response_class": {"enum": ["accepted", "needs_redaction", "deferred_generic", "rejected_generic", "retry_generic"]}
+        }
+      }
+    },
+    "no_raw_value_guarantees": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["audit", "client_response", "admin_search", "model_input", "validator_errors"],
+      "properties": {
+        "audit": {"const": true},
+        "client_response": {"const": true},
+        "admin_search": {"const": true},
+        "model_input": {"const": true},
+        "validator_errors": {"const": true}
+      }
+    },
+    "synthetic_raw_escrow_preflight_cases": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "domain",
+          "decision",
+          "client_response_class",
+          "stores_body",
+          "escrow_handle_created",
+          "model_input_includes_raw",
+          "validator_errors_include_raw",
+          "audit_detail"
+        ],
+        "properties": {
+          "case_id": {"type": "string", "pattern": "^synthetic-raw-escrow:[A-Za-z0-9_.:-]{3,120}$"},
+          "domain": {
+            "type": "string",
+            "enum": [
+              "technical_work",
+              "personal_reasoning",
+              "career_private",
+              "place_service_experience",
+              "public_experience_candidate",
+              "public_aggregate_signal"
+            ]
+          },
+          "decision": {"type": "string", "enum": ["redact_then_retry", "human_review_required", "retry_later"]},
+          "client_response_class": {"type": "string", "enum": ["needs_redaction", "deferred_generic", "retry_generic"]},
+          "stores_body": {"type": "boolean"},
+          "escrow_handle_created": {"type": "boolean"},
+          "model_input_includes_raw": {"type": "boolean"},
+          "validator_errors_include_raw": {"type": "boolean"},
+          "audit_detail": {"type": "string", "pattern": "^synthetic-detail:[A-Za-z0-9_.:-]{3,160}$"}
+        }
+      }
+    },
+    "blocked_until": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "submit_candidate_schema_accepted",
+          "scanner_output_schema_accepted",
+          "classifier_schema_accepted",
+          "audit_event_schema_accepted",
+          "quarantine_schema_accepted",
+          "no_log_ingress_tests_pass",
+          "non_oracular_response_tests_pass",
+          "no_body_storage_negative_tests_pass",
+          "review_escrow_or_ambiguous_retry_policy_accepted",
+          "hmac_fingerprint_key_profile_accepted",
+          "route_level_search_hook_ingress_protection_accepted"
+        ]
+      },
+      "uniqueItems": true
+    }
+  }
+}

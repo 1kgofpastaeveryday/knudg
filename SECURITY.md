@@ -10,10 +10,12 @@ versioned releases are published.
 
 ## Reporting a Vulnerability
 
-Please report vulnerabilities privately to the maintainers. If a private
-security contact is not yet configured for your fork, open a public issue that
-asks for a private contact without including exploit details, secrets, tokens,
-raw logs, personal data, or sensitive reproduction material.
+Please report vulnerabilities through GitHub private vulnerability reporting.
+Do not open public issues, pull requests, or discussions with exploit details,
+secrets, tokens, raw logs, personal data, or sensitive reproduction material.
+
+If private vulnerability reporting is unavailable on a fork, ask the fork owner
+to enable a private reporting channel before sharing details.
 
 ## Sensitive Data Rules
 

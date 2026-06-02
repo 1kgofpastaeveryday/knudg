@@ -120,12 +120,11 @@ def test_builder_rejects_non_technical_retrieval_domains(tmp_path):
 
 
 def test_builder_rejects_raw_private_input_without_echoing_it(tmp_path):
-    code, payload = run_builder(tmp_path, builder_input(explicit_query="inspect C:\\Users\\4\\private\\repo"))
+    code, payload = run_builder(tmp_path, builder_input(explicit_query="inspect Z:/synthetic/repo"))
     assert code == 2
     assert payload["status"] == "rejected"
     serialized = json.dumps(payload)
-    assert "C:\\Users" not in serialized
-    assert "private\\repo" not in serialized
+    assert "Z:/synthetic" not in serialized
 
 
 def test_builder_rejects_unknown_fields_and_wrong_schema_version(tmp_path):

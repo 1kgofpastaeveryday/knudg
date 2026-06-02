@@ -138,6 +138,7 @@
         "anyOf": [
           {"pattern": "https?://"},
           {"pattern": "[A-Za-z]:\\\\"},
+          {"pattern": "[A-Za-z]:/"},
           {"pattern": "(^|\\s)/(Users|home|var|etc|tmp)/"},
           {"pattern": "(?i)(password|secret|token|api[_-]?key|credential|private[_-]?key)"},
           {"pattern": "[\\u0000-\\u001F\\u007F]"}
@@ -159,6 +160,7 @@
         "anyOf": [
           {"pattern": "^/"},
           {"pattern": "^[A-Za-z]:\\\\"},
+          {"pattern": "^[A-Za-z]:/"},
           {"pattern": "\\\\"},
           {"pattern": "(^|/)\\.\\.(/|$)"},
           {"pattern": "(^|/)(Users|home|var|etc|tmp)(/|$)"},
@@ -174,6 +176,7 @@
       "not": {
         "anyOf": [
           {"pattern": "[A-Za-z]:\\\\"},
+          {"pattern": "[A-Za-z]:/"},
           {"pattern": "(?i)(password|secret|token|api[_-]?key|credential)"}
         ]
       }
@@ -187,6 +190,7 @@
         "anyOf": [
           {"pattern": "https?://"},
           {"pattern": "[A-Za-z]:\\\\"},
+          {"pattern": "[A-Za-z]:/"},
           {"pattern": "(?i)(password|secret|token|api[_-]?key|credential)"}
         ]
       }

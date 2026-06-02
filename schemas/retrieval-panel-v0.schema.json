@@ -5,6 +5,29 @@
   "type": "object",
   "required": ["decision", "delivery_mode", "served_from", "latency_budget_ms", "cards"],
   "additionalProperties": false,
+  "$defs": {
+    "safe_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+    },
+    "safe_panel_text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "not": {
+        "anyOf": [
+          {"pattern": "https?://"},
+          {"pattern": "[A-Za-z]:\\\\"},
+          {"pattern": "[A-Za-z]:/"},
+          {"pattern": "(^|\\s)/(Users|home|var|etc|tmp|synthetic)/"},
+          {"pattern": "(?i)(password|secret|token|api[_-]?key|credential|private[_-]?key)"},
+          {"pattern": "[\\u0000-\\u001F\\u007F]"}
+        ]
+      }
+    }
+  },
   "properties": {
     "decision": {
       "type": "string",
@@ -49,9 +72,9 @@
         ],
         "additionalProperties": false,
         "properties": {
-          "card_id": {"type": "string", "minLength": 1},
-          "card_version_id": {"type": "string", "minLength": 1},
-          "namespace_id": {"type": "string", "minLength": 1},
+          "card_id": {"$ref": "#/$defs/safe_id"},
+          "card_version_id": {"$ref": "#/$defs/safe_id"},
+          "namespace_id": {"$ref": "#/$defs/safe_id"},
           "outcome_type": {
             "type": "string",
             "enum": ["solved", "failed_only", "inconclusive", "unknown_clarified"]
@@ -67,7 +90,7 @@
           "withheld": {"type": "boolean"},
           "digest": {
             "type": "string",
-            "minLength": 1
+            "pattern": "^sha256:[0-9A-Za-z_.:-]{3,120}$"
           },
           "local_only_status": {
             "type": "string",
@@ -84,18 +107,17 @@
           "coarse_match_reason": {
             "type": "array",
             "maxItems": 8,
-            "items": {"type": "string", "minLength": 1}
+            "items": {"$ref": "#/$defs/safe_panel_text"}
           },
           "handoff_ref": {
-            "type": "string",
-            "minLength": 1
+            "$ref": "#/$defs/safe_panel_text"
           },
           "provenance": {
             "type": "object",
             "required": ["source", "source_class"],
             "additionalProperties": false,
             "properties": {
-              "source": {"type": "string", "minLength": 1, "maxLength": 240},
+              "source": {"$ref": "#/$defs/safe_panel_text"},
               "source_class": {"type": "string", "const": "local_private_dogfood"}
             }
           }

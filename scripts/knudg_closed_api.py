@@ -161,7 +161,7 @@ def local_private_projection_payload(card, body_digest):
         "sharing_state": "not_shared",
         "publication_state": "never_publishable",
         "outcome_type": "solved",
-        "goal": "closed launch private card",
+        "goal": "local private dogfood card",
         "symptom": "structured local private card captured for local search",
         "environment": {
             "tags": card["environment_tags"],

@@ -77,7 +77,7 @@ def test_rejects_unknown_fields_and_wrong_schema_version():
 
 def test_rejects_raw_or_private_text_in_query():
     for query in [
-        "look at C:\\Users\\4\\private\\repo",
+        "look at Z:/synthetic/repo",
         "debug https://github.com/private/repo",
         "fix token leak in logs",
         "line one\nline two",
@@ -89,8 +89,8 @@ def test_rejects_raw_or_private_text_in_query():
 
 def test_rejects_private_or_absolute_file_refs():
     for file_ref in [
-        "C:\\Users\\4\\repo\\app.py",
-        "/home/user/repo/app.py",
+        "Z:/synthetic/repo/app.py",
+        "/synthetic/repo/app.py",
         "../outside.py",
         "configs/secret.env",
         "docs\\architecture\\retrieval.md",

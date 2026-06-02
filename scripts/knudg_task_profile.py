@@ -16,6 +16,7 @@ SCHEMA_PATH = ROOT / "schemas" / "task-profile-v0.schema.json"
 RAW_PATTERNS = [
     re.compile(r"https?://", re.IGNORECASE),
     re.compile(r"\b[A-Z]:\\", re.IGNORECASE),
+    re.compile(r"\b[A-Z]:/", re.IGNORECASE),
     re.compile(r"(^|\s)/(Users|home|var|etc|tmp)/", re.IGNORECASE),
     re.compile(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b"),
     re.compile(r"\b(?:password|secret|token|api[_-]?key|credential|private[_-]?key)\b", re.IGNORECASE),

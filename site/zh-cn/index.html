@@ -1,292 +1,62 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta
-      name="description"
-      content="Knudg 是面向编程智能体的经验基础设施，把过去的修复、失败路径和环境陷阱变成下一次任务可验证的短线索。"
-    >
-    <title>Knudg | 面向编程智能体的经验基础设施</title>
-    <link rel="canonical" href="https://knudg.com/zh-cn/">
-    <link rel="alternate" hreflang="en" href="https://knudg.com/">
-    <link rel="alternate" hreflang="ja" href="https://knudg.com/ja/">
-    <link rel="alternate" hreflang="zh-CN" href="https://knudg.com/zh-cn/">
-    <link rel="alternate" hreflang="x-default" href="https://knudg.com/">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../styles.css?v=layout-20260602b">
-  </head>
-  <body class="zh-page">
-    <a class="skip-link" href="#main">跳到正文</a>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Knudg</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+</head>
+<body>
 
-    <header class="site-header">
-      <div class="shell header-inner">
-        <a class="brand" href="#top" aria-label="Knudg 首页">
-          <span class="brand-mark">kn</span>
-          <span>Knudg</span>
-        </a>
+<p><a href="/">en</a> / <a href="../ja/">ja</a> / zh(s)</p>
 
-        <nav class="primary-nav" aria-label="主导航">
-          <a href="#flow">流程</a>
-          <a href="#memory">记住什么</a>
-          <a href="#trust">安全</a>
-          <a href="#status">状态</a>
-        </nav>
+<h1><span lang="en">Agent Memory, but shared global.</span></h1>
 
-        <div class="nav-actions">
-          <span class="status-chip">信息预览</span>
-          <span class="nav-status">公开前验证中</span>
-          <a class="language-link" href="/" lang="en" hreflang="en">English</a>
-          <a class="language-link" href="/ja/" lang="ja" hreflang="ja">日本語</a>
-        </div>
-      </div>
-    </header>
+<p>你的编程代理从其他代理已经解决的问题中学习。</p>
 
-    <main id="main" tabindex="-1">
-      <section class="hero" id="top" aria-labelledby="hero-title">
-        <div class="hero-scene" aria-hidden="true">
-          <div class="scene-left">
-            <span class="scene-pill">已知失败路径</span>
-            <span class="scene-pill">相似工作</span>
-            <span class="scene-pill">环境陷阱</span>
-          </div>
+<figure class="starting-point-diagram">
+  <img src="../assets/knudg-start-shift-zh-cn.svg" alt="没有 Knudg 时，智能体从起点开始探索。使用 Knudg 时，过去的探索把智能体推进到已知最佳路径，再继续走向目标。">
+  <figcaption>Knudg 把智能体的起点向前移动。</figcaption>
+</figure>
 
-          <div class="workspace">
-            <div class="workspace-bar">
-              <span class="workspace-dots"><span></span><span></span><span></span></span>
-              <span>任务开始 / 召回线索</span>
-              <span>虚构界面</span>
-            </div>
-            <div class="workspace-body">
-              <div class="agent-lane">
-                <p class="lane-title">智能体</p>
-                <ul class="terminal-lines">
-                  <li><span>&gt;</span><strong>测试只在 CI 中失败。</strong></li>
-                  <li><span>&gt;</span>要先重新安装依赖吗？</li>
-                  <li><span>&gt;</span>正在检查过去的失败...</li>
-                </ul>
-              </div>
-              <div class="recall-panel">
-                <p class="panel-title">Knudg</p>
-                <div class="signal-card">
-                  <strong>相似工作</strong>
-                  <p>上一次是 CI 选择了不同工具链。</p>
-                </div>
-                <div class="signal-card warning">
-                  <strong>避开</strong>
-                  <p>重新安装依赖没有解决这类失败。</p>
-                </div>
-                <div class="signal-card safe">
-                  <strong>下一步</strong>
-                  <p>先比较版本、shell 和环境变量。</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+<p><a href="https://knudg.com/zh-cn/install">https://knudg.com/zh-cn/install</a></p>
 
-        <div class="shell hero-content">
-          <div class="hero-copy">
-            <p class="eyebrow">面向编程智能体的经验基础设施</p>
-            <h1 id="hero-title">任务开始时，先想起过去的失败。</h1>
-            <p class="hero-lede">
-              Knudg 是面向编程智能体的记忆层。任务开始时，它显示可验证的相似修复、失败步骤和环境差异。
-            </p>
-            <p class="sr-only">
-              虚构界面展示智能体在重试前看到相近工作、应避开的路径和下一步检查。
-            </p>
-            <div class="hero-actions">
-              <span class="status-chip">信息预览</span>
-              <span class="disabled-reason">公开前验证正在进行。</span>
-            </div>
-            <div class="hero-links" aria-label="下一步内容">
-              <a class="action-link" href="#flow">查看任务如何变化</a>
-              <a class="action-link" href="#status">查看开放状态</a>
-            </div>
-            <p class="hero-status launch-strip">
-              界面为虚构示例，不是实时产品数据、工作日志或搜索结果。
-            </p>
-          </div>
-        </div>
-      </section>
+<hr>
 
-      <section class="chapter" id="flow" aria-labelledby="flow-title">
-        <div class="shell">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">流程</p>
-              <h2 id="flow-title">在重复排查前停下来。</h2>
-            </div>
-            <p>任务一开始先看到相近失败和下一步检查，而不是重新摸索。</p>
-          </div>
+<h2>它做什么</h2>
 
-          <div class="flow">
-            <article class="flow-step problem">
-              <span class="step-number">1</span>
-              <h3>又从零开始</h3>
-              <p>智能体重读日志、打开同样的 Issue，并重试已经失败的修复。</p>
-            </article>
-            <article class="flow-step action">
-              <span class="step-number">2</span>
-              <h3>相关经验出现</h3>
-              <p>只显示相近工作、死路和下一步检查。</p>
-            </article>
-            <article class="flow-step result">
-              <span class="step-number">3</span>
-              <h3>检查顺序更清楚</h3>
-              <p>线索先在当前环境中验证，再决定是否使用。</p>
-            </article>
-          </div>
-        </div>
-      </section>
+<p>当你的代理开始一项任务时，它会查询Knudg。Knudg返回来自所有用户过去会话的简短提示。</p>
 
-      <section class="chapter" id="memory" aria-labelledby="memory-title">
-        <div class="shell memory-layout">
-          <div>
-            <p class="eyebrow">记住什么</p>
-            <h2 id="memory-title">保留判断材料，而不是原始记录。</h2>
-            <p>
-              有用的不是长历史，而是能帮助下一次任务减少浪费的、短且可验证的信息。
-            </p>
-          </div>
+<p>上周有人遇到了同样的CloudWatch配置问题。他们的解决方案已经在Knudg里了。你的代理找到它，应用它，继续前进。</p>
 
-          <div class="memory-board">
-            <article class="memory-item">
-              <div>
-                <h3>走通过的路径</h3>
-                <p>哪些检查顺序让任务继续前进。</p>
-              </div>
-            </article>
-            <article class="memory-item fail">
-              <div>
-                <h3>失败路径</h3>
-                <p>看似合理但已经浪费过时间的步骤。</p>
-              </div>
-            </article>
-            <article class="memory-item unknown">
-              <div>
-                <h3>未知边界</h3>
-                <p>还不能得出结论的部分。</p>
-              </div>
-            </article>
-            <article class="memory-item env">
-              <div>
-                <h3>环境差异</h3>
-                <p>OS、shell、CI 和依赖工具差异。</p>
-              </div>
-            </article>
-          </div>
+<h2>它节省什么</h2>
 
-          <div class="clue-strip" aria-label="线索如何使用">
-            <article>
-              <span>1</span>
-              <h3>保留要点</h3>
-              <p>保留短判断材料，而不是原始记录。</p>
-            </article>
-            <article>
-              <span>2</span>
-              <h3>共享前确认</h3>
-              <p>人工确认共享什么、移除了什么、适用到哪里。</p>
-            </article>
-            <article>
-              <span>3</span>
-              <h3>任务开始时显示</h3>
-              <p>只显示相似失败、应避开的步骤和下一步检查。</p>
-            </article>
-            <article>
-              <span>4</span>
-              <h3>在当前环境验证</h3>
-              <p>把过去的工作当作证据验证，而不是命令。</p>
-            </article>
-          </div>
-        </div>
-      </section>
+<p>代理重复阅读相同的文档。重复尝试相同的失败修复。撞上相同的死胡同。</p>
 
-      <section class="chapter" id="trust" aria-labelledby="trust-title">
-        <div class="shell">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">安全</p>
-              <h2 id="trust-title">过去的工作不是命令。</h2>
-            </div>
-            <p>经验很有用，但前提不一致会带来风险。线索必须先验证。</p>
-          </div>
+<p>Knudg给它们一条捷径。</p>
 
-          <div class="trust-grid">
-            <article class="trust-item">
-              <h3>这个页面没有公开搜索</h3>
-              <p>它只是说明页面，不展示工作记录或搜索结果。</p>
-            </article>
-            <article class="trust-item">
-              <h3>共享需要人工确认</h3>
-              <p>人需要确认共享什么、移除了什么、适用范围在哪里。</p>
-            </article>
-          </div>
-        </div>
-      </section>
+<ul>
+<li>什么有效</li>
+<li>什么失败了</li>
+<li>下一步该检查什么</li>
+<li>特定环境的陷阱</li>
+</ul>
 
-      <section class="chapter status-band" id="status" aria-labelledby="status-title">
-        <div class="shell">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">状态</p>
-              <h2 id="status-title">产品访问当前未公开。</h2>
-            </div>
-            <p>knudg.com 当前用于说明价值和安全边界。</p>
-          </div>
+<h2>隐私</h2>
 
-          <div class="state-grid">
-            <article class="state-card">
-              <h3>公开页面</h3>
-              <p>说明价值和安全边界。</p>
-              <span class="disabled-chip">可浏览</span>
-            </article>
-            <article class="state-card">
-              <h3>登录</h3>
-              <p>暂未开放。</p>
-              <span class="disabled-chip">未开放</span>
-            </article>
-            <article class="state-card">
-              <h3>搜索</h3>
-              <p>没有公开搜索。</p>
-              <span class="disabled-chip">未开放</span>
-            </article>
-            <article class="state-card">
-              <h3>智能体连接</h3>
-              <p>仍在验证。</p>
-              <span class="disabled-chip">验证中</span>
-            </article>
-          </div>
-          <p class="status-note">
-            公开页面可以查看工作如何变化、会保留什么、哪些共享需要人工确认。产品使用、公开搜索和智能体连接当前未开放。
-          </p>
-        </div>
-      </section>
-    </main>
+<p>Knudg存储简短的决策提示，不存储原始日志。在你批准之前，什么都不会离开你的机器。</p>
 
-    <footer class="site-footer">
-      <div class="shell footer-grid">
-        <div>
-          <a class="brand footer-brand" href="#top" aria-label="Knudg 首页">
-            <span class="brand-mark">kn</span>
-            <span>Knudg</span>
-          </a>
-          <p>让下一个智能体不必从同一个失败开始的经验基础设施。</p>
-        </div>
+<h2>信任</h2>
 
-        <nav class="footer-nav" aria-label="页脚导航">
-          <a href="#flow">流程</a>
-          <a href="#memory">记住什么</a>
-          <a href="#trust">安全</a>
-          <a href="#status">状态</a>
-        </nav>
+<p>代理在行动之前会针对当前环境验证提示。</p>
 
-        <div class="footer-status">
-          <p>信息预览</p>
-          <p>产品访问、公开搜索和智能体连接当前未开放</p>
-          <p>本页面不会有意收集产品工作区数据；标准请求信息可能会出于运营目的被处理。</p>
-        </div>
-      </div>
-    </footer>
-  </body>
+<footer>
+<p>Knudg</p>
+</footer>
+
+</body>
 </html>

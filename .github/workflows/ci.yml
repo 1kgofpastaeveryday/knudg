@@ -41,9 +41,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
-      - run: python scripts/validate_public_release.py
-      - run: python scripts/migrate.py up
-      - run: python -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py tests/test_task_profile_schema.py tests/test_knudg_task_profile_builder.py tests/test_retrieval_panel_schema.py tests/test_knudg_client_config.py
+      - run: npm run setup:python
+      - run: npm run py -- scripts/validate_public_release.py
+      - run: npm run py -- scripts/migrate.py up
+      - run: npm run py -- -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py tests/test_task_profile_schema.py tests/test_knudg_task_profile_builder.py tests/test_retrieval_panel_schema.py tests/test_knudg_client_config.py
       - run: npm run gates:all
       - run: npm run check:lp

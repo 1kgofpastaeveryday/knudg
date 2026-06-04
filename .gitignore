@@ -7,6 +7,7 @@ Desktop.ini
 .env
 .env.*
 !.env.example
+.venv/
 
 # Logs and temporary files
 *.log

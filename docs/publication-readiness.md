@@ -35,7 +35,7 @@ Use these checks before publishing:
 
 ```powershell
 git status --short --ignored
-python -m pytest tests/test_knudg_plugin_manifest.py tests/test_knudg_client_config.py tests/test_knudg_local_frontend.py tests/test_task_profile_schema.py
+npm run py -- -m pytest tests/test_knudg_plugin_manifest.py tests/test_knudg_client_config.py tests/test_knudg_local_frontend.py tests/test_task_profile_schema.py
 npm run check:lp
 ```
 

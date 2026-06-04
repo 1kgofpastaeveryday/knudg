@@ -45,7 +45,7 @@ has migration privileges, then run the API with the least-privilege runtime
 role.
 
 ```powershell
-python scripts/migrate.py up
+npm run py -- scripts/migrate.py up
 ```
 
 ## API
@@ -53,7 +53,7 @@ python scripts/migrate.py up
 Run:
 
 ```powershell
-python scripts/knudg_closed_api.py --host 0.0.0.0 --port 8000
+npm run py -- scripts/knudg_closed_api.py --host 0.0.0.0 --port 8000
 ```
 
 Expose only the routes required for your deployment. For a private deployment,
@@ -67,7 +67,7 @@ After deployment:
 ```powershell
 npm run knudgctl -- server status
 npm run knudgctl -- server capabilities
-python -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py
+npm run py -- -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py
 ```
 
 Expected private deployment properties:

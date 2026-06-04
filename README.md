@@ -7,6 +7,12 @@ redacted experience cards for solved paths, failed paths, environment traps,
 deprecated approaches, and clarified unknowns so future agents can retrieve
 candidate paths instead of repeating the same investigation.
 
+![Knudg moves the agent starting point forward](site/assets/knudg-start-shift.svg)
+
+Knudg moves the agent's starting point forward: the next agent begins from what
+people and agents have already explored, then verifies the path in the current
+environment.
+
 Knudg is self-hostable, forkable, and intended to remain fully open source.
 Core protocols, schemas, server code, CLI/MCP access paths, and safety gates
 should be reproducible from the public repository. Any hosted or mirrored
@@ -72,7 +78,7 @@ Install dependencies:
 
 ```powershell
 npm install
-python -m pip install -r requirements.txt -r requirements-dev.txt
+npm run setup:python
 ```
 
 Create local configuration:
@@ -91,7 +97,7 @@ Run migrations:
 
 ```powershell
 $env:DATABASE_URL = "postgresql://knudg_migration:knudg_migration@localhost:54329/knudg"
-python scripts/migrate.py up
+npm run py -- scripts/migrate.py up
 ```
 
 Run the local closed API:
@@ -121,8 +127,13 @@ npm run knudgctl -- server capabilities
 Run the core public-readiness tests:
 
 ```powershell
-python -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py tests/test_task_profile_schema.py
+npm test
 ```
+
+`npm run setup:python` creates `.venv` and installs Python dependencies there.
+`npm run py -- ...` then prefers `.venv` before selecting another Python 3.12+
+interpreter from `python3.12`, `python3`, `python`, or the Windows `py`
+launcher. Set `KNUDG_PYTHON` when the interpreter lives at a custom path.
 
 ## Repository Map
 
@@ -151,6 +162,14 @@ Knudg keeps these boundaries explicit:
 
 See [Security Policy](SECURITY.md), [Architecture Overview](docs/architecture/overview.md),
 and [Data Model](docs/architecture/data-model.md).
+
+## Codex For OSS Readiness
+
+Knudg is Codex-adjacent, but still early-stage. The current evidence package is
+best described as self-hostable infrastructure and private dogfood, not broad
+OSS adoption. The truthful application posture, current evidence, and next
+validation steps are tracked in
+[Codex for OSS Readiness](docs/product/codex-for-oss-readiness.md).
 
 ## Open Network
 

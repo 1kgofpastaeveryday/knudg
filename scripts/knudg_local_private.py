@@ -14,6 +14,11 @@ if str(ROOT) not in sys.path:
 
 from scripts.card_payload import canonical_digest, canonicalize, load_json_without_duplicate_keys
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 
 SCHEMA_VERSION = "local-private-card-v0"
 SOURCE_CLASS = "local_private_dogfood"
@@ -21,6 +26,7 @@ SOURCE_CLASS = "local_private_dogfood"
 ALLOWED_FIELDS = {
     "source_class",
     "title",
+    "human_summary",
     "problem_summary",
     "solution_summary",
     "public_packages",
@@ -36,6 +42,10 @@ TEXT_BOUNDS = {
     "title": (8, 120),
     "problem_summary": (20, 600),
     "solution_summary": (20, 900),
+}
+HUMAN_SUMMARY_BOUNDS = {
+    "content": (20, 240),
+    "redaction_summary": (20, 240),
 }
 LIST_BOUNDS = {
     "public_packages": (8, 1, 80),
@@ -239,6 +249,22 @@ def _normalize_string_list(field, values):
     return normalized
 
 
+def _normalize_human_summary(value):
+    if not isinstance(value, dict):
+        _reject("human_summary_bounds")
+    extra = set(value) - set(HUMAN_SUMMARY_BOUNDS)
+    missing = set(HUMAN_SUMMARY_BOUNDS) - set(value)
+    if extra or missing:
+        _reject("human_summary_fields")
+    sanitized = {}
+    for field, (min_length, max_length) in HUMAN_SUMMARY_BOUNDS.items():
+        text = _normalize_text(value[field], f"human_summary_{field}_bounds")
+        _check_length(f"human_summary_{field}", text, min_length, max_length)
+        _scan_sanitized_string(text)
+        sanitized[field] = text
+    return sanitized
+
+
 def validate_local_private_card_v0(payload):
     if not isinstance(payload, dict):
         _reject("invalid_payload")
@@ -251,6 +277,8 @@ def validate_local_private_card_v0(payload):
 
     sanitized = {"source_class": SOURCE_CLASS}
     collected = [SOURCE_CLASS]
+    sanitized["human_summary"] = _normalize_human_summary(payload["human_summary"])
+    collected.extend(sanitized["human_summary"].values())
     for field, (min_length, max_length) in TEXT_BOUNDS.items():
         value = _normalize_text(payload[field], f"{field}_bounds")
         _check_length(field, value, min_length, max_length)
@@ -283,6 +311,7 @@ def validate_local_private_card_v0(payload):
     return {
         "source_class": sanitized["source_class"],
         "title": sanitized["title"],
+        "human_summary": sanitized["human_summary"],
         "problem_summary": sanitized["problem_summary"],
         "solution_summary": sanitized["solution_summary"],
         "public_packages": sanitized["public_packages"],

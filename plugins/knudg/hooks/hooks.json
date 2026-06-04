@@ -1,0 +1,17 @@
+{
+  "description": "Knudg turn startup hook. This decides whether a turn should use Knudg and attempts a sanitized live nudge when safe.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"plugins/knudg/hooks/knudg_startup_gate.py\"",
+            "timeout": 8,
+            "statusMessage": "Checking Knudg context"
+          }
+        ]
+      }
+    ]
+  }
+}

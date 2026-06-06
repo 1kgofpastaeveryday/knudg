@@ -1115,6 +1115,7 @@ def test_closed_api_structured_access_log_tracks_source_and_activity_without_tok
         with urllib.request.urlopen(request, timeout=5) as response:
             assert response.status == 200
             assert response.headers["x-knudg-request-id"]
+            response.read()
     finally:
         stop_process(process)
 

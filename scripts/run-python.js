@@ -2,9 +2,12 @@
 "use strict";
 
 const { spawnSync } = require("node:child_process");
+const path = require("node:path");
 
 const MIN_MAJOR = 3;
 const MIN_MINOR = 12;
+const REPO_ROOT = path.resolve(__dirname, "..");
+const DEFAULT_PYTEST_BASETEMP = path.join(REPO_ROOT, ".pytest-tmp");
 
 const requested = process.env.KNUDG_PYTHON;
 const candidates = requested
@@ -39,6 +42,18 @@ function supportsVersion(version) {
     return true;
   }
   return version.major === MIN_MAJOR && version.minor >= MIN_MINOR;
+}
+
+function isPytestInvocation(args) {
+  return args.some((arg, index) => arg === "pytest" && (index === 0 || args[index - 1] === "-m"));
+}
+
+function hasPytestBasetempArg(args) {
+  return args.some((arg) => arg === "--basetemp" || arg.startsWith("--basetemp="));
+}
+
+function hasPytestBasetempAddopts(addopts) {
+  return typeof addopts === "string" && /(?:^|\s)--basetemp(?:=|\s|$)/.test(addopts);
 }
 
 const attempts = [];
@@ -78,7 +93,14 @@ if (!selected) {
 }
 
 const args = process.argv.slice(2);
-const finalArgs = args.length > 0 ? args : ["--version"];
+const finalArgs = args.length > 0 ? [...args] : ["--version"];
+if (
+  isPytestInvocation(finalArgs) &&
+  !hasPytestBasetempArg(finalArgs) &&
+  !hasPytestBasetempAddopts(process.env.PYTEST_ADDOPTS)
+) {
+  finalArgs.push("--basetemp", DEFAULT_PYTEST_BASETEMP);
+}
 const child = spawnSync(selected.command, [...selected.prefix, ...finalArgs], {
   stdio: "inherit",
 });

@@ -42,6 +42,7 @@ trace.zip
 # Dependency and tool caches
 node_modules/
 .pytest_cache/
+.pytest-tmp/
 .wrangler/
 __pycache__/
 *.py[cod]

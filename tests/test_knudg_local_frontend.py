@@ -9,12 +9,15 @@ from pathlib import Path
 from urllib import request
 from urllib.error import HTTPError
 
+from scripts.knudg_local_frontend import BUNDLED_FRONTEND_TOKEN
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class UpstreamHandler(BaseHTTPRequestHandler):
     token_seen = False
+    expected_token = "test-token"
     approved_digest_seen = None
     publish_requests = 0
     force_store_on_stage = False
@@ -41,7 +44,7 @@ class UpstreamHandler(BaseHTTPRequestHandler):
         self._write_json({"status": "not_found"}, status=404)
 
     def do_POST(self):
-        UpstreamHandler.token_seen = self.headers.get("authorization") == "Bearer test-token"
+        UpstreamHandler.token_seen = self.headers.get("authorization") == f"Bearer {UpstreamHandler.expected_token}"
         payload = self._read_json()
         if self.path == "/v1/private/cards:publish":
             UpstreamHandler.publish_requests += 1
@@ -113,6 +116,7 @@ class UpstreamHandler(BaseHTTPRequestHandler):
 
 def serve_upstream():
     UpstreamHandler.token_seen = False
+    UpstreamHandler.expected_token = "test-token"
     UpstreamHandler.approved_digest_seen = None
     UpstreamHandler.publish_requests = 0
     UpstreamHandler.force_store_on_stage = False
@@ -241,6 +245,39 @@ def test_local_frontend_stages_write_search_and_view_without_browser_token():
         assert code == 200
         assert completed["status"] == "private_retention_consent_completed"
         assert completed["public_publication_enabled"] is False
+    finally:
+        stop_process(process)
+        upstream.shutdown()
+
+
+def test_local_frontend_uses_bundled_distribution_token_when_env_token_absent():
+    upstream = serve_upstream()
+    UpstreamHandler.expected_token = BUNDLED_FRONTEND_TOKEN
+    env = {**os.environ}
+    env.pop("KNUDG_OPERATOR_TOKEN", None)
+    env.pop("KNUDG_FRONTEND_TOKEN", None)
+    env["KNUDG_FRONTEND_API_BASE_URL"] = f"http://127.0.0.1:{upstream.server_port}"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_local_frontend.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        startup = read_startup_line(process)
+        code, searched = post_json(f"{startup['url']}/api/search", {"workspace": "closed-beta-test", "task_profile": {}})
+
+        assert code == 200
+        assert searched["status"] == "ok"
+        assert UpstreamHandler.token_seen is True
     finally:
         stop_process(process)
         upstream.shutdown()

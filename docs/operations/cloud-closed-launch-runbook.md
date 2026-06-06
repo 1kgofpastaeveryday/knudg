@@ -6,6 +6,12 @@ operator emails, IP addresses, tokens, and connection strings.
 
 For local development, prefer `docker-compose.yml` and `.env.example`.
 
+Deployment-local SSH aliases, hostnames, service paths, backup paths, and
+restart commands must stay in ignored operator notes or the deployment
+provider's private runbook. Do not commit them to this public repository. In
+this workspace, the private closed-backend deploy/restart note is kept under
+`.codex/knudg/` and is intentionally ignored by git.
+
 Hosted Greencloud or other managed-cloud deployments must be configured
 explicitly through deployment-local settings. Do not rely on committed hosted
 endpoint defaults. For operator publish tooling, set `KNUDG_API_URL` to the
@@ -59,6 +65,18 @@ npm run py -- scripts/knudg_closed_api.py --host 0.0.0.0 --port 8000
 Expose only the routes required for your deployment. For a private deployment,
 place the API behind authentication, firewall rules, or a private network
 boundary.
+
+For a direct SSH/systemd deployment, the deployment-local runbook should cover:
+
+- non-interactive SSH connectivity check
+- service status check before mutation
+- backup of every changed runtime file
+- copy to a remote staging directory before install
+- compile check with the deployment virtual environment before restart
+- `systemctl reset-failed` only after a known failed restart loop
+- service restart and `active/running` verification
+- post-restart health checks and feature-specific smoke checks
+- rollback from timestamped backups
 
 ## Validation
 

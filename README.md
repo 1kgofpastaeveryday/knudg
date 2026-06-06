@@ -108,14 +108,53 @@ $env:DATABASE_URL = "postgresql://knudg_migration:knudg_migration@localhost:5432
 npm run dev:closed-api
 ```
 
+Run the local operator frontend:
+
+```powershell
+npm run dev:frontend
+```
+
+Build the distributable frontend package:
+
+```powershell
+npm run package:frontend
+```
+
+The package is written to `dist/knudg-frontend-<version>.tgz`. It includes a
+public bundled frontend token for generic distribution. A backend accepts that
+token only when its operator explicitly sets
+`KNUDG_DISTRIBUTION_TOKEN=knudg-frontend-public-beta-v0`; real operator tokens
+should remain in local environment or secret storage only.
+
 The optional backend final filter can use NVIDIA NIM GLM-5.1 as a fail-closed
 LLM judge:
 
 ```powershell
 $env:NVIDIA_API_KEY = "<local key>"
 $env:KNUDG_FINAL_FILTER_NVIDIA_MODEL = "z-ai/glm-5.1"
-$env:KNUDG_FINAL_FILTER_TIMEOUT_SECONDS = "180"
+$env:KNUDG_FINAL_FILTER_TIMEOUT_SECONDS = "600"
+$env:KNUDG_FINAL_FILTER_QUEUE_ENABLED = "true"
+$env:KNUDG_FINAL_FILTER_QUEUE_WORKERS_ENABLED = "true"
+$env:KNUDG_FINAL_FILTER_NVIDIA_RPM = "40"
 ```
+
+When the final-filter queue is enabled and an NVIDIA key is configured,
+publication candidates are queued immediately. Background workers send queued
+GLM-5.1 checks in parallel while the process-level start-rate limiter caps
+NVIDIA requests at 40 per minute. With the default 600-second timeout and
+40-RPM cap, the server derives a 400-worker queue width unless
+`KNUDG_FINAL_FILTER_QUEUE_WORKER_CONCURRENCY` is set explicitly.
+Use `npm run knudgctl -- live final-filter stats` to inspect aggregate queue
+counts, age buckets, and worker configuration without returning candidate or
+result bodies.
+
+Private card publish also performs a same-logical-card merge check. If similar
+local-private cards are found, the API returns `merge_required` after exact
+artifact approval unless the request explicitly sets
+`merge.target_card_id` to update the existing card, or
+`merge.decision=create_new` to create a separate card. Merge updates append a
+new immutable card version and move the card's current-version pointer; they do
+not overwrite previous versions.
 
 Check the CLI:
 

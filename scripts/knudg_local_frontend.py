@@ -20,6 +20,7 @@ MAX_JSON_BYTES = 64 * 1024
 ALLOWED_API_HOSTS = {"api.knudg.com", "localhost", "127.0.0.1", "::1"}
 TAILSCALE_IPV4_NETWORK = ipaddress.ip_network("100.64.0.0/10")
 TAILSCALE_IPV6_NETWORK = ipaddress.ip_network("fd7a:115c:a1e0::/48")
+BUNDLED_FRONTEND_TOKEN = "knudg-frontend-public-beta-v0"
 
 
 def json_bytes(payload):
@@ -105,9 +106,7 @@ def normalize_api_base_url(value):
 
 
 def read_token():
-    token = os.environ.get("KNUDG_OPERATOR_TOKEN") or ""
-    if not token:
-        raise RuntimeError("KNUDG_OPERATOR_TOKEN is required")
+    token = os.environ.get("KNUDG_OPERATOR_TOKEN") or os.environ.get("KNUDG_FRONTEND_TOKEN") or BUNDLED_FRONTEND_TOKEN
     return token
 
 

@@ -2168,8 +2168,8 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
         self.send_header("x-knudg-request-id", getattr(self, "request_id", ""))
         self.write_cors_headers()
         self.end_headers()
-        self.wfile.write(body)
         self.write_access_log(status)
+        self.wfile.write(body)
 
     def write_cors_headers(self):
         origin = (self.headers.get("origin") or "").strip()

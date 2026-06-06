@@ -1938,6 +1938,7 @@ def final_filter_queue_scheduler(server):
             _FINAL_FILTER_QUEUE_SEMAPHORE.release()
             if not getattr(server, "quiet", False):
                 sys.stderr.write(json.dumps({"event": "final_filter_queue_error", "error_class": exc.__class__.__name__}, sort_keys=True) + "\n")
+                sys.stderr.flush()
             time.sleep(final_filter_queue_poll_seconds())
             continue
         if not row:
@@ -2156,6 +2157,7 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
             **client_ip_metadata(self),
         }
         sys.stderr.write(json.dumps(event, sort_keys=True) + "\n")
+        sys.stderr.flush()
 
     def write_json(self, payload, status=200):
         body = json_bytes(payload)

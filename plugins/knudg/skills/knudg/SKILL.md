@@ -58,6 +58,11 @@ The sub-agent should:
    return raw card bodies, transcripts, secrets, absolute paths, source file
    excerpts, hostnames, usernames, or executable command text.
 
+After the main agent records the terminal Knudg verdict, close the short-lived
+Knudg sub-agent thread so it does not consume the thread limit. Do not close it
+while it is still running or pending, and do not automatically close unrelated
+implementation, review, or exploration agents.
+
 If sub-agents are unavailable, the main agent may run the same live nudge
 commands directly before broad repo exploration. If those commands fail, report
 that Knudg could not provide a starting clue and continue with ordinary local

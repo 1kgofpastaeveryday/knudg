@@ -1,0 +1,67 @@
+name: Bug report
+description: Report a reproducible Knudg bug without private data.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include secrets, tokens, raw transcripts, private paths, hostnames, usernames, or private deployment details. Use synthetic examples and redacted summaries.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - closed API
+        - CLI / knudgctl
+        - local operator UI
+        - schemas / validators
+        - Codex plugin / skill
+        - landing page / docs
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: What happened?
+      description: Describe the behavior using synthetic identifiers and redacted output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Keep commands and payloads synthetic. Do not paste raw logs.
+      placeholder: |
+        1. Configure local `.env` from `.env.example`
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "main, tag, or commit SHA"
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Use coarse details only, such as OS family, Python version, Node version, and Postgres version.
+      placeholder: "Windows, Python 3.12, Node 20, Postgres 16"
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public issue safety
+      options:
+        - label: I removed secrets, tokens, raw transcripts, personal data, private hostnames, usernames, and absolute local paths.
+          required: true
+        - label: This is not a vulnerability report or accidental private-data exposure report.
+          required: true

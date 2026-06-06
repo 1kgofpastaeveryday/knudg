@@ -27,6 +27,19 @@ def json_bytes(payload):
     return json.dumps(payload, sort_keys=True).encode("utf-8")
 
 
+def env_flag(name):
+    return (os.environ.get(name) or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def parse_allowed_users(values):
+    users = []
+    for value in values:
+        if not value:
+            continue
+        users.extend(part.strip().lower() for part in value.split(",") if part.strip())
+    return frozenset(users)
+
+
 def consent_review_surface():
     gate = json.loads(CONSENT_GATE_FIXTURE.read_text(encoding="utf-8"))
     enabled_flags = sorted(name for name, value in gate["enablement"].items() if value)
@@ -142,6 +155,25 @@ class LocalFrontendHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def tailscale_gate_rejection(self):
+        if not self.server.require_tailscale:
+            return None
+        login = (self.headers.get("Tailscale-User-Login") or "").strip().lower()
+        app_caps = (self.headers.get("Tailscale-App-Capabilities") or "").strip()
+        if not login and not app_caps:
+            return {
+                "status": "forbidden",
+                "reject_class": "tailscale_required",
+                "detail": "Knudg Operator requires Tailscale Serve identity headers.",
+            }
+        if self.server.tailscale_allowed_users and login not in self.server.tailscale_allowed_users:
+            return {
+                "status": "forbidden",
+                "reject_class": "tailscale_user_not_allowed",
+                "detail": "Tailscale user is not allowed for this operator frontend.",
+            }
+        return None
+
     def write_file(self, path, content_type):
         body = path.read_bytes()
         self.send_response(200)
@@ -178,6 +210,10 @@ class LocalFrontendHandler(BaseHTTPRequestHandler):
                 return exc.code, {"status": "upstream_error"}
 
     def do_GET(self):
+        rejection = self.tailscale_gate_rejection()
+        if rejection is not None:
+            self.write_json(rejection, status=403)
+            return
         if self.path == "/":
             self.write_file(UI_ROOT / "index.html", "text/html; charset=utf-8")
             return
@@ -209,6 +245,10 @@ class LocalFrontendHandler(BaseHTTPRequestHandler):
         self.write_json({"status": "not_found"}, status=404)
 
     def do_POST(self):
+        rejection = self.tailscale_gate_rejection()
+        if rejection is not None:
+            self.write_json(rejection, status=403)
+            return
         try:
             payload = read_json_request(self)
         except (ValueError, json.JSONDecodeError):
@@ -284,10 +324,22 @@ class LocalFrontendServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, server_address, request_handler_class, *, api_base_url, operator_token, quiet):
+    def __init__(
+        self,
+        server_address,
+        request_handler_class,
+        *,
+        api_base_url,
+        operator_token,
+        quiet,
+        require_tailscale,
+        tailscale_allowed_users,
+    ):
         self.api_base_url = api_base_url
         self.operator_token = operator_token
         self.quiet = quiet
+        self.require_tailscale = require_tailscale
+        self.tailscale_allowed_users = tailscale_allowed_users
         super().__init__(server_address, request_handler_class)
 
 
@@ -296,6 +348,13 @@ def build_parser():
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8790)
     parser.add_argument("--api-base-url", default=os.environ.get("KNUDG_FRONTEND_API_BASE_URL", DEFAULT_API_BASE_URL))
+    parser.add_argument("--require-tailscale", action="store_true", default=env_flag("KNUDG_OPERATOR_REQUIRE_TAILSCALE"))
+    parser.add_argument(
+        "--tailscale-allowed-user",
+        action="append",
+        default=[],
+        help="Tailscale user login allowed to access the operator UI. May be repeated.",
+    )
     parser.add_argument("--quiet", action="store_true")
     return parser
 
@@ -305,12 +364,17 @@ def main(argv=None):
     args = parser.parse_args(argv)
     api_base_url = normalize_api_base_url(args.api_base_url)
     token = read_token()
+    tailscale_allowed_users = parse_allowed_users(
+        [os.environ.get("KNUDG_OPERATOR_TAILSCALE_ALLOWED_USERS") or "", *args.tailscale_allowed_user]
+    )
     server = LocalFrontendServer(
         (args.host, args.port),
         LocalFrontendHandler,
         api_base_url=api_base_url,
         operator_token=token,
         quiet=args.quiet,
+        require_tailscale=args.require_tailscale,
+        tailscale_allowed_users=tailscale_allowed_users,
     )
     print(
         json.dumps(
@@ -318,6 +382,8 @@ def main(argv=None):
                 "status": "listening",
                 "url": f"http://{args.host}:{server.server_port}",
                 "backend_url": api_base_url,
+                "tailscale_required": args.require_tailscale,
+                "tailscale_allowed_user_count": len(tailscale_allowed_users),
             },
             sort_keys=True,
         ),

@@ -114,6 +114,20 @@ Run the local operator frontend:
 npm run dev:frontend
 ```
 
+Run the local operator frontend behind Tailscale Serve only:
+
+```powershell
+$env:KNUDG_OPERATOR_REQUIRE_TAILSCALE = "1"
+$env:KNUDG_OPERATOR_TAILSCALE_ALLOWED_USERS = "operator@example.com"
+npm run dev:frontend -- --require-tailscale
+tailscale serve --bg --yes --http=8790 8790
+```
+
+Keep the frontend bound to `127.0.0.1` and use Tailscale Serve, not Funnel, for
+tailnet-only access. `--require-tailscale` rejects requests without Tailscale
+Serve identity headers; `KNUDG_OPERATOR_TAILSCALE_ALLOWED_USERS` optionally
+limits access to comma-separated Tailscale user logins.
+
 Build the distributable frontend package:
 
 ```powershell
@@ -168,6 +182,18 @@ Run the core public-readiness tests:
 ```powershell
 npm test
 ```
+
+Run the public repository hygiene checks:
+
+```powershell
+npm run public:release-check
+npm run secret:scan -- --history
+npm run check:lp
+```
+
+GitHub native secret scanning should remain enabled for the public repository;
+the local `secret:scan` command is a high-confidence CI backstop that never
+prints matched secret values.
 
 `npm run setup:python` creates `.venv` and installs Python dependencies there.
 `npm run py -- ...` then prefers `.venv` before selecting another Python 3.12+
@@ -226,8 +252,13 @@ Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and
 keep fixtures synthetic unless a documented review process explicitly permits a
 redacted artifact.
 
-For support and vulnerability reports, see [SUPPORT.md](SUPPORT.md) and
-[SECURITY.md](SECURITY.md). Project governance is described in
+Use the GitHub issue templates for public bug reports, self-hosting questions,
+and feature requests. Do not put secrets, raw logs, transcripts, private
+deployment details, or exploit details in public issues.
+
+For support, public repository operations, and vulnerability reports, see
+[SUPPORT.md](SUPPORT.md), [Public Repository Operations](docs/public-repo-operations.md),
+and [SECURITY.md](SECURITY.md). Project governance is described in
 [GOVERNANCE.md](GOVERNANCE.md).
 
 ## License

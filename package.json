@@ -25,6 +25,8 @@
     "rollback:lp": "npx --yes wrangler@4.90.0 rollback --name knudg-site --message \"Rollback LP deploy\" --yes",
     "package:frontend": "node scripts/package-frontend.js",
     "check:lp": "node scripts/check-knudg-layout.js",
+    "public:release-check": "node scripts/run-python.js scripts/validate_public_release.py",
+    "secret:scan": "node scripts/run-python.js scripts/scan_secrets.py",
     "smoke:lp": "powershell -ExecutionPolicy Bypass -File scripts/smoke-knudg-site.ps1 -BaseUrl https://knudg.com",
     "dev:closed-api": "node scripts/run-python.js scripts/knudg_closed_api.py",
     "dev:frontend": "node scripts/run-python.js scripts/knudg_local_frontend.py",

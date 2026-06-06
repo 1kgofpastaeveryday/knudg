@@ -1,0 +1,52 @@
+name: Feature request
+description: Propose a public-source or self-hosting improvement.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature proposals should preserve Knudg's boundaries: default private visibility, explicit approval for publication, synthetic fixtures, and self-hostable core behavior.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What should Knudg help users or agents do?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the desired behavior, API, workflow, or documentation change.
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - CLI / knudgctl
+        - closed API
+        - local operator UI
+        - schemas / validators
+        - Codex plugin / skill
+        - docs / landing page
+        - public publication gates
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety and privacy considerations
+      description: Note any consent, revocation, redaction, authorization, or publication-gate concerns.
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Boundaries
+      options:
+        - label: This proposal does not require storing raw transcripts, raw logs, secrets, or private identifiers in public artifacts.
+          required: true

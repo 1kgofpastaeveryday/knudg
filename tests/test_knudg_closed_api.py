@@ -1222,7 +1222,7 @@ def test_closed_api_private_publish_rejects_raw_card_without_echoing_canary():
         raw_card = validate_local_private_card_v0(
             json.loads((ROOT / "fixtures" / "local-private-card.sample.json").read_text(encoding="utf-8"))
         )
-        raw_card["solution_summary"] = f"The rejected secret token {canary} lived under C:\\Users\\4\\private\\repo."
+        raw_card["solution_summary"] = f"The rejected secret token {canary} lived under C:\\Users\\redacted\\private\\repo."
         status, rejected = post_publish(f"{base_url}/v1/private/cards:publish", {"card": raw_card}, token="test-token")
         assert status == 400
         assert rejected == {"status": "rejected", "stored": False, "reject_class": "local_private_card"}
@@ -1264,7 +1264,7 @@ def test_closed_api_private_search_rejects_raw_profile_without_echoing_canary():
                 "task_profile": {
                     "schema_version": "task_profile.v0",
                     "intent": "debug",
-                    "explicit_query": f"raw secret token {canary} at C:\\Users\\4\\private",
+                    "explicit_query": f"raw secret token {canary} at C:\\Users\\redacted\\private",
                     "repo_shape_category": "pytest-postgres",
                     "public_packages": ["psycopg"],
                     "error_fingerprints": [canary],
@@ -1312,7 +1312,7 @@ def test_closed_api_publication_candidate_rejects_workspace_without_echoing_cana
         canary = "CANARY_CANDIDATE_WORKSPACE_DO_NOT_ECHO"
         status, rejected = post_private(
             f"{base_url}/v1/private/cards/11111111-1111-4111-8111-111111111111:publication-candidate",
-            {"workspace": f"C:\\Users\\4\\private\\{canary}"},
+            {"workspace": f"C:\\Users\\redacted\\private\\{canary}"},
             token="test-token",
         )
         assert status == 400

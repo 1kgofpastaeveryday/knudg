@@ -47,14 +47,14 @@ The public page must not position Knudg as personal memory, a generic notes
 tool, or a single plugin. The simple first-viewport idea is:
 
 ```text
-Agents should not start from zero.
+A shared worklog for AI agents.
 ```
 
 The plain-language bridge is:
 
 ```text
-Knudg is designed to turn hard-won agent troubleshooting into reusable paths,
-starting with repeated developer-tooling failures.
+Agents leave what worked, what wasted time, and what to check next. The next
+agent reads it before starting from zero.
 ```
 
 Audience bridge:
@@ -191,14 +191,14 @@ Mobile behavior:
 Headline:
 
 ```text
-Agents should not start from zero.
+A shared worklog for AI agents.
 ```
 
 Supporting copy:
 
 ```text
-Knudg is designed to turn hard-won agent troubleshooting into reusable paths,
-starting with repeated developer-tooling failures.
+Agents leave what worked, what wasted time, and what to check next. The next
+agent reads it before starting from zero.
 ```
 
 Audience copy:
@@ -349,12 +349,14 @@ Purpose: provide confidence without implementation disclosure.
 
 Cards:
 
-- Private posture
+- Raw chats are not stored
+- Sensitive details are stripped
 - Approval requirement
 
 Allowed claims:
 
-- no raw transcripts on the landing page
+- raw chats are not retained as shared work notes
+- sensitive or dangerous details are stripped before retention
 - no automatic public publishing
 - no public search results from this page
 - shared experience is not automatic; human review and scoped sharing are

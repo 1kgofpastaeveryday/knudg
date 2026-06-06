@@ -6,7 +6,7 @@ const path = require("path");
 const targets = [
   ["en", "site/index.html", "en", true],
   ["ja", "site/ja/index.html", "ja", true],
-  ["zh-cn", "site/zh-cn/index.html", "zh", true],
+  ["zh-cn", "site/zh-cn/index.html", "zh-CN", true],
   ["install", "site/install/index.html", "en", false],
   ["ja-install", "site/ja/install/index.html", "ja", false],
   ["zh-cn-install", "site/zh-cn/install/index.html", "zh", false],
@@ -74,8 +74,8 @@ function targetUrl(baseUrl, relativePath) {
 
       const result = await page.evaluate(({ expectedLang, requiresDiagram }) => {
         const allowedAnchor = (href) => {
-          if (href === "/" || href === "../" || href === "ja/" || href === "zh-cn/") return true;
-          if (href === "../ja/" || href === "../zh-cn/") return true;
+          if (href === "/" || href === "../" || href === "ja/" || href === "zh-cn/" || href === "install/") return true;
+          if (href === "../ja/" || href === "../zh-cn/" || href === "../install/" || href === "../ja/install/" || href === "../zh-cn/install/") return true;
           if (href === "https://knudg.com/install") return true;
           if (href === "https://knudg.com/ja/install") return true;
           if (href === "https://knudg.com/zh-cn/install") return true;
@@ -140,10 +140,7 @@ function targetUrl(baseUrl, relativePath) {
         };
       }, { expectedLang, requiresDiagram });
 
-      const externalRequests = requests.filter((url) => {
-        if (!/^https?:\/\//i.test(url) || url.startsWith(baseUrl)) return false;
-        return !/^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(url);
-      });
+      const externalRequests = requests.filter((url) => /^https?:\/\//i.test(url) && !url.startsWith(baseUrl));
 
       if (
         result.scrollWidth > result.innerWidth ||

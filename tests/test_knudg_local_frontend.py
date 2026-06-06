@@ -135,11 +135,11 @@ def read_startup_line(process, timeout_seconds=5):
     raise AssertionError("local frontend did not print a startup line")
 
 
-def post_json(url, payload):
+def post_json(url, payload, headers=None):
     req = request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"content-type": "application/json"},
+        headers={"content-type": "application/json", **(headers or {})},
         method="POST",
     )
     try:
@@ -149,9 +149,19 @@ def post_json(url, payload):
         return exc.code, json.loads(exc.read().decode("utf-8"))
 
 
-def get_json(url):
-    with request.urlopen(url, timeout=5) as response:
+def get_json(url, headers=None):
+    req = request.Request(url, headers=headers or {}, method="GET")
+    with request.urlopen(req, timeout=5) as response:
         return response.status, json.loads(response.read().decode("utf-8"))
+
+
+def get_json_or_error(url, headers=None):
+    req = request.Request(url, headers=headers or {}, method="GET")
+    try:
+        with request.urlopen(req, timeout=5) as response:
+            return response.status, json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        return exc.code, json.loads(exc.read().decode("utf-8"))
 
 
 def stop_process(process):
@@ -278,6 +288,56 @@ def test_local_frontend_uses_bundled_distribution_token_when_env_token_absent():
         assert code == 200
         assert searched["status"] == "ok"
         assert UpstreamHandler.token_seen is True
+    finally:
+        stop_process(process)
+        upstream.shutdown()
+
+
+def test_local_frontend_can_require_tailscale_identity_headers():
+    upstream = serve_upstream()
+    env = {
+        **os.environ,
+        "KNUDG_OPERATOR_TOKEN": "test-token",
+        "KNUDG_OPERATOR_REQUIRE_TAILSCALE": "1",
+        "KNUDG_OPERATOR_TAILSCALE_ALLOWED_USERS": "operator@example.com",
+        "KNUDG_FRONTEND_API_BASE_URL": f"http://127.0.0.1:{upstream.server_port}",
+    }
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_local_frontend.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        startup = read_startup_line(process)
+        assert startup["tailscale_required"] is True
+        assert startup["tailscale_allowed_user_count"] == 1
+
+        code, rejected = get_json_or_error(f"{startup['url']}/api/status")
+        assert code == 403
+        assert rejected["reject_class"] == "tailscale_required"
+
+        code, rejected_user = get_json_or_error(
+            f"{startup['url']}/api/status",
+            headers={"Tailscale-User-Login": "other@example.com"},
+        )
+        assert code == 403
+        assert rejected_user["reject_class"] == "tailscale_user_not_allowed"
+
+        code, status = get_json_or_error(
+            f"{startup['url']}/api/status",
+            headers={"Tailscale-User-Login": "operator@example.com"},
+        )
+        assert code == 200
+        assert status["status"] == "ready"
     finally:
         stop_process(process)
         upstream.shutdown()

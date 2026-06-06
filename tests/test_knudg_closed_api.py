@@ -1814,7 +1814,7 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
         conn.rollback()
 
     with psycopg.connect(migrated_db, connect_timeout=3) as conn:
-        row = conn.execute(
+        rows = conn.execute(
             """
             select b.body_json, b.lifecycle_status as body_status,
               d.search_text, d.lifecycle_status as search_status
@@ -1824,6 +1824,17 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
              and d.card_id = b.card_id
              and d.card_version_id = b.card_version_id
             where b.card_id = %s
+            order by b.created_at, b.card_version_id
+            """,
+            (card_id,),
+        ).fetchall()
+        purge_event_row = conn.execute(
+            """
+            select event_json
+            from local_private_value_events
+            where card_id = %s and event_name = 'purge_completed'
+            order by created_at desc
+            limit 1
             """,
             (card_id,),
         ).fetchone()
@@ -1847,10 +1858,13 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
             """,
             (stored_experience["record_id"],),
         ).fetchone()
-    assert row[0] == {}
-    assert row[1] == "purged"
-    assert row[2] == ""
-    assert row[3] == "purged"
+    assert len(rows) == 2
+    assert all(row[0] == {} for row in rows)
+    assert all(row[1] == "purged" for row in rows)
+    assert all(row[2] == "" for row in rows)
+    assert all(row[3] == "purged" for row in rows)
+    assert purge_event_row[0]["search_versions_purged"] == 2
+    assert purge_event_row[0]["body_versions_purged"] == 2
     assert event_row[0]["candidate_digest"] == candidate["candidate_digest"]
     assert event_row[0]["public_publication_enabled"] is False
     assert experience_row == (

@@ -60,6 +60,7 @@ EXPECTED_MIGRATIONS = (
     "0013_local_private_human_summary_contract",
     "0014_final_filter_queue",
     "0015_local_private_merge_update",
+    "0016_closed_private_purge_all_versions",
 )
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", re.IGNORECASE)
 LOCAL_PRIVATE_WORKSPACE_REJECT = (

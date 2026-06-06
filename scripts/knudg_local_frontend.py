@@ -20,7 +20,6 @@ MAX_JSON_BYTES = 64 * 1024
 ALLOWED_API_HOSTS = {"api.knudg.com", "localhost", "127.0.0.1", "::1"}
 TAILSCALE_IPV4_NETWORK = ipaddress.ip_network("100.64.0.0/10")
 TAILSCALE_IPV6_NETWORK = ipaddress.ip_network("fd7a:115c:a1e0::/48")
-BUNDLED_FRONTEND_TOKEN = "knudg-frontend-public-beta-v0"
 
 
 def json_bytes(payload):
@@ -119,8 +118,7 @@ def normalize_api_base_url(value):
 
 
 def read_token():
-    token = os.environ.get("KNUDG_OPERATOR_TOKEN") or os.environ.get("KNUDG_FRONTEND_TOKEN") or BUNDLED_FRONTEND_TOKEN
-    return token
+    return os.environ.get("KNUDG_OPERATOR_TOKEN") or os.environ.get("KNUDG_FRONTEND_TOKEN") or ""
 
 
 def read_json_request(handler):
@@ -254,6 +252,15 @@ class LocalFrontendHandler(BaseHTTPRequestHandler):
         except (ValueError, json.JSONDecodeError):
             self.write_json({"status": "rejected"}, status=400)
             return
+        if not self.server.operator_token:
+            self.write_json(
+                {
+                    "status": "operator_token_required",
+                    "detail": "Set KNUDG_OPERATOR_TOKEN or KNUDG_FRONTEND_TOKEN before proxying private backend requests.",
+                },
+                status=503,
+            )
+            return
         headers = {"authorization": f"Bearer {self.server.operator_token}"}
         try:
             if self.path == "/api/cards:publish":
@@ -382,6 +389,7 @@ def main(argv=None):
                 "status": "listening",
                 "url": f"http://{args.host}:{server.server_port}",
                 "backend_url": api_base_url,
+                "operator_token_configured": bool(token),
                 "tailscale_required": args.require_tailscale,
                 "tailscale_allowed_user_count": len(tailscale_allowed_users),
             },

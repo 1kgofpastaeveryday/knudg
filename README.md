@@ -135,10 +135,10 @@ npm run package:frontend
 ```
 
 The package is written to `dist/knudg-frontend-<version>.tgz`. It includes a
-public bundled frontend token for generic distribution. A backend accepts that
-token only when its operator explicitly sets
-`KNUDG_DISTRIBUTION_TOKEN=knudg-frontend-public-beta-v0`; real operator tokens
-should remain in local environment or secret storage only.
+local operator UI and same-origin proxy. Private backend operations require a
+non-public `KNUDG_FRONTEND_TOKEN` or `KNUDG_OPERATOR_TOKEN`; packaged frontend
+artifacts do not include a bearer token that can authenticate private routes.
+Real operator tokens should remain in local environment or secret storage only.
 
 The optional backend final filter can use NVIDIA NIM GLM-5.1 as a fail-closed
 LLM judge:

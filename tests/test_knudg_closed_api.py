@@ -928,7 +928,7 @@ def test_closed_api_final_filter_route_requires_operator_and_fails_closed_withou
         stop_process(process)
 
 
-def test_closed_api_accepts_explicit_distribution_token_without_primary_operator_token():
+def test_closed_api_rejects_distribution_token_without_primary_operator_token():
     env = {**os.environ}
     env.pop("DATABASE_URL", None)
     env.pop("KNUDG_OPERATOR_TOKEN", None)
@@ -960,13 +960,61 @@ def test_closed_api_accepts_explicit_distribution_token_without_primary_operator
             {"candidate": sample_final_filter_candidate()},
             token="wrong-token",
         )
+        assert status == 503
+        assert forbidden["status"] == "forbidden"
+        assert forbidden["detail"] == "operator token is not configured"
+
+        status, evaluated = post_private(
+            f"{base_url}/v1/private/final-filter:evaluate",
+            {"candidate": sample_final_filter_candidate()},
+            token="distribution-token",
+        )
+        assert status == 503
+        assert evaluated["status"] == "forbidden"
+        assert evaluated["detail"] == "operator token is not configured"
+    finally:
+        stop_process(process)
+
+
+def test_closed_api_rejects_distribution_token_for_private_routes_when_operator_token_exists():
+    env = {**os.environ}
+    env.pop("DATABASE_URL", None)
+    env.pop("KNUDG_ADDITIONAL_OPERATOR_TOKENS", None)
+    env.pop("KNUDG_NVIDIA_API_KEY", None)
+    env.pop("NVIDIA_API_KEY", None)
+    env.pop("NGC_API_KEY", None)
+    env["KNUDG_OPERATOR_TOKEN"] = "operator-token"
+    env["KNUDG_DISTRIBUTION_TOKEN"] = "distribution-token"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_closed_api.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        startup = read_startup_line(process)
+        base_url = f"http://127.0.0.1:{startup['port']}"
+
+        status, forbidden = post_private(
+            f"{base_url}/v1/private/final-filter:evaluate",
+            {"candidate": sample_final_filter_candidate()},
+            token="distribution-token",
+        )
         assert status == 403
         assert forbidden["status"] == "forbidden"
 
         status, evaluated = post_private(
             f"{base_url}/v1/private/final-filter:evaluate",
             {"candidate": sample_final_filter_candidate()},
-            token="distribution-token",
+            token="operator-token",
         )
         assert status == 200
         assert evaluated["status"] == "final_filter_evaluated"
@@ -1080,7 +1128,7 @@ def test_closed_api_structured_access_log_tracks_source_and_activity_without_tok
     env.pop("KNUDG_NVIDIA_API_KEY", None)
     env.pop("NVIDIA_API_KEY", None)
     env.pop("NGC_API_KEY", None)
-    env["KNUDG_DISTRIBUTION_TOKEN"] = "distribution-token"
+    env["KNUDG_OPERATOR_TOKEN"] = "operator-token"
     process = subprocess.Popen(
         [
             sys.executable,
@@ -1097,12 +1145,11 @@ def test_closed_api_structured_access_log_tracks_source_and_activity_without_tok
     try:
         startup = read_startup_line(process)
         base_url = f"http://127.0.0.1:{startup['port']}"
-        distribution_token = "distribution-token"
         request = urllib.request.Request(
             f"{base_url}/v1/private/final-filter:evaluate",
             data=json.dumps({"candidate": sample_final_filter_candidate()}).encode("utf-8"),
             headers={
-                "authorization": f"Bearer {distribution_token}",
+                "authorization": "Bearer operator-token",
                 "content-type": "application/json",
                 "origin": "http://127.0.0.1:8790",
                 "user-agent": "knudg-test-agent/1.0",
@@ -1125,14 +1172,14 @@ def test_closed_api_structured_access_log_tracks_source_and_activity_without_tok
 
     assert access["route"] == "private_final_filter_evaluate"
     assert access["status"] == 200
-    assert access["auth_token_class"] == "distribution"
+    assert access["auth_token_class"] == "primary"
     assert access["authorization_present"] is True
     assert access["forwarded_for"] == "203.0.113.10"
     assert access["forwarded_host"] == "api.knudg.com"
     assert access["forwarded_proto"] == "https"
     assert access["origin_host"] == "127.0.0.1"
     assert access["user_agent_digest"].startswith("sha256:")
-    assert "distribution-token" not in stderr
+    assert "operator-token" not in stderr
     assert "Bearer" not in stderr
     assert "Technical schema-validation guidance" not in stderr
 

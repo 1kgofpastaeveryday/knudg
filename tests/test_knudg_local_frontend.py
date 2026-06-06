@@ -9,9 +9,6 @@ from pathlib import Path
 from urllib import request
 from urllib.error import HTTPError
 
-from scripts.knudg_local_frontend import BUNDLED_FRONTEND_TOKEN
-
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -260,9 +257,8 @@ def test_local_frontend_stages_write_search_and_view_without_browser_token():
         upstream.shutdown()
 
 
-def test_local_frontend_uses_bundled_distribution_token_when_env_token_absent():
+def test_local_frontend_requires_explicit_token_for_private_proxy_when_env_token_absent():
     upstream = serve_upstream()
-    UpstreamHandler.expected_token = BUNDLED_FRONTEND_TOKEN
     env = {**os.environ}
     env.pop("KNUDG_OPERATOR_TOKEN", None)
     env.pop("KNUDG_FRONTEND_TOKEN", None)
@@ -285,9 +281,9 @@ def test_local_frontend_uses_bundled_distribution_token_when_env_token_absent():
         startup = read_startup_line(process)
         code, searched = post_json(f"{startup['url']}/api/search", {"workspace": "closed-beta-test", "task_profile": {}})
 
-        assert code == 200
-        assert searched["status"] == "ok"
-        assert UpstreamHandler.token_seen is True
+        assert code == 503
+        assert searched["status"] == "operator_token_required"
+        assert UpstreamHandler.token_seen is False
     finally:
         stop_process(process)
         upstream.shutdown()

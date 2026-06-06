@@ -10,7 +10,6 @@ const DIST = path.join(ROOT, "dist");
 const STAGE = path.join(DIST, "knudg-frontend");
 const rootPackage = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
 const version = rootPackage.version;
-const bundledToken = "knudg-frontend-public-beta-v0";
 
 function ensureInside(parent, child) {
   const relative = path.relative(parent, child);
@@ -121,8 +120,8 @@ fs.writeFileSync(
   path.join(STAGE, ".env.example"),
   [
     "# Optional overrides for the packaged Knudg frontend.",
-    "# The frontend uses the bundled public token when neither variable is set.",
-    `KNUDG_FRONTEND_TOKEN=${bundledToken}`,
+    "# Private backend proxy routes require a non-public token.",
+    "KNUDG_FRONTEND_TOKEN=",
     "KNUDG_FRONTEND_API_BASE_URL=http://api.knudg.com",
     "",
   ].join("\n"),
@@ -146,10 +145,9 @@ fs.writeFileSync(
     "Configuration:",
     "",
     "- `KNUDG_FRONTEND_API_BASE_URL` selects the backend origin.",
-    "- `KNUDG_FRONTEND_TOKEN` or `KNUDG_OPERATOR_TOKEN` overrides the bundled public frontend token.",
-    `- Bundled public frontend token: \`${bundledToken}\`.`,
+    "- Set `KNUDG_FRONTEND_TOKEN` or `KNUDG_OPERATOR_TOKEN` to a non-public backend token before using private proxy routes.",
     "",
-    "Backend note: the public frontend token is accepted only when the backend operator explicitly sets `KNUDG_DISTRIBUTION_TOKEN` to the same value.",
+    "Backend note: packaged frontend artifacts do not include a bearer token that can authenticate private routes.",
     "",
   ].join("\n"),
   "utf8",

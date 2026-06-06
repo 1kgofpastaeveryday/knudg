@@ -153,7 +153,6 @@ def operator_token_entries():
     entries = []
     for label, value in (
         ("primary", os.environ.get("KNUDG_OPERATOR_TOKEN")),
-        ("distribution", os.environ.get("KNUDG_DISTRIBUTION_TOKEN")),
         ("additional", os.environ.get("KNUDG_ADDITIONAL_OPERATOR_TOKENS")),
     ):
         for token in _split_configured_tokens(value):

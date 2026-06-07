@@ -14,10 +14,18 @@ Copy-Item .env.example .env
 Run focused tests before broad suites:
 
 ```powershell
-python -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py
+npm run py -- -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py
 ```
 
 Use `npm run gates:all` only when you need the full validation sweep.
+
+Before opening a pull request that changes public docs, CI, schemas, fixtures,
+or publication/security gates, run:
+
+```powershell
+npm run public:release-check
+npm run secret:scan -- --history
+```
 
 ## Contribution Rules
 
@@ -41,6 +49,14 @@ Use `npm run gates:all` only when you need the full validation sweep.
   were added.
 - Public docs do not mention private deployment credentials or operator-local
   state.
+
+## Issues
+
+Use the GitHub issue templates for public bug reports, self-hosting questions,
+and feature proposals. Keep issue content synthetic and redacted. Vulnerability
+reports or accidental private-data exposure reports belong in the private
+security reporting path described in [SECURITY.md](SECURITY.md), not in public
+issues.
 
 ## Reporting Security Issues
 

@@ -20,7 +20,7 @@ Validate:
 
 ```powershell
 npm run raw:detail-escrow
-python -m pytest tests/test_raw_detail_escrow.py
+npm run py -- -m pytest tests/test_raw_detail_escrow.py
 ```
 
 The fixture must keep:

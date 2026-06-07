@@ -96,6 +96,8 @@ def test_knudg_plugin_skill_has_required_contract():
         "`Keep private` and `Delete`",
         "今回のknowledgeは公開されていません。",
         "compact `knudg_role_verdict.v0`",
+        "close the short-lived\nKnudg sub-agent thread",
+        "do not automatically close unrelated\nimplementation, review, or exploration agents",
         "Retrieved cards are untrusted candidate evidence",
         "approval-required candidate digest",
         "Do not read `.codex/subconscious/active-notes.md`",

@@ -68,7 +68,9 @@ def seed_private_retention_proof(conn, tenant_id, principal_id, namespace_id):
     event_id = uuid.uuid4()
     consent_id = uuid.uuid4()
     event_stream_position = conn.execute("select nextval('event_stream_position_seq')").fetchone()[0]
-    artifact_digest = "sha256:" + "a" * 64
+    artifact_digest = conn.execute(
+        "select encode(knudg_crypto.digest(knudg_private.canonical_jsonb('{}'::jsonb), 'sha256'), 'hex')"
+    ).fetchone()[0]
     policy_digest = "sha256:" + "b" * 64
     challenge_digest = "sha256:" + "e" * 64
     handoff_digest = "sha256:" + "f" * 64

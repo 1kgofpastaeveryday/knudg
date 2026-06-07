@@ -674,16 +674,16 @@ begin
     raise exception 'reason digest is required' using errcode = '23514';
   end if;
 
-  update redacted_private_experience_records
+  update redacted_private_experience_records as r
   set lifecycle_status = 'revoked',
       revoked_at = now(),
       revocation_reason_digest = row_reason_digest,
       updated_at = now()
-  where tenant_id = binding.tenant_id
-    and namespace_id = binding.namespace_id
-    and id = row_record_id
-    and lifecycle_status = 'captured'
-  returning id, lifecycle_status
+  where r.tenant_id = binding.tenant_id
+    and r.namespace_id = binding.namespace_id
+    and r.id = row_record_id
+    and r.lifecycle_status = 'captured'
+  returning r.id, r.lifecycle_status
   into updated;
 
   record_id := row_record_id;
@@ -726,7 +726,7 @@ begin
     raise exception 'reason digest is required' using errcode = '23514';
   end if;
 
-  update redacted_private_experience_records
+  update redacted_private_experience_records as r
   set lifecycle_status = 'purged',
       subject_public_name = 'Purged private record',
       subject_aliases = '{}'::text[],
@@ -738,11 +738,11 @@ begin
       purged_at = now(),
       purge_reason_digest = row_reason_digest,
       updated_at = now()
-  where tenant_id = binding.tenant_id
-    and namespace_id = binding.namespace_id
-    and id = row_record_id
-    and lifecycle_status in ('captured', 'revoked')
-  returning id, lifecycle_status
+  where r.tenant_id = binding.tenant_id
+    and r.namespace_id = binding.namespace_id
+    and r.id = row_record_id
+    and r.lifecycle_status in ('captured', 'revoked')
+  returning r.id, r.lifecycle_status
   into updated;
 
   record_id := row_record_id;

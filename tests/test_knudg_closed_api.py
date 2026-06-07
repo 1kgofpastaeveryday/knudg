@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import subprocess
@@ -269,8 +270,9 @@ def post_private(url, payload, token="test-token"):
 
 
 class MockNvidiaResponse:
-    def __init__(self, payload):
+    def __init__(self, payload, status=200):
         self.payload = payload
+        self.status = status
 
     def __enter__(self):
         return self
@@ -278,7 +280,7 @@ class MockNvidiaResponse:
     def __exit__(self, exc_type, exc, traceback):
         return False
 
-    def read(self):
+    def read(self, *args):
         return json.dumps(self.payload).encode("utf-8")
 
 
@@ -305,11 +307,14 @@ def test_final_filter_without_nvidia_key_fails_closed(monkeypatch):
     result = closed_api.evaluate_final_filter({"candidate": sample_final_filter_candidate()})
 
     assert result["schema_version"] == "final-filter-result-v0"
-    assert result["verdict"] == "needs_human_review"
+    assert result["verdict"] == "hold"
+    assert result["decision_label"] == "hold"
     assert result["risk_reasons"] == ["llm_provider_unconfigured"]
     assert result["provider"] == "none"
     assert result["llm_called"] is False
     assert result["fail_closed"] is True
+    assert result["automated_repair_required"] is True
+    assert result["hold_repair_policy"]["parallel_reviewer_count"] == 3
     assert result["public_publication_enabled"] is False
 
 
@@ -341,6 +346,20 @@ def test_final_filter_uses_glm_5_1_and_validates_json(monkeypatch):
         assert request.full_url == "https://integrate.api.nvidia.com/v1/chat/completions"
         assert body["model"] == "z-ai/glm-5.1"
         assert body["temperature"] == 0
+        assert body["stream"] is False
+        assert body["guided_json"]["required"] == [
+            "verdict",
+            "risk_level",
+            "risk_reasons",
+            "required_redactions",
+            "public_safe_summary",
+            "operator_note",
+        ]
+        assert "response_format" not in body
+        prompt = json.loads(body["messages"][1]["content"])
+        assert "surface_contracts" not in prompt["policy_context"]
+        assert prompt["policy_context"]["surface_contracts_present"] is False
+        assert prompt["candidate"]["human_summary"]["content"] == sample_final_filter_candidate()["human_summary"]["content"]
         assert timeout >= 1
         return MockNvidiaResponse(
             {
@@ -349,7 +368,7 @@ def test_final_filter_uses_glm_5_1_and_validates_json(monkeypatch):
                         "message": {
                             "content": json.dumps(
                                 {
-                                    "verdict": "allow",
+                                    "verdict": "pass",
                                     "risk_level": "low",
                                     "risk_reasons": [],
                                     "required_redactions": [],
@@ -367,7 +386,8 @@ def test_final_filter_uses_glm_5_1_and_validates_json(monkeypatch):
 
     result = closed_api.evaluate_final_filter({"candidate": sample_final_filter_candidate()})
 
-    assert result["verdict"] == "allow"
+    assert result["verdict"] == "pass"
+    assert result["decision_label"] == "clear_ok"
     assert result["risk_level"] == "low"
     assert result["provider"] == "nvidia"
     assert result["model"] == "z-ai/glm-5.1"
@@ -376,7 +396,93 @@ def test_final_filter_uses_glm_5_1_and_validates_json(monkeypatch):
     assert result["final_publication_completion_enabled"] is False
 
 
-def test_final_filter_invalid_glm_response_needs_human_review(monkeypatch):
+def test_final_filter_accepts_compact_glm_pass_result(monkeypatch):
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
+
+    def mock_urlopen(request, timeout):
+        return MockNvidiaResponse({"choices": [{"message": {"content": "```json\n{\"filter_result\":\"pass\"}\n```"}}]})
+
+    monkeypatch.setattr(closed_api.urllib.request, "urlopen", mock_urlopen)
+
+    result = closed_api.evaluate_final_filter({"candidate": sample_final_filter_candidate()})
+
+    assert result["verdict"] == "pass"
+    assert result["decision_label"] == "clear_ok"
+    assert result["risk_level"] == "low"
+    assert result["provider"] == "nvidia"
+    assert result["llm_called"] is True
+
+
+def test_final_filter_maps_legacy_allow_and_quarantine_labels_to_three_way_verdicts(monkeypatch):
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
+    responses = iter(
+        [
+            {"choices": [{"message": {"content": json.dumps({"verdict": "allow", "risk_level": "low"})}}]},
+            {"choices": [{"message": {"content": json.dumps({"verdict": "quarantine", "risk_level": "high"})}}]},
+        ]
+    )
+
+    def mock_urlopen(request, timeout):
+        return MockNvidiaResponse(next(responses))
+
+    monkeypatch.setattr(closed_api.urllib.request, "urlopen", mock_urlopen)
+
+    pass_result = closed_api.evaluate_final_filter({"candidate": sample_final_filter_candidate()})
+    review_result = closed_api.evaluate_final_filter({"candidate": sample_final_filter_candidate()})
+
+    assert pass_result["verdict"] == "pass"
+    assert pass_result["decision_label"] == "clear_ok"
+    assert pass_result["fail_closed"] is False
+    assert review_result["verdict"] == "hold"
+    assert review_result["decision_label"] == "hold"
+    assert review_result["automated_repair_required"] is True
+    assert review_result["hold_repair_policy"]["writer_input"] == "ng_points_only"
+
+
+def test_final_filter_normalizes_verbose_model_reason_fields(monkeypatch):
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
+
+    def mock_urlopen(request, timeout):
+        return MockNvidiaResponse(
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "verdict": "hold",
+                                    "risk_level": "medium",
+                                    "risk_reasons": [
+                                        "This candidate mentions public-candidate conversion and should receive manual policy review before any publication action."
+                                    ],
+                                    "required_redactions": [
+                                        {
+                                            "field": "candidate.operator_note",
+                                            "reason": "x" * 250,
+                                        }
+                                    ],
+                                    "public_safe_summary": "Technical schema-validation guidance.",
+                                    "operator_note": "y" * 500,
+                                }
+                            )
+                        }
+                    }
+                ]
+            }
+        )
+
+    monkeypatch.setattr(closed_api.urllib.request, "urlopen", mock_urlopen)
+
+    result = closed_api.evaluate_final_filter({"candidate": sample_final_filter_candidate()})
+
+    assert result["verdict"] == "hold"
+    assert result["decision_label"] == "hold"
+    assert result["risk_reasons"] == ["this_candidate_mentions_public_candidate_conversion_and_should_receive_manual_po"]
+    assert len(result["required_redactions"][0]["reason"]) == 200
+    assert len(result["operator_note"]) == 300
+
+
+def test_final_filter_invalid_glm_response_holds_for_repair_loop(monkeypatch):
     monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
 
     def mock_urlopen(request, timeout):
@@ -386,16 +492,398 @@ def test_final_filter_invalid_glm_response_needs_human_review(monkeypatch):
 
     result = closed_api.evaluate_final_filter({"candidate": sample_final_filter_candidate()})
 
-    assert result["verdict"] == "needs_human_review"
+    assert result["verdict"] == "hold"
     assert result["risk_reasons"] == ["llm_provider_error"]
     assert result["provider"] == "nvidia"
     assert result["llm_called"] is True
+    assert result["automated_repair_required"] is True
+
+
+def test_final_filter_polls_pending_nvidia_result(monkeypatch):
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
+    monkeypatch.setenv("KNUDG_NVIDIA_STATUS_BASE_URL", "https://integrate.api.nvidia.com/v1/status")
+    calls = []
+
+    def mock_urlopen(request, timeout):
+        calls.append(request.full_url)
+        if request.get_method() == "POST":
+            return MockNvidiaResponse({"requestId": "11111111-1111-4111-8111-111111111111"}, status=202)
+        return MockNvidiaResponse(
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "verdict": "pass",
+                                    "risk_level": "low",
+                                    "risk_reasons": [],
+                                    "required_redactions": [],
+                                    "public_safe_summary": "Technical schema-validation guidance.",
+                                    "operator_note": "Low-risk technical candidate.",
+                                }
+                            )
+                        }
+                    }
+                ]
+            }
+        )
+
+    monkeypatch.setattr(closed_api.urllib.request, "urlopen", mock_urlopen)
+    monkeypatch.setattr(closed_api.time, "sleep", lambda seconds: None)
+
+    result = closed_api.evaluate_final_filter({"candidate": sample_final_filter_candidate()})
+
+    assert result["verdict"] == "pass"
+    assert calls == [
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+        "https://integrate.api.nvidia.com/v1/status/11111111-1111-4111-8111-111111111111",
+    ]
+
+
+def test_final_filter_queue_is_idempotent_and_worker_completes(migrated_db, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", migrated_db)
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-key")
+    monkeypatch.setenv("KNUDG_FINAL_FILTER_QUEUE_MAX_ATTEMPTS", "3")
+    monkeypatch.setenv("KNUDG_FINAL_FILTER_QUEUE_WORKER_CONCURRENCY", "2")
+
+    class NoopLimiter:
+        def acquire(self):
+            return None
+
+    def mock_urlopen(request, timeout):
+        return MockNvidiaResponse(
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "verdict": "pass",
+                                    "risk_level": "low",
+                                    "risk_reasons": [],
+                                    "required_redactions": [],
+                                    "public_safe_summary": "Technical schema-validation guidance.",
+                                    "operator_note": "Low-risk technical candidate.",
+                                }
+                            )
+                        }
+                    }
+                ]
+            }
+        )
+
+    monkeypatch.setattr(closed_api, "nvidia_start_rate_limiter", lambda: NoopLimiter())
+    monkeypatch.setattr(closed_api.urllib.request, "urlopen", mock_urlopen)
+
+    policy_context = {
+        "check_stage": "publication_candidate_final_filter",
+        "visibility_target": "public_candidate",
+        "ad_or_spam_assessment_required": True,
+    }
+    first = closed_api.enqueue_or_evaluate_final_filter(sample_final_filter_candidate(), policy_context)
+    replay = closed_api.enqueue_or_evaluate_final_filter(sample_final_filter_candidate(), policy_context)
+
+    assert first["verdict"] == "hold"
+    assert first["queued"] is True
+    assert first["queue_status"] == "queued"
+    assert first["max_queries_per_minute"] == 40.0
+    assert replay["final_filter_job_id"] == first["final_filter_job_id"]
+
+    row = closed_api.claim_final_filter_job()
+    assert str(row["id"]) == first["final_filter_job_id"]
+    closed_api.process_final_filter_job(row)
+    completed = closed_api.read_final_filter_job(first["final_filter_job_id"])
+
+    assert completed["verdict"] == "pass"
+    assert completed["queued"] is False
+    assert completed["queue_status"] == "succeeded"
+    assert completed["llm_called"] is True
+    with psycopg.connect(migrated_db, connect_timeout=3) as conn:
+        stored = conn.execute("select status, attempts from final_filter_jobs where id = %s", (first["final_filter_job_id"],)).fetchone()
+    assert stored == ("succeeded", 1)
+
+
+def test_final_filter_queue_stats_do_not_select_body_columns(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql://db.example/knudg")
+    monkeypatch.setenv("KNUDG_FINAL_FILTER_QUEUE_WORKER_CONCURRENCY", "37")
+    captured_queries = []
+
+    class FakeCursor:
+        def execute(self, query):
+            captured_queries.append(query)
+            return self
+
+        def fetchone(self):
+            return {
+                "total_jobs": 1500,
+                "queued_jobs": 31,
+                "ready_queued_jobs": 30,
+                "delayed_queued_jobs": 1,
+                "leased_jobs": 6,
+                "expired_leases": 2,
+                "succeeded_jobs": 1463,
+                "dead_jobs": 0,
+                "attempted_jobs": 1469,
+                "attempts_total": 1488,
+                "max_attempts_seen": 3,
+                "oldest_queued_age_seconds": 900,
+                "oldest_ready_queued_age_seconds": 800,
+                "oldest_expired_lease_age_seconds": 60,
+                "newest_succeeded_age_seconds": 4,
+            }
+
+    class FakeConnection:
+        def __enter__(self):
+            return FakeCursor()
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    def fake_connect(url, row_factory=None, connect_timeout=None):
+        assert url == "postgresql://db.example/knudg"
+        assert row_factory is not None
+        assert connect_timeout == 3
+        return FakeConnection()
+
+    monkeypatch.setattr(psycopg, "connect", fake_connect)
+
+    stats = closed_api.final_filter_queue_stats()
+
+    select_sql = captured_queries[0].lower().split("from final_filter_jobs", maxsplit=1)[0]
+    assert "candidate_json" not in select_sql
+    assert "result_json" not in select_sql
+    assert stats["total_jobs"] == 1500
+    assert stats["active_depth"] == 37
+    assert stats["status_counts"] == {"queued": 31, "leased": 6, "succeeded": 1463, "dead": 0}
+    assert stats["ready_queued_jobs"] == 30
+    assert stats["delayed_queued_jobs"] == 1
+    assert stats["expired_leases"] == 2
+    assert stats["candidate_bodies_included"] is False
+    assert stats["result_bodies_included"] is False
+    assert stats["configuration"]["worker_concurrency"] == 37
+
+
+def test_final_filter_queue_stats_are_aggregate_only(migrated_db, monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", migrated_db)
+    monkeypatch.setenv("KNUDG_FINAL_FILTER_QUEUE_WORKER_CONCURRENCY", "7")
+    canary = "CANARY_FINAL_FILTER_STATS_DO_NOT_ECHO"
+
+    def digest(label):
+        return "sha256:" + hashlib.sha256(label.encode("utf-8")).hexdigest()
+
+    candidate = {"human_summary": {"content": canary}, "label": "stats fixture"}
+    policy_context = {"visibility_target": "public_candidate"}
+    result = {"operator_note": canary, "verdict": "pass"}
+    rows = [
+        ("queued-ready", "queued", 0, "now() - interval '5 minutes'", "null", "null", "null"),
+        ("queued-delayed", "queued", 1, "now() + interval '2 minutes'", "null", "null", "null"),
+        ("leased-active", "leased", 1, "now() - interval '4 minutes'", "now() + interval '2 minutes'", "null", "null"),
+        ("leased-expired", "leased", 2, "now() - interval '6 minutes'", "now() - interval '1 minute'", "null", "null"),
+        ("succeeded", "succeeded", 1, "now() - interval '7 minutes'", "null", "now() - interval '10 seconds'", "%s::jsonb"),
+        ("dead", "dead", 3, "now() - interval '8 minutes'", "null", "null", "null"),
+    ]
+
+    with psycopg.connect(migrated_db, connect_timeout=3) as conn:
+        conn.execute("truncate final_filter_jobs")
+        for label, status, attempts, available_at, leased_until, completed_at, result_sql in rows:
+            conn.execute(
+                f"""
+                insert into final_filter_jobs(
+                  id, request_digest, status, candidate_json, policy_context_json, result_json,
+                  attempts, available_at, leased_until, completed_at
+                )
+                values (
+                  %s, %s, %s, %s::jsonb, %s::jsonb, {result_sql},
+                  %s, {available_at}, {leased_until}, {completed_at}
+                )
+                """,
+                (
+                    str(uuid.uuid4()),
+                    digest(label),
+                    status,
+                    json.dumps(candidate),
+                    json.dumps(policy_context),
+                    json.dumps(result),
+                    attempts,
+                )
+                if result_sql != "null"
+                else (
+                    str(uuid.uuid4()),
+                    digest(label),
+                    status,
+                    json.dumps(candidate),
+                    json.dumps(policy_context),
+                    attempts,
+                ),
+            )
+
+    stats = closed_api.final_filter_queue_stats()
+
+    assert stats["schema_version"] == "final-filter-queue-stats-v0"
+    assert stats["total_jobs"] == 6
+    assert stats["active_depth"] == 4
+    assert stats["status_counts"] == {"queued": 2, "leased": 2, "succeeded": 1, "dead": 1}
+    assert stats["ready_queued_jobs"] == 1
+    assert stats["delayed_queued_jobs"] == 1
+    assert stats["expired_leases"] == 1
+    assert stats["attempted_jobs"] == 5
+    assert stats["attempts_total"] == 8
+    assert stats["max_attempts_seen"] == 3
+    assert stats["configuration"]["worker_concurrency"] == 7
+    assert stats["candidate_bodies_included"] is False
+    assert stats["result_bodies_included"] is False
+    serialized = json.dumps(stats)
+    assert canary not in serialized
+    assert "candidate_json" not in serialized
+    assert "result_json" not in serialized
+    assert stats["age_seconds"]["oldest_queued"] is not None
+    assert stats["age_seconds"]["oldest_ready_queued"] is not None
+    assert stats["age_seconds"]["oldest_expired_lease"] is not None
+    assert stats["age_seconds"]["newest_succeeded"] is not None
+
+
+def test_closed_api_final_filter_queue_stats_endpoint_requires_auth_and_hides_bodies(migrated_db):
+    canary = "CANARY_FINAL_FILTER_STATS_ENDPOINT_DO_NOT_ECHO"
+    with psycopg.connect(migrated_db, connect_timeout=3) as conn:
+        conn.execute("truncate final_filter_jobs")
+        conn.execute(
+            """
+            insert into final_filter_jobs(
+              id, request_digest, status, candidate_json, policy_context_json, attempts, available_at
+            )
+            values (%s, %s, 'queued', %s::jsonb, %s::jsonb, 0, now() - interval '3 minutes')
+            """,
+            (
+                str(uuid.uuid4()),
+                "sha256:" + hashlib.sha256(b"endpoint-stats").hexdigest(),
+                json.dumps({"human_summary": {"content": canary}}),
+                json.dumps({"visibility_target": "public_candidate"}),
+            ),
+        )
+
+    env = {**os.environ}
+    env["DATABASE_URL"] = migrated_db
+    env["KNUDG_OPERATOR_TOKEN"] = "test-token"
+    env.pop("KNUDG_NVIDIA_API_KEY", None)
+    env.pop("NVIDIA_API_KEY", None)
+    env.pop("NGC_API_KEY", None)
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_closed_api.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        startup = read_startup_line(process)
+        base_url = f"http://127.0.0.1:{startup['port']}"
+
+        status, unauthorized = post_private(f"{base_url}/v1/private/final-filter/jobs:stats", {}, token=None)
+        assert status == 401
+        assert unauthorized["status"] == "unauthorized"
+
+        status, payload = post_private(f"{base_url}/v1/private/final-filter/jobs:stats", {}, token="test-token")
+        assert status == 200
+        assert payload["status"] == "final_filter_queue_stats"
+        assert payload["stats"]["total_jobs"] == 1
+        assert payload["stats"]["status_counts"]["queued"] == 1
+        assert payload["stats"]["ready_queued_jobs"] == 1
+        assert payload["stats"]["candidate_bodies_included"] is False
+        assert payload["stats"]["result_bodies_included"] is False
+    finally:
+        stop_process(process)
+
+    serialized = json.dumps(payload)
+    assert canary not in serialized
+    assert "candidate_json" not in serialized
+    assert "result_json" not in serialized
+    assert canary not in process.stdout.read()
+    assert canary not in process.stderr.read()
+
+
+def test_final_filter_rpm_is_capped_at_nvidia_limit(monkeypatch):
+    monkeypatch.setenv("KNUDG_FINAL_FILTER_NVIDIA_RPM", "200")
+
+    assert closed_api.final_filter_nvidia_rpm() == 40.0
+
+
+def test_final_filter_timeout_defaults_to_ten_minutes_and_derives_queue_width(monkeypatch):
+    monkeypatch.delenv("KNUDG_FINAL_FILTER_TIMEOUT_SECONDS", raising=False)
+    monkeypatch.delenv("KNUDG_FINAL_FILTER_NVIDIA_RPM", raising=False)
+    monkeypatch.delenv("KNUDG_FINAL_FILTER_QUEUE_WORKER_CONCURRENCY", raising=False)
+
+    assert closed_api.nvidia_final_filter_timeout_seconds() == 600.0
+    assert closed_api.final_filter_queue_worker_concurrency() == 400
+
+
+def test_final_filter_timeout_and_queue_width_are_capped(monkeypatch):
+    monkeypatch.setenv("KNUDG_FINAL_FILTER_TIMEOUT_SECONDS", "1200")
+    monkeypatch.setenv("KNUDG_FINAL_FILTER_QUEUE_WORKER_CONCURRENCY", "999")
+
+    assert closed_api.nvidia_final_filter_timeout_seconds() == 600.0
+    assert closed_api.final_filter_queue_worker_concurrency() == 480
+
+
+def test_local_private_merge_candidates_recommend_existing_update(monkeypatch):
+    card = validate_local_private_card_v0(json.loads((ROOT / "fixtures" / "local-private-card.sample.json").read_text(encoding="utf-8")))
+
+    def mock_search(task_profile, *, workspace_id, limit, min_score, latency_budget_ms):
+        assert task_profile["schema_version"] == "task_profile.v0"
+        assert "retrieval_domains" not in task_profile
+        assert workspace_id == "closed-beta-test"
+        assert limit == 3
+        assert min_score == 2
+        return {
+            "decision": "cards_found",
+            "served_from": "closed_private_exact_fts",
+            "cards": [
+                {
+                    "card_id": "11111111-1111-4111-8111-111111111111",
+                    "card_version_id": "22222222-2222-4222-8222-222222222222",
+                    "match_score": 4,
+                }
+            ],
+        }
+
+    monkeypatch.setattr(closed_api, "search_private_cards", mock_search)
+
+    result = closed_api.local_private_merge_candidates(card, "closed-beta-test")
+
+    assert result["schema_version"] == "local-private-merge-candidates-v0"
+    assert result["recommended_action"] == "update_existing"
+    assert result["cards"][0]["card_id"] == "11111111-1111-4111-8111-111111111111"
+
+
+def test_publish_merge_request_requires_explicit_update_or_create_new():
+    implicit_update = closed_api.normalize_publish_merge_request(
+        {"target_card_id": "11111111-1111-4111-8111-111111111111"}
+    )
+    create_new = closed_api.normalize_publish_merge_request({"decision": "create_new", "reason": "not the same logical card"})
+
+    assert implicit_update["decision"] == "update_existing"
+    assert implicit_update["target_card_id"] == "11111111-1111-4111-8111-111111111111"
+    assert create_new["decision"] == "create_new"
+    assert create_new["target_card_id"] is None
+    with pytest.raises(ValueError):
+        closed_api.normalize_publish_merge_request({"decision": "update_existing"})
+    with pytest.raises(ValueError):
+        closed_api.normalize_publish_merge_request({"decision": "create_new", "target_card_id": "11111111-1111-4111-8111-111111111111"})
 
 
 def test_closed_api_final_filter_route_requires_operator_and_fails_closed_without_key():
     env = {**os.environ}
     env.pop("DATABASE_URL", None)
     env.pop("KNUDG_OPERATOR_TOKEN", None)
+    env.pop("KNUDG_DISTRIBUTION_TOKEN", None)
+    env.pop("KNUDG_ADDITIONAL_OPERATOR_TOKENS", None)
     env.pop("KNUDG_NVIDIA_API_KEY", None)
     env.pop("NVIDIA_API_KEY", None)
     env.pop("NGC_API_KEY", None)
@@ -433,9 +921,104 @@ def test_closed_api_final_filter_route_requires_operator_and_fails_closed_withou
         )
         assert status == 200
         assert evaluated["status"] == "final_filter_evaluated"
-        assert evaluated["verdict"] == "needs_human_review"
+        assert evaluated["verdict"] == "hold"
         assert evaluated["risk_reasons"] == ["llm_provider_unconfigured"]
         assert evaluated["public_publication_enabled"] is False
+    finally:
+        stop_process(process)
+
+
+def test_closed_api_rejects_distribution_token_without_primary_operator_token():
+    env = {**os.environ}
+    env.pop("DATABASE_URL", None)
+    env.pop("KNUDG_OPERATOR_TOKEN", None)
+    env.pop("KNUDG_ADDITIONAL_OPERATOR_TOKENS", None)
+    env.pop("KNUDG_NVIDIA_API_KEY", None)
+    env.pop("NVIDIA_API_KEY", None)
+    env.pop("NGC_API_KEY", None)
+    env["KNUDG_DISTRIBUTION_TOKEN"] = "distribution-token"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_closed_api.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        startup = read_startup_line(process)
+        base_url = f"http://127.0.0.1:{startup['port']}"
+
+        status, forbidden = post_private(
+            f"{base_url}/v1/private/final-filter:evaluate",
+            {"candidate": sample_final_filter_candidate()},
+            token="wrong-token",
+        )
+        assert status == 503
+        assert forbidden["status"] == "forbidden"
+        assert forbidden["detail"] == "operator token is not configured"
+
+        status, evaluated = post_private(
+            f"{base_url}/v1/private/final-filter:evaluate",
+            {"candidate": sample_final_filter_candidate()},
+            token="distribution-token",
+        )
+        assert status == 503
+        assert evaluated["status"] == "forbidden"
+        assert evaluated["detail"] == "operator token is not configured"
+    finally:
+        stop_process(process)
+
+
+def test_closed_api_rejects_distribution_token_for_private_routes_when_operator_token_exists():
+    env = {**os.environ}
+    env.pop("DATABASE_URL", None)
+    env.pop("KNUDG_ADDITIONAL_OPERATOR_TOKENS", None)
+    env.pop("KNUDG_NVIDIA_API_KEY", None)
+    env.pop("NVIDIA_API_KEY", None)
+    env.pop("NGC_API_KEY", None)
+    env["KNUDG_OPERATOR_TOKEN"] = "operator-token"
+    env["KNUDG_DISTRIBUTION_TOKEN"] = "distribution-token"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_closed_api.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        startup = read_startup_line(process)
+        base_url = f"http://127.0.0.1:{startup['port']}"
+
+        status, forbidden = post_private(
+            f"{base_url}/v1/private/final-filter:evaluate",
+            {"candidate": sample_final_filter_candidate()},
+            token="distribution-token",
+        )
+        assert status == 403
+        assert forbidden["status"] == "forbidden"
+
+        status, evaluated = post_private(
+            f"{base_url}/v1/private/final-filter:evaluate",
+            {"candidate": sample_final_filter_candidate()},
+            token="operator-token",
+        )
+        assert status == 200
+        assert evaluated["status"] == "final_filter_evaluated"
+        assert evaluated["verdict"] == "hold"
     finally:
         stop_process(process)
 
@@ -453,6 +1036,8 @@ def test_closed_api_fails_closed_without_database():
     env = {**os.environ}
     env.pop("DATABASE_URL", None)
     env.pop("KNUDG_OPERATOR_TOKEN", None)
+    env.pop("KNUDG_DISTRIBUTION_TOKEN", None)
+    env.pop("KNUDG_ADDITIONAL_OPERATOR_TOKENS", None)
     process = subprocess.Popen(
         [
             sys.executable,
@@ -533,6 +1118,70 @@ def test_closed_api_unknown_get_route_does_not_echo_path_query_or_access_log_can
     assert canary not in stderr
     assert "Users" not in json.dumps(body)
     assert "private" not in stderr
+
+
+def test_closed_api_structured_access_log_tracks_source_and_activity_without_token_or_body():
+    env = {**os.environ}
+    env.pop("DATABASE_URL", None)
+    env.pop("KNUDG_OPERATOR_TOKEN", None)
+    env.pop("KNUDG_ADDITIONAL_OPERATOR_TOKENS", None)
+    env.pop("KNUDG_NVIDIA_API_KEY", None)
+    env.pop("NVIDIA_API_KEY", None)
+    env.pop("NGC_API_KEY", None)
+    env["KNUDG_OPERATOR_TOKEN"] = "operator-token"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_closed_api.py"),
+            "--port",
+            "0",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        startup = read_startup_line(process)
+        base_url = f"http://127.0.0.1:{startup['port']}"
+        request = urllib.request.Request(
+            f"{base_url}/v1/private/final-filter:evaluate",
+            data=json.dumps({"candidate": sample_final_filter_candidate()}).encode("utf-8"),
+            headers={
+                "authorization": "Bearer operator-token",
+                "content-type": "application/json",
+                "origin": "http://127.0.0.1:8790",
+                "user-agent": "knudg-test-agent/1.0",
+                "x-forwarded-for": "203.0.113.10",
+                "x-forwarded-host": "api.knudg.com",
+                "x-forwarded-proto": "https",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=5) as response:
+            assert response.status == 200
+            assert response.headers["x-knudg-request-id"]
+            response.read()
+    finally:
+        stop_process(process)
+
+    stderr = process.stderr.read()
+    events = [json.loads(line) for line in stderr.splitlines() if line.strip()]
+    access = next(event for event in events if event.get("event") == "http_access")
+
+    assert access["route"] == "private_final_filter_evaluate"
+    assert access["status"] == 200
+    assert access["auth_token_class"] == "primary"
+    assert access["authorization_present"] is True
+    assert access["forwarded_for"] == "203.0.113.10"
+    assert access["forwarded_host"] == "api.knudg.com"
+    assert access["forwarded_proto"] == "https"
+    assert access["origin_host"] == "127.0.0.1"
+    assert access["user_agent_digest"].startswith("sha256:")
+    assert "operator-token" not in stderr
+    assert "Bearer" not in stderr
+    assert "Technical schema-validation guidance" not in stderr
 
 
 def test_closed_api_private_publish_requires_token_and_digest_before_storage():
@@ -620,7 +1269,7 @@ def test_closed_api_private_publish_rejects_raw_card_without_echoing_canary():
         raw_card = validate_local_private_card_v0(
             json.loads((ROOT / "fixtures" / "local-private-card.sample.json").read_text(encoding="utf-8"))
         )
-        raw_card["solution_summary"] = f"The rejected secret token {canary} lived under C:\\Users\\4\\private\\repo."
+        raw_card["solution_summary"] = f"The rejected secret token {canary} lived under C:\\Users\\redacted\\private\\repo."
         status, rejected = post_publish(f"{base_url}/v1/private/cards:publish", {"card": raw_card}, token="test-token")
         assert status == 400
         assert rejected == {"status": "rejected", "stored": False, "reject_class": "local_private_card"}
@@ -662,7 +1311,7 @@ def test_closed_api_private_search_rejects_raw_profile_without_echoing_canary():
                 "task_profile": {
                     "schema_version": "task_profile.v0",
                     "intent": "debug",
-                    "explicit_query": f"raw secret token {canary} at C:\\Users\\4\\private",
+                    "explicit_query": f"raw secret token {canary} at C:\\Users\\redacted\\private",
                     "repo_shape_category": "pytest-postgres",
                     "public_packages": ["psycopg"],
                     "error_fingerprints": [canary],
@@ -710,7 +1359,7 @@ def test_closed_api_publication_candidate_rejects_workspace_without_echoing_cana
         canary = "CANARY_CANDIDATE_WORKSPACE_DO_NOT_ECHO"
         status, rejected = post_private(
             f"{base_url}/v1/private/cards/11111111-1111-4111-8111-111111111111:publication-candidate",
-            {"workspace": f"C:\\Users\\4\\private\\{canary}"},
+            {"workspace": f"C:\\Users\\redacted\\private\\{canary}"},
             token="test-token",
         )
         assert status == 400
@@ -877,6 +1526,9 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
     env["KNUDG_PRIVATE_TENANT_ID"] = tenant_id
     env["KNUDG_PRIVATE_NAMESPACE_ID"] = namespace_id
     env["KNUDG_PRIVATE_PRINCIPAL_ID"] = principal_id
+    env.pop("KNUDG_NVIDIA_API_KEY", None)
+    env.pop("NVIDIA_API_KEY", None)
+    env.pop("NGC_API_KEY", None)
     process = subprocess.Popen(
         [
             sys.executable,
@@ -912,7 +1564,76 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
         assert status == 201
         assert published["status"] == "private_published"
         card_id = published["card_id"]
+        first_version_id = published["card_version_id"]
+
+        updated_card = dict(card)
+        updated_card["title"] = "Psycopg migration capture path update"
+        updated_card["solution_summary"] = (
+            card["solution_summary"]
+            + " Later attempts should update this same logical Knudg when the old note was not directly usable."
+        )
+        updated_card["lessons"] = [
+            *card["lessons"],
+            "Use merge update when a similar Knudg was relevant but not directly usable.",
+        ]
+        updated_digest = canonical_digest_hex(updated_card)
+        status, merge_approval = post_publish(
+            f"{base_url}/v1/private/cards:publish",
+            {"workspace": "closed-beta-test", "card": updated_card},
+            token="test-token",
+        )
+        assert status == 409
+        assert merge_approval["status"] == "approval_required"
+        assert merge_approval["merge_candidates"]["recommended_action"] == "update_existing"
+        assert merge_approval["merge_candidates"]["cards"][0]["card_id"] == card_id
+
+        status, merge_required = post_publish(
+            f"{base_url}/v1/private/cards:publish",
+            {"workspace": "closed-beta-test", "card": updated_card},
+            token="test-token",
+            digest=updated_digest,
+        )
+        assert status == 409
+        assert merge_required["status"] == "merge_required"
+        assert merge_required["stored"] is False
+
+        status, updated = post_publish(
+            f"{base_url}/v1/private/cards:publish",
+            {
+                "workspace": "closed-beta-test",
+                "card": updated_card,
+                "merge": {
+                    "decision": "update_existing",
+                    "target_card_id": card_id,
+                    "reason": "same logical Knudg needed updated applicability limits",
+                },
+            },
+            token="test-token",
+            digest=updated_digest,
+        )
+        assert status == 200
+        assert updated["status"] == "private_card_updated"
+        assert updated["stored"] is True
+        assert updated["card_id"] == card_id
+        assert updated["previous_card_version_id"] == first_version_id
+        assert updated["card_version_id"] != first_version_id
+        assert updated["version_number"] == 2
+        assert updated["merge_update"]["result"] == "version_created"
+        assert updated["merge_update"]["created_new_card"] is False
+        published = updated
+        card = updated_card
+
         with psycopg.connect(migrated_db, connect_timeout=3) as conn:
+            assert conn.execute("select count(*) from experience_cards").fetchone()[0] == 1
+            assert conn.execute("select count(*) from card_versions where card_id = %s", (card_id,)).fetchone()[0] == 2
+            assert conn.execute(
+                "select count(*) from card_edges where source_card_version_id = %s and target_card_version_id = %s and edge_type = 'supersedes'",
+                (published["card_version_id"], first_version_id),
+            ).fetchone()[0] == 1
+            assert conn.execute(
+                "select lifecycle_status from local_private_search_documents where card_version_id = %s",
+                (first_version_id,),
+            ).fetchone()[0] == "revoked"
             consent_proof = seed_closed_api_private_retention_proof(
                 conn,
                 tenant_id,
@@ -958,6 +1679,7 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
         assert found["result"]["decision"] == "cards_found"
         assert found["result"]["served_from"] == "closed_private_exact_fts"
         assert found["result"]["cards"][0]["card_id"] == card_id
+        assert found["result"]["cards"][0]["card_version_id"] == published["card_version_id"]
         assert "summary" not in found["result"]["cards"][0]
 
         status, candidate = post_private(
@@ -970,6 +1692,16 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
         assert candidate["public_publication_enabled"] is False
         assert candidate["external_publication_enabled"] is False
         assert candidate["requires_human_approval"] is True
+        assert candidate["final_filter"]["schema_version"] == "final-filter-result-v0"
+        assert candidate["final_filter"]["verdict"] == "hold"
+        assert candidate["final_filter"]["risk_reasons"] == ["llm_provider_unconfigured"]
+        assert candidate["final_filter"]["provider"] == "none"
+        assert candidate["final_filter"]["llm_called"] is False
+        assert candidate["final_filter"]["fail_closed"] is True
+        assert candidate["final_filter"]["automated_repair_required"] is True
+        assert candidate["final_filter"]["hold_repair_policy"]["parallel_reviewer_count"] == 3
+        assert candidate["final_filter"]["public_publication_enabled"] is False
+        assert candidate["final_filter"]["final_publication_completion_enabled"] is False
         assert candidate["candidate"]["schema_version"] == "closed-publication-candidate-v0"
         assert candidate["candidate"]["candidate_state"] == "publication_ready_candidate"
         assert candidate["candidate"]["redaction"]["state"] == "sanitized_public_fields_only"
@@ -1001,6 +1733,7 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
         assert status == 200
         assert viewed["status"] == "private_card"
         assert viewed["card_id"] == card_id
+        assert viewed["card_version_id"] == published["card_version_id"]
         assert viewed["card"] == card
         assert viewed["publication_enabled"] is False
 
@@ -1052,6 +1785,24 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
             )
             """
         ).fetchone()[0] is True
+        assert conn.execute(
+            """
+            select has_function_privilege(
+              'knudg_api_app',
+              'knudg_closed_api_merge_update(text, uuid, jsonb, jsonb, jsonb)',
+              'execute'
+            )
+            """
+        ).fetchone()[0] is True
+        assert conn.execute(
+            """
+            select has_function_privilege(
+              'knudg_api_app',
+              'knudg_closed_private_merge_update(uuid, uuid[], uuid, text, uuid, jsonb, jsonb, jsonb)',
+              'execute'
+            )
+            """
+        ).fetchone()[0] is False
         assert conn.execute(
             """
             select has_function_privilege(
@@ -1111,7 +1862,7 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
         conn.rollback()
 
     with psycopg.connect(migrated_db, connect_timeout=3) as conn:
-        row = conn.execute(
+        rows = conn.execute(
             """
             select b.body_json, b.lifecycle_status as body_status,
               d.search_text, d.lifecycle_status as search_status
@@ -1121,6 +1872,17 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
              and d.card_id = b.card_id
              and d.card_version_id = b.card_version_id
             where b.card_id = %s
+            order by b.created_at, b.card_version_id
+            """,
+            (card_id,),
+        ).fetchall()
+        purge_event_row = conn.execute(
+            """
+            select event_json
+            from local_private_value_events
+            where card_id = %s and event_name = 'purge_completed'
+            order by created_at desc
+            limit 1
             """,
             (card_id,),
         ).fetchone()
@@ -1144,10 +1906,13 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
             """,
             (stored_experience["record_id"],),
         ).fetchone()
-    assert row[0] == {}
-    assert row[1] == "purged"
-    assert row[2] == ""
-    assert row[3] == "purged"
+    assert len(rows) == 2
+    assert all(row[0] == {} for row in rows)
+    assert all(row[1] == "purged" for row in rows)
+    assert all(row[2] == "" for row in rows)
+    assert all(row[3] == "purged" for row in rows)
+    assert purge_event_row[0]["search_versions_purged"] == 2
+    assert purge_event_row[0]["body_versions_purged"] == 2
     assert event_row[0]["candidate_digest"] == candidate["candidate_digest"]
     assert event_row[0]["public_publication_enabled"] is False
     assert experience_row == (

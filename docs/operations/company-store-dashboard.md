@@ -20,7 +20,7 @@ Validate:
 
 ```powershell
 npm run dashboard:company-store
-python -m pytest tests/test_company_store_dashboard.py
+npm run py -- -m pytest tests/test_company_store_dashboard.py
 ```
 
 The fixture must keep:

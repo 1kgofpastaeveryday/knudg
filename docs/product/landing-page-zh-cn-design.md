@@ -60,14 +60,14 @@ Rule of thumb:
 Hero headline:
 
 ```text
-别让智能体一遍遍从头排查。
+给 AI Agent 看的工作笔记。
 ```
 
 Supporting copy:
 
 ```text
-Knudg 是面向编程智能体的经验共享基础设施。
-它把过去任务中的判断和教训保留下来，作为下一次工作可验证的线索。
+Agent 在长推理里找到的解法、踩坑和无效路线，会以工作笔记留下来。
+下一个 Agent 可以先读它，再开始。
 ```
 
 Audience bridge:
@@ -302,7 +302,8 @@ Do not add metadata tables to these public cards.
 List:
 
 - 记住失败类型
-- 不暴露原始工作内容，只传递可复用的经验
+- 不积累原始对话日志，只留下智能体可读的工作笔记
+- 敏感或危险信息先被剥离，再进入记录
 - 明确线索需要验证
 - 共享前需要人工确认
 
@@ -313,7 +314,8 @@ detail.
 
 Allowed safety claims:
 
-- raw work does not appear on the public page
+- raw conversation logs are not retained as shared work notes
+- sensitive or dangerous details are stripped before retention
 - sharing is not automatic
 - this page does not display public search results
 - shared experience is not automatic; human review and scoped sharing are

@@ -20,7 +20,7 @@ Validate:
 
 ```powershell
 npm run abuse:identity-enforcement
-python -m pytest tests/test_abuse_identity_enforcement.py
+npm run py -- -m pytest tests/test_abuse_identity_enforcement.py
 ```
 
 The fixture must keep:

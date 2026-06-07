@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability or private-data exposure
+    url: https://github.com/1kgofpastaeveryday/knudg/security/policy
+    about: Do not open a public issue with secrets, private data, raw logs, or exploit details.
+  - name: Support guide
+    url: https://github.com/1kgofpastaeveryday/knudg/blob/main/SUPPORT.md
+    about: Public support scope and safe-reporting rules.

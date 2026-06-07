@@ -10,6 +10,16 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "schemas" / "review-ops-gates.schema.json"
 DECISIONS_PATH = ROOT / "docs" / "decisions" / "README.md"
 
+REQUIRED_FINAL_CHECK_CRITERIA = {
+    "undisclosed_sponsorship_or_affiliate_interest",
+    "promotional_call_to_action_or_lead_capture",
+    "affiliate_referral_or_tracking_incentive",
+    "keyword_stuffing_or_reputation_manipulation",
+    "fake_or_unverifiable_experience_claim",
+    "coordinated_or_repeated_low_signal_submission",
+}
+REQUIRED_FINAL_FILTER_VERDICTS = {"pass", "hold", "reject"}
+
 
 def load_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -33,6 +43,31 @@ def gate_failures(data):
         failures.append("at least one high-risk lane is required")
     if any(not lane["dual_review_required"] for lane in high_risk_lanes):
         failures.append("every high-risk lane requires dual review")
+    final_check = data["final_publication_check"]
+    criteria = set(final_check["criteria"])
+    missing_criteria = sorted(REQUIRED_FINAL_CHECK_CRITERIA - criteria)
+    if missing_criteria:
+        failures.append("final publication check missing ad/spam criteria: " + ", ".join(missing_criteria))
+    verdicts = set(final_check["llm_verdicts"])
+    missing_verdicts = sorted(REQUIRED_FINAL_FILTER_VERDICTS - verdicts)
+    if missing_verdicts:
+        failures.append("final publication check missing LLM verdicts: " + ", ".join(missing_verdicts))
+    repair_loop = final_check["hold_repair_loop"]
+    reviewer_outputs = set(repair_loop["reviewer_outputs_required"])
+    if reviewer_outputs != {"ok_points", "ng_points", "repair_worthiness"}:
+        failures.append("hold repair loop must require ok points, NG points, and repair-worthiness review outputs")
+    if repair_loop["parallel_reviewer_count"] != 3:
+        failures.append("hold repair loop requires exactly three parallel reviewers")
+    if not repair_loop["repair_worthiness_decision_required"]:
+        failures.append("hold repair loop requires a repair-worthiness decision before writer repair")
+    if repair_loop["writer_receives"] != "ng_points_only":
+        failures.append("hold repair loop writer must receive NG points only")
+    if repair_loop["max_writer_attempts"] != 3:
+        failures.append("hold repair loop requires exactly three writer attempts before reject")
+    if repair_loop["pass_condition"] != "all_three_reviewers_pass":
+        failures.append("hold repair loop pass condition must require all three reviewers to pass")
+    if repair_loop["reject_condition"] != "not_worth_repair_or_three_writer_attempts_without_pass":
+        failures.append("hold repair loop reject condition must include not-worth-repair or three failed writer attempts")
     if data["enablement"]["reviewer_publish_enabled"]:
         failures.append("reviewer publish must remain disabled in this scaffold")
     if data["enablement"]["public_display_enabled"]:
@@ -58,6 +93,9 @@ def main(argv=None):
         print(json.dumps({"status": "blocked", "blocking_gates": failures}, sort_keys=True))
         return 3
     print(json.dumps({
+        "ad_or_spam_check_required": True,
+        "hold_repair_loop_enabled": True,
+        "llm_verdicts": sorted(REQUIRED_FINAL_FILTER_VERDICTS),
         "status": "ok",
         "reviewer_publish_enabled": False,
         "public_display_enabled": False,

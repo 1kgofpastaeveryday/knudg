@@ -79,6 +79,25 @@ class LiveBackendHandler(BaseHTTPRequestHandler):
                 status=409,
             )
             return
+        if self.path == "/v1/private/final-filter/jobs:stats":
+            assert payload == {}
+            self._write_json(
+                {
+                    "status": "final_filter_queue_stats",
+                    "stats": {
+                        "schema_version": "final-filter-queue-stats-v0",
+                        "total_jobs": 1500,
+                        "active_depth": 37,
+                        "status_counts": {"queued": 31, "leased": 6, "succeeded": 1463, "dead": 0},
+                        "ready_queued_jobs": 31,
+                        "delayed_queued_jobs": 0,
+                        "expired_leases": 0,
+                        "candidate_bodies_included": False,
+                        "result_bodies_included": False,
+                    },
+                }
+            )
+            return
         self._write_json({"status": "not_found"}, status=404)
 
 
@@ -255,6 +274,21 @@ def test_live_profile_build_search_nudge_and_write_candidate(tmp_path):
         assert candidate["stored"] is False
         assert candidate["public_publication_enabled"] is False
         assert "live-token" not in json.dumps(candidate)
+
+        code, stats = run_knudgctl(
+            "live",
+            "final-filter",
+            "stats",
+            "--config",
+            str(config),
+            env=env,
+        )
+        assert code == 0
+        assert stats["queue_status"] == "final_filter_queue_stats"
+        assert stats["stats"]["total_jobs"] == 1500
+        assert stats["stats"]["candidate_bodies_included"] is False
+        assert stats["stats"]["result_bodies_included"] is False
+        assert "live-token" not in json.dumps(stats)
         assert LiveBackendHandler.saw_token is True
     finally:
         server.shutdown()

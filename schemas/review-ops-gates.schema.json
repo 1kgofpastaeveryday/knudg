@@ -13,6 +13,7 @@
     "assignment",
     "high_risk_verification",
     "malicious_card_tests",
+    "final_publication_check",
     "pause_rules",
     "enablement"
   ],
@@ -86,6 +87,79 @@
         "fixture_set_id": {"type": "string", "pattern": "^malicious_[A-Za-z0-9_-]{6,80}$"},
         "seeded_test_required": {"const": true},
         "false_approval_threshold_label": {"type": "string", "pattern": "^threshold_[A-Za-z0-9_-]{6,80}$"}
+      }
+    },
+    "final_publication_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_id",
+        "ad_or_spam_assessment_required",
+        "commercial_incentive_disclosure_required",
+        "spam_or_undisclosed_ad_blocks_publication",
+        "llm_verdicts",
+        "hold_repair_loop",
+        "criteria"
+      ],
+      "properties": {
+        "policy_id": {"type": "string", "pattern": "^final_check_[A-Za-z0-9_-]{6,80}$"},
+        "ad_or_spam_assessment_required": {"const": true},
+        "commercial_incentive_disclosure_required": {"const": true},
+        "spam_or_undisclosed_ad_blocks_publication": {"const": true},
+        "llm_verdicts": {
+          "type": "array",
+          "items": {
+            "enum": ["pass", "hold", "reject"]
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true
+        },
+        "hold_repair_loop": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "parallel_reviewer_count",
+            "reviewer_outputs_required",
+            "repair_worthiness_decision_required",
+            "writer_receives",
+            "max_writer_attempts",
+            "pass_condition",
+            "reject_condition"
+          ],
+          "properties": {
+            "enabled": {"const": true},
+            "parallel_reviewer_count": {"const": 3},
+            "reviewer_outputs_required": {
+              "type": "array",
+              "items": {"enum": ["ok_points", "ng_points", "repair_worthiness"]},
+              "minItems": 3,
+              "maxItems": 3,
+              "uniqueItems": true
+            },
+            "repair_worthiness_decision_required": {"const": true},
+            "writer_receives": {"const": "ng_points_only"},
+            "max_writer_attempts": {"const": 3},
+            "pass_condition": {"const": "all_three_reviewers_pass"},
+            "reject_condition": {"const": "not_worth_repair_or_three_writer_attempts_without_pass"}
+          }
+        },
+        "criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "undisclosed_sponsorship_or_affiliate_interest",
+              "promotional_call_to_action_or_lead_capture",
+              "affiliate_referral_or_tracking_incentive",
+              "keyword_stuffing_or_reputation_manipulation",
+              "fake_or_unverifiable_experience_claim",
+              "coordinated_or_repeated_low_signal_submission"
+            ]
+          },
+          "uniqueItems": true
+        }
       }
     },
     "pause_rules": {

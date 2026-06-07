@@ -1,0 +1,55 @@
+name: Self-hosting help
+description: Ask for help running Knudg locally or in a self-hosted environment.
+title: "[Self-hosting]: "
+labels: ["self-hosting", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Public self-hosting issues must use synthetic examples. Do not include private endpoints, deployment credentials, raw logs, personal data, or host-specific SSH details.
+  - type: dropdown
+    id: setup_phase
+    attributes:
+      label: Setup phase
+      options:
+        - dependency install
+        - Postgres / migrations
+        - closed API
+        - local operator frontend
+        - Codex plugin / skill
+        - Tailscale Serve
+        - packaging
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to run?
+      description: Describe the local/self-hosted setup without private endpoints or credentials.
+    validations:
+      required: true
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What have you tried?
+      description: Use redacted summaries. Avoid raw logs and full command output.
+    validations:
+      required: true
+  - type: textarea
+    id: sanitized_error
+    attributes:
+      label: Sanitized error or symptom
+      description: Include only short, redacted error fingerprints.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "OS family, Python version, Node version, Postgres version, Docker availability"
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public issue safety
+      options:
+        - label: I removed secrets, tokens, raw transcripts, raw logs, private endpoints, hostnames, usernames, and absolute local paths.
+          required: true

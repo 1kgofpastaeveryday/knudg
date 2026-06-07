@@ -21,7 +21,7 @@ Validate:
 
 ```powershell
 npm run tns:audit
-python -m pytest tests/test_trust_and_safety_audit.py
+npm run py -- -m pytest tests/test_trust_and_safety_audit.py
 ```
 
 The fixture must keep:

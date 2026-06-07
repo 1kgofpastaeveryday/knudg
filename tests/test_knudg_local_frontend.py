@@ -9,12 +9,12 @@ from pathlib import Path
 from urllib import request
 from urllib.error import HTTPError
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class UpstreamHandler(BaseHTTPRequestHandler):
     token_seen = False
+    expected_token = "test-token"
     approved_digest_seen = None
     publish_requests = 0
     force_store_on_stage = False
@@ -41,7 +41,7 @@ class UpstreamHandler(BaseHTTPRequestHandler):
         self._write_json({"status": "not_found"}, status=404)
 
     def do_POST(self):
-        UpstreamHandler.token_seen = self.headers.get("authorization") == "Bearer test-token"
+        UpstreamHandler.token_seen = self.headers.get("authorization") == f"Bearer {UpstreamHandler.expected_token}"
         payload = self._read_json()
         if self.path == "/v1/private/cards:publish":
             UpstreamHandler.publish_requests += 1
@@ -113,6 +113,7 @@ class UpstreamHandler(BaseHTTPRequestHandler):
 
 def serve_upstream():
     UpstreamHandler.token_seen = False
+    UpstreamHandler.expected_token = "test-token"
     UpstreamHandler.approved_digest_seen = None
     UpstreamHandler.publish_requests = 0
     UpstreamHandler.force_store_on_stage = False
@@ -131,11 +132,11 @@ def read_startup_line(process, timeout_seconds=5):
     raise AssertionError("local frontend did not print a startup line")
 
 
-def post_json(url, payload):
+def post_json(url, payload, headers=None):
     req = request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"content-type": "application/json"},
+        headers={"content-type": "application/json", **(headers or {})},
         method="POST",
     )
     try:
@@ -145,9 +146,19 @@ def post_json(url, payload):
         return exc.code, json.loads(exc.read().decode("utf-8"))
 
 
-def get_json(url):
-    with request.urlopen(url, timeout=5) as response:
+def get_json(url, headers=None):
+    req = request.Request(url, headers=headers or {}, method="GET")
+    with request.urlopen(req, timeout=5) as response:
         return response.status, json.loads(response.read().decode("utf-8"))
+
+
+def get_json_or_error(url, headers=None):
+    req = request.Request(url, headers=headers or {}, method="GET")
+    try:
+        with request.urlopen(req, timeout=5) as response:
+            return response.status, json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        return exc.code, json.loads(exc.read().decode("utf-8"))
 
 
 def stop_process(process):
@@ -241,6 +252,88 @@ def test_local_frontend_stages_write_search_and_view_without_browser_token():
         assert code == 200
         assert completed["status"] == "private_retention_consent_completed"
         assert completed["public_publication_enabled"] is False
+    finally:
+        stop_process(process)
+        upstream.shutdown()
+
+
+def test_local_frontend_requires_explicit_token_for_private_proxy_when_env_token_absent():
+    upstream = serve_upstream()
+    env = {**os.environ}
+    env.pop("KNUDG_OPERATOR_TOKEN", None)
+    env.pop("KNUDG_FRONTEND_TOKEN", None)
+    env["KNUDG_FRONTEND_API_BASE_URL"] = f"http://127.0.0.1:{upstream.server_port}"
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_local_frontend.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        startup = read_startup_line(process)
+        code, searched = post_json(f"{startup['url']}/api/search", {"workspace": "closed-beta-test", "task_profile": {}})
+
+        assert code == 503
+        assert searched["status"] == "operator_token_required"
+        assert UpstreamHandler.token_seen is False
+    finally:
+        stop_process(process)
+        upstream.shutdown()
+
+
+def test_local_frontend_can_require_tailscale_identity_headers():
+    upstream = serve_upstream()
+    env = {
+        **os.environ,
+        "KNUDG_OPERATOR_TOKEN": "test-token",
+        "KNUDG_OPERATOR_REQUIRE_TAILSCALE": "1",
+        "KNUDG_OPERATOR_TAILSCALE_ALLOWED_USERS": "operator@example.com",
+        "KNUDG_FRONTEND_API_BASE_URL": f"http://127.0.0.1:{upstream.server_port}",
+    }
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_local_frontend.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    try:
+        startup = read_startup_line(process)
+        assert startup["tailscale_required"] is True
+        assert startup["tailscale_allowed_user_count"] == 1
+
+        code, rejected = get_json_or_error(f"{startup['url']}/api/status")
+        assert code == 403
+        assert rejected["reject_class"] == "tailscale_required"
+
+        code, rejected_user = get_json_or_error(
+            f"{startup['url']}/api/status",
+            headers={"Tailscale-User-Login": "other@example.com"},
+        )
+        assert code == 403
+        assert rejected_user["reject_class"] == "tailscale_user_not_allowed"
+
+        code, status = get_json_or_error(
+            f"{startup['url']}/api/status",
+            headers={"Tailscale-User-Login": "operator@example.com"},
+        )
+        assert code == 200
+        assert status["status"] == "ready"
     finally:
         stop_process(process)
         upstream.shutdown()

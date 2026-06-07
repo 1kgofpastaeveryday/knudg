@@ -3276,6 +3276,43 @@ def live_write_candidate(args):
         return emit_client(command_name(args), "unavailable", EXIT_UNAVAILABLE, detail=str(exc))
 
 
+def live_final_filter_stats(args):
+    try:
+        _, effective = _live_effective(args)
+        token = live_operator_token(args)
+        status, payload = live_post_json(
+            effective.server_url,
+            "/v1/private/final-filter/jobs:stats",
+            {},
+            token,
+            timeout_seconds=args.timeout_seconds,
+        )
+        if status < 200 or status >= 300:
+            return emit_client(
+                command_name(args),
+                "unavailable",
+                EXIT_UNAVAILABLE,
+                upstream_status=status,
+                upstream_status_text=payload.get("status"),
+            )
+        stats = payload.get("stats")
+        if not isinstance(stats, dict):
+            return emit_client(command_name(args), "unavailable", EXIT_UNAVAILABLE, upstream_status=status, upstream_status_text=payload.get("status"))
+        return emit_client(
+            command_name(args),
+            "ok",
+            EXIT_OK,
+            profile=effective.profile,
+            server_url=effective.server_url,
+            queue_status=payload.get("status"),
+            stats=stats,
+        )
+    except (ConfigError, ValueError, json.JSONDecodeError) as exc:
+        return emit_client(command_name(args), "usage_error", EXIT_USAGE, detail=str(exc))
+    except ProbeError as exc:
+        return emit_client(command_name(args), "unavailable", EXIT_UNAVAILABLE, detail=str(exc))
+
+
 def add_common(parser):
     parser.add_argument("--database-url", default=None)
 
@@ -3353,6 +3390,13 @@ def build_parser():
     live_write_parser.add_argument("--token-env", default="KNUDG_OPERATOR_TOKEN")
     live_write_parser.add_argument("--config")
     live_write_parser.set_defaults(func=live_write_candidate)
+    live_final_filter = live_sub.add_parser("final-filter")
+    live_final_filter_sub = live_final_filter.add_subparsers(dest="action", required=True, parser_class=JsonArgumentParser)
+    live_final_filter_stats_parser = live_final_filter_sub.add_parser("stats")
+    live_final_filter_stats_parser.add_argument("--token-env", default="KNUDG_OPERATOR_TOKEN")
+    live_final_filter_stats_parser.add_argument("--config")
+    live_final_filter_stats_parser.add_argument("--timeout-seconds", type=positive_int, default=5)
+    live_final_filter_stats_parser.set_defaults(func=live_final_filter_stats)
 
     migrate = sub.add_parser("migrate")
     migrate_sub = migrate.add_subparsers(dest="subcommand", required=True, parser_class=JsonArgumentParser)

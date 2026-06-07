@@ -117,7 +117,7 @@ def test_candidate_domain_facets_rejects_broader_domain_ingest_when_db_available
     namespace_id = uuid.uuid4()
     conn.execute("insert into tenants(id, slug, name) values (%s, %s, 'Tenant')", (tenant_id, f"tenant-{tenant_id.hex}"))
     conn.execute(
-        "insert into principals(id, principal_type, display_name, external_subject) values (%s, 'user', 'Test User', %s)",
+        "insert into principals(id, principal_type, display_name, external_subject) values (%s, 'human_user', 'Test User', %s)",
         (principal_id, f"subject-{principal_id.hex}"),
     )
     conn.execute(

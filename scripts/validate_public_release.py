@@ -35,9 +35,11 @@ DENIED_PATH_PATTERNS = (
     re.compile(r"^knudg-.*-live\.png$"),
 )
 
+PATH_SEPARATOR = r"(?:[/\\]|\\\\)"
+
 DENIED_CONTENT_PATTERNS = (
-    re.compile(r"C:[/\\]Users[/\\]4\b", re.IGNORECASE),
-    re.compile(r"D:[/\\]working[/\\]knudg\b", re.IGNORECASE),
+    re.compile(rf"C:{PATH_SEPARATOR}Users{PATH_SEPARATOR}4\b", re.IGNORECASE),
+    re.compile(rf"D:{PATH_SEPARATOR}working{PATH_SEPARATOR}knudg\b", re.IGNORECASE),
     re.compile(r"-----BEGIN (?:RSA |OPENSSH |EC |DSA |)PRIVATE KEY-----"),
     re.compile(r"\bgh[pousr]_[A-Za-z0-9_]{36,}\b"),
     re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"),

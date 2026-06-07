@@ -44,19 +44,19 @@ docker compose up -d postgres
 Install test dependencies:
 
 ```powershell
-python -m pip install -r requirements-dev.txt
+npm run setup:python
 ```
 
 Apply migrations:
 
 ```powershell
-python scripts/migrate.py up
+npm run py -- scripts/migrate.py up
 ```
 
 Rollback migrations:
 
 ```powershell
-python scripts/migrate.py down
+npm run py -- scripts/migrate.py down
 ```
 
 To use an existing Postgres instance, set `DATABASE_URL` before running the
@@ -65,7 +65,7 @@ migration runner or tests.
 ## M0 Schema Tests
 
 ```powershell
-python -m pytest tests/test_m0_schema.py
+npm run py -- -m pytest tests/test_m0_schema.py
 ```
 
 ## Gate Checks

@@ -172,6 +172,9 @@ def test_gate_runs_for_technical_work_in_knudg_workspace(tmp_path):
     assert "`crawl_status` should be `searched` only when the delegated" in hook_output["additionalContext"]
     assert "pending_init" in hook_output["additionalContext"]
     assert "Do not close a delegated sub-agent while its status is still running" in hook_output["additionalContext"]
+    assert "reaches a terminal status, record its compact verdict and close" in hook_output["additionalContext"]
+    assert "does not consume the thread limit" in hook_output["additionalContext"]
+    assert "Close only this bounded Knudg live-nudge sub-agent" in hook_output["additionalContext"]
     assert "do not claim a native sub-agent ran" in hook_output["additionalContext"]
 
     records = read_log(log)
@@ -281,7 +284,8 @@ def test_gate_asks_before_raw_or_sensitive_material(tmp_path):
 
 def test_gate_skips_outside_knudg_scope(tmp_path):
     log = tmp_path / "gate.jsonl"
-    output = run_hook(user_prompt("pytestが落ちているので原因調査して", cwd=tmp_path), log)
+    outside_cwd = ROOT.parent / "outside-knudg-test-workspace"
+    output = run_hook(user_prompt("pytestが落ちているので原因調査して", cwd=outside_cwd), log)
 
     assert output["hookSpecificOutput"] == {"hookEventName": "UserPromptSubmit"}
     record = read_log(log)[-1]

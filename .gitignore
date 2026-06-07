@@ -7,6 +7,7 @@ Desktop.ini
 .env
 .env.*
 !.env.example
+.venv/
 
 # Logs and temporary files
 *.log
@@ -41,6 +42,7 @@ trace.zip
 # Dependency and tool caches
 node_modules/
 .pytest_cache/
+.pytest-tmp/
 .wrangler/
 __pycache__/
 *.py[cod]

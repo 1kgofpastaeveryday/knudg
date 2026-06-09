@@ -21,7 +21,7 @@ need the prior plan. Where anything conflicts, target-model.md wins.
    filter queue (40 rpm throttle). The queue exists; it still needs rewiring so
    ingestion feeds it directly (see ③ below).
 4. **Semantic search** — hybrid FTS + pgvector, opt-in. Done (storage + functions
-   + API), pending a full HTTP-level e2e test.
+   + API + HTTP-level e2e).
 
 ## Done in the reshape (2026-06)
 
@@ -51,12 +51,23 @@ need the prior plan. Where anything conflicts, target-model.md wins.
    Only after the solo loop proves useful.
 3. **Shared pipe / serving** (Public + Team servers as one pipe with
    filter+access config) — the heavy ② work; after ③.
-4. **Doc consolidation.** Reconcile or retire docs that predate target-model:
-   `docs/architecture/implementation-readiness.md`, the product/RFC docs
-   (`docs/rfcs/0004-*` + the adversarial review reports), and the README link to
-   `docs/product/codex-for-oss-readiness.md`. Mind README/internal links.
-5. **Semantic-search e2e test.** HTTP-level: publish with embedding on → embedding
-   stored → hybrid served (model-gated skip). See semantic-search.md.
+
+Done since:
+
+- **Doc consolidation (was ④).** Retired the human-gated/M0–M6-milestone,
+  consent/approval, enterprise-governance, experience-domains, and
+  public-publication-path apparatus that predated target-model: deleted 18 docs
+  (the `architecture/` overview/operations/agent-access/consent-revocation-ux/
+  enterprise-governance/experience-domains/implementation-readiness docs, the
+  `decisions/` backlog, the retired `product/` roadmap/crosswalk/notice docs,
+  RFC 0004, and the 5 adversarial-review snapshots). Reconciled survivors
+  (top README, docs/README, data-model, security-privacy, m0-contract-split,
+  strategy, RFC 0001, landing-page-runbook) to point at target-model.md and
+  fixed every internal link. Deleted docs live in git history.
+- **Semantic-search e2e test (was ⑤).** HTTP-level publish with embedding on →
+  embedding stored → hybrid served, plus a keyword-disjoint query retrieved
+  purely via the vector path and the revoke fence on vector rows. Model-gated
+  skip. `tests/test_knudg_closed_api.py::test_closed_api_semantic_hybrid_e2e`.
 
 ## Known issues / cleanup
 

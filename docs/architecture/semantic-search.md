@@ -50,10 +50,13 @@ verified end-to-end (embed + cosine). The whole feature is **opt-in**
 off the backend stays FTS-only. Implemented additively (migration 0018 adds
 `knudg_closed_api_set_embedding` and `knudg_closed_api_vector_search`; the FTS
 publish/search functions are unchanged; the API combines FTS + vector results
-with `merge_search_rows`). A full HTTP-level semantic e2e (publish with embedding
-on → embedding stored → hybrid served) is the recommended next test; current
-coverage is unit tests for the Python logic, migration apply, pgvector cosine
-ops, and the FTS path staying green with embedding off.
+with `merge_search_rows`). Coverage now includes a full HTTP-level semantic e2e
+(`tests/test_knudg_closed_api.py::test_closed_api_semantic_hybrid_e2e`,
+model-gated skip): publish with embedding on → embedding stored → hybrid served,
+a keyword-disjoint query retrieved purely via the vector path
+(`coarse_match_reason == ['semantic_similarity']`), and the revoke fence applied
+to vector rows. Alongside it: unit tests for the Python logic, migration apply,
+pgvector cosine ops, and the FTS path staying green with embedding off.
 
 ## Flow
 

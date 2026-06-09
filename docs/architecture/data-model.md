@@ -126,9 +126,9 @@ experience_card:
 Domain fields are logical schema requirements for future generalized
 experience cards. The closed-launch local-private implementation may continue
 using its constrained payload shape until the migration/design pass updates the
-physical card schema. New product-path non-synthetic ingestion must not add
-broader personal, career, company, place, or service cards without a domain
-policy matching [Experience Domains](experience-domains.md).
+physical card schema. The current model scopes cards to technical work only; broader personal,
+career, company, place, or service domains were retired (see
+[target-model.md](target-model.md)).
 
 ## Canonical Tables
 

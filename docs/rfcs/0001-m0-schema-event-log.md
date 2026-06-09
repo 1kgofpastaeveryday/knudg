@@ -55,7 +55,7 @@ Out of scope:
 
 M0 follows:
 
-- [Implementation Readiness](../architecture/implementation-readiness.md)
+- [Target Model](../architecture/target-model.md)
 - [Data Model](../architecture/data-model.md)
 - [Security and Privacy](../architecture/security-privacy.md)
 

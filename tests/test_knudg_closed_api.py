@@ -1689,6 +1689,159 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
     assert purge_event_row[0]["body_versions_purged"] == 2
 
 
+def semantic_embedding_available():
+    # Model-gated: semantic search downloads a local model on first use. If the
+    # model cannot be constructed (offline / not installed), the e2e is skipped
+    # rather than failed — the FTS path is what stays mandatory.
+    prev = os.environ.get("KNUDG_EMBEDDING_ENABLED")
+    os.environ["KNUDG_EMBEDDING_ENABLED"] = "1"
+    try:
+        return closed_api.embed_text("semantic search availability probe") is not None
+    except Exception:
+        return False
+    finally:
+        if prev is None:
+            os.environ.pop("KNUDG_EMBEDDING_ENABLED", None)
+        else:
+            os.environ["KNUDG_EMBEDDING_ENABLED"] = prev
+
+
+def test_closed_api_semantic_hybrid_e2e(migrated_db):
+    if not semantic_embedding_available():
+        pytest.skip("embedding model unavailable; semantic search e2e is model-gated")
+    tenant_id = "11111111-1111-4111-8111-111111111111"
+    namespace_id = "22222222-2222-4222-8222-222222222222"
+    principal_id = "33333333-3333-4333-8333-333333333333"
+    api_password = "knudg_api_app_test"
+    api_url = api_role_url(migrated_db, api_password)
+    with psycopg.connect(migrated_db, autocommit=True, connect_timeout=3) as conn:
+        conn.execute(sql.SQL("alter role knudg_api_app login password {}").format(sql.Literal(api_password)))
+        conn.execute(
+            """
+            insert into knudg_private.closed_api_runtime_bindings(
+              tenant_id, namespace_id, principal_id, tenant_slug, namespace_key
+            )
+            values (%s, %s, %s, 'knudg-closed-private', 'closed-private')
+            on conflict (tenant_id, namespace_id, principal_id) do update
+            set tenant_slug = excluded.tenant_slug,
+                namespace_key = excluded.namespace_key,
+                enabled = true,
+                updated_at = now()
+            """,
+            (tenant_id, namespace_id, principal_id),
+        )
+
+    env = {**os.environ}
+    env["DATABASE_URL"] = api_url
+    env["KNUDG_OPERATOR_TOKEN"] = "test-token"
+    env["KNUDG_PRIVATE_TENANT_ID"] = tenant_id
+    env["KNUDG_PRIVATE_NAMESPACE_ID"] = namespace_id
+    env["KNUDG_PRIVATE_PRINCIPAL_ID"] = principal_id
+    env["KNUDG_EMBEDDING_ENABLED"] = "1"
+    env.pop("KNUDG_NVIDIA_API_KEY", None)
+    env.pop("NVIDIA_API_KEY", None)
+    env.pop("NGC_API_KEY", None)
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_closed_api.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    workspace = "semantic-e2e-test"
+    try:
+        startup = read_startup_line(process)
+        base_url = f"http://127.0.0.1:{startup['port']}"
+        card = validate_local_private_card_v0(
+            json.loads((ROOT / "fixtures" / "local-private-card.sample.json").read_text(encoding="utf-8"))
+        )
+        digest = canonical_digest_hex(card)
+        keyword_task_profile = json.loads(
+            (ROOT / "fixtures" / "local-private-task-profile.sample.json").read_text(encoding="utf-8")
+        )
+        # Semantically about the same card (relational-schema migration capture)
+        # but deliberately keyword-disjoint: none of these terms FTS-match the
+        # stored card, so any hit here must come from the vector path.
+        semantic_task_profile = {
+            "schema_version": "task_profile.v0",
+            "intent": "debug",
+            "explicit_query": "saving relational schema upgrade notes from a data-store client without leaking secrets",
+            "repo_shape_category": "relational-store-notes",
+            "retrieval_domains": ["technical_work"],
+            "recent_event_kinds": ["task_start"],
+        }
+
+        status, published = post_publish(
+            f"{base_url}/v1/private/cards:publish",
+            {"workspace": workspace, "card": card},
+            token="test-token",
+            digest=digest,
+        )
+        assert status == 201
+        assert published["status"] == "private_published"
+        card_id = published["card_id"]
+        card_version_id = published["card_version_id"]
+
+        # Publish with embedding on stores the vector best-effort.
+        with psycopg.connect(migrated_db, connect_timeout=3) as conn:
+            embedded = conn.execute(
+                "select embedding is not null from local_private_search_documents where card_version_id = %s",
+                (card_version_id,),
+            ).fetchone()[0]
+        assert embedded is True
+
+        # Keyword query: FTS still matches, and because embedding is on the query
+        # is also embedded, so the response is served from the hybrid path.
+        status, keyword_found = post_private(
+            f"{base_url}/v1/private/search",
+            {"workspace": workspace, "task_profile": keyword_task_profile, "limit": 3, "min_score": 1},
+        )
+        assert status == 200
+        assert keyword_found["result"]["decision"] == "cards_found"
+        assert keyword_found["result"]["served_from"] == "closed_private_hybrid"
+        assert keyword_found["result"]["cards"][0]["card_id"] == card_id
+
+        # Semantic query: no shared keywords, so FTS contributes nothing. The card
+        # is found purely via vector cosine similarity — proven by the match
+        # reason being semantic-only.
+        status, semantic_found = post_private(
+            f"{base_url}/v1/private/search",
+            {"workspace": workspace, "task_profile": semantic_task_profile, "limit": 3, "min_score": 1},
+        )
+        assert status == 200
+        assert semantic_found["result"]["decision"] == "cards_found"
+        assert semantic_found["result"]["served_from"] == "closed_private_hybrid"
+        matches = [c for c in semantic_found["result"]["cards"] if c["card_id"] == card_id]
+        assert matches, "semantic query did not retrieve the card via the vector path"
+        assert matches[0]["coarse_match_reason"] == ["semantic_similarity"]
+        assert "summary" not in matches[0]
+
+        # Revocation fence applies to vector rows exactly as to FTS rows: a revoked
+        # card is not vector-retrievable.
+        status, revoked = post_private(
+            f"{base_url}/v1/private/cards/{card_id}:revoke",
+            {"workspace": workspace, "reason": "semantic e2e revoke"},
+        )
+        assert status == 200
+        assert revoked["revoked"] is True
+
+        status, hidden = post_private(
+            f"{base_url}/v1/private/search",
+            {"workspace": workspace, "task_profile": semantic_task_profile, "limit": 3, "min_score": 1},
+        )
+        assert status == 200
+        assert hidden["result"]["decision"] == "no_suggestion"
+    finally:
+        stop_process(process)
+
+
 def test_closed_api_allows_deployment_type_override():
     env = {**os.environ}
     env.pop("DATABASE_URL", None)

@@ -62,7 +62,7 @@ signals, and create only approval-required write candidates.
 
 ## Task Files
 
-- [core-status.md](core-status.md): current design/implementation map.
+- The current design/implementation map is [docs/architecture/target-model.md](../docs/architecture/target-model.md). The milestone task files below predate it and describe the older private-first/gated model; treat target-model.md as authoritative where they conflict.
 - [m0-data-kernel.md](m0-data-kernel.md): trust/data kernel follow-through.
 - [m1-writer.md](m1-writer.md): private writer queue, candidate draft, consent, and approval tasks.
 - [m3-retrieval.md](m3-retrieval.md): crawler/search/retrieval-panel path.

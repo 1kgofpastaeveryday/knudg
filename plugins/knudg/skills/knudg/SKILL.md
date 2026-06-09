@@ -248,10 +248,23 @@ searched backend produces no useful current-task signal. `suggestion_available`
 means references exist; it is task progress only if the main agent validates and
 uses the signal. `do_nothing` is a valid and expected result.
 
-## Write Candidate
+## Write Candidate (offer proactively at solved-work boundaries)
 
-After the main task has a solved path, important failed path, or clarified
-unknown, the Knudg sub-agent may run:
+Creating knudg is the first reason knudg exists, and it will not happen if the
+agent only writes when explicitly asked. Treat capture as a completion-time
+self-check — not a background hook, not an automatic write:
+
+- When you reach a solved-work boundary — a solved path, an important failed
+  path, an environment trap, a deprecated approach, or a clarified unknown — and
+  before you end the turn, ask yourself: "is what I just learned reusable by a
+  future agent on a similar task?"
+- If yes, proactively OFFER to capture it as a knudg, in one short line, without
+  waiting to be asked. If no (trivial, one-off, copy edit, or already
+  well-known), stay silent. Do not offer on every turn.
+- This is an agent judgement made only at genuine solved-work boundaries, at
+  most once per boundary. It is not a per-prompt prompt and not a daemon.
+
+Only after the user/operator accepts the offer, the Knudg sub-agent may run:
 
 ```powershell
 npm run knudgctl -- live write-candidate --card <local-private-card-json>
@@ -260,6 +273,8 @@ npm run knudgctl -- live write-candidate --card <local-private-card-json>
 This creates only an approval-required candidate digest. It must not complete
 publication, team sharing, public indexing, or user consent. The user/operator
 must explicitly approve any actual write using the exact digest/artifact shown.
+Accepting the offer is permission to prepare the candidate, not permission to
+publish.
 
 ## Safety Boundaries
 

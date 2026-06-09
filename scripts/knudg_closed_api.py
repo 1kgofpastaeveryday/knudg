@@ -460,7 +460,6 @@ def components_from_snapshot(snapshot):
         "protected_retrieval": "disabled",
         "publication": "disabled",
         "operator_private_publish": "ready" if operator_auth_configured() and all(private_workspace_env()[key] for key in ("tenant_id", "namespace_id", "principal_id")) else "not_configured",
-        "publication_candidate": "ready" if operator_auth_configured() and all(private_workspace_env()[key] for key in ("tenant_id", "namespace_id", "principal_id")) else "not_configured",
         "redacted_experience_storage": "ready" if operator_auth_configured() and all(private_workspace_env()[key] for key in ("tenant_id", "namespace_id", "principal_id")) else "not_configured",
         "final_filter": "ready" if operator_auth_configured() else "not_configured",
         "final_filter_queue": "ready" if final_filter_queue_enabled() and database_url() else "disabled",
@@ -477,7 +476,6 @@ def route_classes():
         "card-read": "metadata_only",
         "submit/write": "operator_private_sanitized_only" if auth_configured else "disabled",
         "trusted-consent-revocation": "operator_private_revoke_purge" if auth_configured else "disabled",
-        "publication-candidate": "operator_private_candidate_only" if auth_configured else "disabled",
         "final-filter": "operator_private_llm_judge_fail_closed" if auth_configured else "disabled",
         "redacted-experience-storage": "operator_private_redacted_storage_only" if auth_configured else "disabled",
         "private-retention-completion": "operator_private_trusted_completion" if auth_configured else "disabled",
@@ -530,8 +528,6 @@ def route_label(method, path):
         return "private_experience_mutate"
     if re.fullmatch(r"/v1/private/cards/[0-9a-fA-F-]+:(revoke|purge)", clean_path):
         return "private_cards_mutate"
-    if re.fullmatch(r"/v1/private/cards/[0-9a-fA-F-]+:publication-candidate", clean_path):
-        return "private_cards_publication_candidate"
     if clean_path == "/v1/private/final-filter:evaluate":
         return "private_final_filter_evaluate"
     if clean_path == "/v1/private/final-filter/jobs:stats":
@@ -848,53 +844,6 @@ def mutate_private_card(action, card_id, reason, *, workspace_id):
     }
 
 
-def prepare_publication_candidate(card_id, *, workspace_id):
-    if not isinstance(card_id, str) or not UUID_RE.fullmatch(card_id):
-        raise ValueError("card id rejected")
-    tenant_id, namespace_ids, principal_id, workspace = closed_private_workspace_args(workspace_id)
-    url = database_url()
-    if not url:
-        raise RuntimeError("DATABASE_URL is not configured")
-    import psycopg
-    from psycopg.rows import dict_row
-
-    with psycopg.connect(url, row_factory=dict_row, connect_timeout=3) as conn:
-        row = conn.execute(
-            """
-            select *
-            from knudg_closed_api_publication_candidate(%s, %s::uuid)
-            """,
-            (workspace, card_id),
-        ).fetchone()
-    surface_contracts = public_exposure_contract(row["candidate_digest"], row["payload_digest"])
-    policy_context = {
-        "check_stage": "publication_candidate_final_filter",
-        "visibility_target": "public_candidate",
-        "candidate_digest": row["candidate_digest"],
-        "payload_digest": sha256_digest_ref(row["payload_digest"]),
-        "surface_contracts": surface_contracts,
-        "ad_or_spam_assessment_required": True,
-        "commercial_incentive_disclosure_required": True,
-        "spam_or_undisclosed_ad_blocks_publication": True,
-        "public_publication_enabled": False,
-    }
-    final_filter = enqueue_or_evaluate_final_filter(row["candidate_json"], policy_context)
-    return {
-        "card_id": str(row["card_id"]),
-        "card_version_id": str(row["card_version_id"]),
-        "body_digest": row["body_digest"],
-        "payload_digest": sha256_digest_ref(row["payload_digest"]),
-        "candidate_digest": row["candidate_digest"],
-        "candidate": row["candidate_json"],
-        "surface_contracts": surface_contracts,
-        "final_filter": final_filter,
-        "stored_public_card": False,
-        "public_publication_enabled": False,
-        "external_publication_enabled": False,
-        "requires_human_approval": True,
-    }
-
-
 def experience_storage_validator():
     global _EXPERIENCE_STORAGE_VALIDATOR
     if _EXPERIENCE_STORAGE_VALIDATOR is None:
@@ -1073,97 +1022,6 @@ def sha256_digest_ref(digest):
     if isinstance(digest, str) and re.fullmatch(r"[a-f0-9]{64}", digest):
         return "sha256:" + digest
     return digest
-
-
-def public_exposure_contract(candidate_digest, payload_digest):
-    return {
-        "schema_version": "public-exposure-contract-v0",
-        "contract_digest_binding": {
-            "candidate_digest": candidate_digest,
-            "payload_digest": sha256_digest_ref(payload_digest),
-        },
-        "public_candidate_conversion": {
-            "objective_item": 9,
-            "enabled": False,
-            "serving_enabled": False,
-            "stored_public_card": False,
-            "required_gates": ["PR-003", "PR-005", "PR-006", "REVIEWER_PUBLISH"],
-        },
-        "b2b_respondent_portal": {
-            "objective_item": 10,
-            "enabled": False,
-            "b2b_delivery_enabled": False,
-            "response_available": False,
-            "required_gates": ["ED-005", "MODERATION_WORKFLOW", "NO_DISCLOSURE_NEGATIVE_TESTS", "RESPONDENT_POLICY"],
-        },
-        "company_store_dashboard": {
-            "objective_item": 13,
-            "enabled": False,
-            "dashboard_enabled": False,
-            "aggregate_signal_available": False,
-            "required_gates": [
-                "AGGREGATE_PRIVACY_THRESHOLD_POLICY",
-                "AGGREGATE_SIGNAL_POLICY",
-                "CORRECTION_TAKEDOWN_POLICY",
-                "DASHBOARD_DISPLAY_POLICY",
-                "DASHBOARD_EXPORT_DOWNLOAD_POLICY",
-                "FAIR_REVIEW_PRESENTATION_POLICY",
-                "MANIPULATION_RESISTANCE_POLICY",
-                "MIN_SOURCE_COUNT_POLICY",
-                "MODERATION_WORKFLOW",
-                "NO_ESCROW_ARTIFACT_DISPLAY_TESTS",
-                "NO_IDENTITY_LEAKAGE_TESTS",
-                "NO_SINGLE_OBSERVATION_DISPLAY_TESTS",
-                "NO_SUPPRESSION_SURFACE_TESTS",
-                "PUBLIC_B2B_DISCLOSURE_POLICY",
-            ],
-        },
-        "forbidden_outputs": {
-            "public_candidate_conversion": [
-                "submitter_identity",
-                "raw_source_material",
-                "private_selection_status",
-                "staff_identity",
-                "raw_review_body",
-                "non_public_operational_detail",
-            ],
-            "b2b_respondent_portal": [
-                "submitter_identity",
-                "raw_source_material",
-                "device_or_network_signal",
-                "reidentification_hint",
-                "protected_fingerprint",
-                "raw_review_body",
-                "source_metadata",
-                "raw_moderation_evidence",
-                "escrow_ciphertext",
-                "escrow_handle",
-                "escrow_key_material",
-                "reviewer_private_note",
-                "non_public_operational_detail",
-                "respondent_visible_user_attribution",
-            ],
-            "company_store_dashboard": [
-                "submitter_identity",
-                "raw_source_material",
-                "device_or_network_signal",
-                "reidentification_hint",
-                "protected_fingerprint",
-                "raw_review_body",
-                "source_metadata",
-                "raw_moderation_evidence",
-                "escrow_ciphertext",
-                "escrow_handle",
-                "escrow_key_material",
-                "account_identifier",
-                "match_status",
-                "individual_claim",
-                "single_observation_detail",
-                "reviewer_private_note",
-                "non_public_operational_detail",
-            ],
-        },
-    }
 
 
 def final_filter_digest(candidate, policy_context):
@@ -2458,24 +2316,6 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
                     workspace_id=request_body.get("workspace", "closed-launch-manual"),
                 )
                 self.write_json({"status": "revoked" if action == "revoke" else "purged", **result})
-            except (ValueError, json.JSONDecodeError):
-                self.write_json({"status": "rejected"}, status=400)
-            except Exception as exc:
-                self.write_json({"status": "unavailable", "error_class": exc.__class__.__name__}, status=503)
-            return
-        candidate_match = re.fullmatch(r"/v1/private/cards/([0-9a-fA-F-]+):publication-candidate", self.path)
-        if candidate_match:
-            ok, status, detail = verify_operator_auth(self)
-            if not ok:
-                self.write_json({"status": "unauthorized" if status == 401 else "forbidden", "detail": detail}, status=status)
-                return
-            try:
-                request_body = read_json_request(self)
-                result = prepare_publication_candidate(
-                    candidate_match.group(1),
-                    workspace_id=request_body.get("workspace", "closed-launch-manual"),
-                )
-                self.write_json({"status": "publication_candidate_ready", **result})
             except (ValueError, json.JSONDecodeError):
                 self.write_json({"status": "rejected"}, status=400)
             except Exception as exc:

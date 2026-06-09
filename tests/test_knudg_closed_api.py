@@ -22,7 +22,6 @@ from scripts.knudg_local_private import validate_local_private_card_v0
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_URL = "postgresql://knudg_migration:knudg_migration@localhost:54329/knudg"
-PUBLIC_EXPOSURE_SCHEMA = ROOT / "schemas" / "public-exposure-contract-v0.schema.json"
 
 
 def read_startup_line(process, timeout_seconds=5):
@@ -1332,47 +1331,6 @@ def test_closed_api_private_search_rejects_raw_profile_without_echoing_canary():
     assert canary not in process.stderr.read()
 
 
-def test_closed_api_publication_candidate_rejects_workspace_without_echoing_canary():
-    env = {**os.environ}
-    env.pop("DATABASE_URL", None)
-    env["KNUDG_OPERATOR_TOKEN"] = "test-token"
-    env["KNUDG_PRIVATE_TENANT_ID"] = "11111111-1111-4111-8111-111111111111"
-    env["KNUDG_PRIVATE_NAMESPACE_ID"] = "22222222-2222-4222-8222-222222222222"
-    env["KNUDG_PRIVATE_PRINCIPAL_ID"] = "33333333-3333-4333-8333-333333333333"
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            str(ROOT / "scripts" / "knudg_closed_api.py"),
-            "--port",
-            "0",
-            "--quiet",
-        ],
-        cwd=ROOT,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    try:
-        startup = read_startup_line(process)
-        base_url = f"http://127.0.0.1:{startup['port']}"
-        canary = "CANARY_CANDIDATE_WORKSPACE_DO_NOT_ECHO"
-        status, rejected = post_private(
-            f"{base_url}/v1/private/cards/11111111-1111-4111-8111-111111111111:publication-candidate",
-            {"workspace": f"C:\\Users\\redacted\\private\\{canary}"},
-            token="test-token",
-        )
-        assert status == 400
-        assert rejected == {"status": "rejected"}
-    finally:
-        stop_process(process)
-    serialized = json.dumps(rejected)
-    assert canary not in serialized
-    assert "Users" not in serialized
-    assert canary not in process.stdout.read()
-    assert canary not in process.stderr.read()
-
-
 def test_closed_api_private_search_rejects_non_technical_retrieval_domain_without_echoing():
     env = {**os.environ}
     env.pop("DATABASE_URL", None)
@@ -1681,50 +1639,6 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
         assert found["result"]["cards"][0]["card_id"] == card_id
         assert found["result"]["cards"][0]["card_version_id"] == published["card_version_id"]
         assert "summary" not in found["result"]["cards"][0]
-
-        status, candidate = post_private(
-            f"{base_url}/v1/private/cards/{card_id}:publication-candidate",
-            {"workspace": "closed-beta-test"},
-        )
-        assert status == 200
-        assert candidate["status"] == "publication_candidate_ready"
-        assert candidate["stored_public_card"] is False
-        assert candidate["public_publication_enabled"] is False
-        assert candidate["external_publication_enabled"] is False
-        assert candidate["requires_human_approval"] is True
-        assert candidate["final_filter"]["schema_version"] == "final-filter-result-v0"
-        assert candidate["final_filter"]["verdict"] == "hold"
-        assert candidate["final_filter"]["risk_reasons"] == ["llm_provider_unconfigured"]
-        assert candidate["final_filter"]["provider"] == "none"
-        assert candidate["final_filter"]["llm_called"] is False
-        assert candidate["final_filter"]["fail_closed"] is True
-        assert candidate["final_filter"]["automated_repair_required"] is True
-        assert candidate["final_filter"]["hold_repair_policy"]["parallel_reviewer_count"] == 3
-        assert candidate["final_filter"]["public_publication_enabled"] is False
-        assert candidate["final_filter"]["final_publication_completion_enabled"] is False
-        assert candidate["candidate"]["schema_version"] == "closed-publication-candidate-v0"
-        assert candidate["candidate"]["candidate_state"] == "publication_ready_candidate"
-        assert candidate["candidate"]["redaction"]["state"] == "sanitized_public_fields_only"
-        assert candidate["candidate"]["redaction"]["raw_body_excluded"] is True
-        assert candidate["candidate"]["redaction"]["candidate_digest_binds_exact_artifact"] is True
-        assert candidate["candidate"]["review"]["public_indexing_enabled"] is False
-        assert candidate["candidate"]["artifact"]["title"] == card["title"]
-        assert candidate["candidate"]["source"]["card_id"] == card_id
-        surface_contracts = candidate["surface_contracts"]
-        Draft202012Validator(json.loads(PUBLIC_EXPOSURE_SCHEMA.read_text(encoding="utf-8"))).validate(surface_contracts)
-        assert surface_contracts["contract_digest_binding"]["candidate_digest"] == candidate["candidate_digest"]
-        assert surface_contracts["contract_digest_binding"]["payload_digest"] == candidate["payload_digest"]
-        assert surface_contracts["public_candidate_conversion"]["enabled"] is False
-        assert surface_contracts["public_candidate_conversion"]["serving_enabled"] is False
-        assert surface_contracts["public_candidate_conversion"]["stored_public_card"] is False
-        assert surface_contracts["b2b_respondent_portal"]["enabled"] is False
-        assert surface_contracts["b2b_respondent_portal"]["b2b_delivery_enabled"] is False
-        assert surface_contracts["b2b_respondent_portal"]["response_available"] is False
-        assert surface_contracts["company_store_dashboard"]["enabled"] is False
-        assert surface_contracts["company_store_dashboard"]["dashboard_enabled"] is False
-        assert surface_contracts["company_store_dashboard"]["aggregate_signal_available"] is False
-        assert "submitter_identity" in surface_contracts["forbidden_outputs"]["public_candidate_conversion"]
-        assert "protected_fingerprint" in surface_contracts["forbidden_outputs"]["company_store_dashboard"]
 
         status, viewed = post_private(
             f"{base_url}/v1/private/cards/{card_id}:view",

@@ -85,8 +85,9 @@ Document authority:
   in release notes so rollback has a known last-good target
 - keep preview URLs disabled so alternate public hostnames do not become
   canonical by accident
-- future team or public publication flows must satisfy
-  `docs/product/publication-control-requirements.md` before access opens
+- future team or public publication flows must follow the one pipe in
+  `docs/architecture/target-model.md` (GLM filter is the sole gate; revoke
+  always works) before access opens
 
 ## Production Deploy
 

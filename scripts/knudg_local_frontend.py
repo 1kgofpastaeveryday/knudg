@@ -232,31 +232,6 @@ class LocalFrontendHandler(BaseHTTPRequestHandler):
                 status, upstream = self.upstream_json("POST", "/v1/private/search", payload, headers)
                 self.write_json(upstream, status=status)
                 return
-            if self.path == "/api/experience-records:store":
-                status, upstream = self.upstream_json("POST", "/v1/private/experience-records:store", payload, headers)
-                self.write_json(upstream, status=status)
-                return
-            experience_action_match = re.fullmatch(r"/api/experience-records/([0-9a-fA-F-]+):(revoke|purge)", self.path)
-            if experience_action_match:
-                record_id, action = experience_action_match.groups()
-                status, upstream = self.upstream_json(
-                    "POST",
-                    f"/v1/private/experience-records/{record_id}:{action}",
-                    payload,
-                    headers,
-                )
-                self.write_json(upstream, status=status)
-                return
-            handoff_match = re.fullmatch(r"/api/approval-handoffs/([0-9a-fA-F-]+):complete-private-retention", self.path)
-            if handoff_match:
-                status, upstream = self.upstream_json(
-                    "POST",
-                    f"/v1/private/approval-handoffs/{handoff_match.group(1)}:complete-private-retention",
-                    payload,
-                    headers,
-                )
-                self.write_json(upstream, status=status)
-                return
             view_match = re.fullmatch(r"/api/cards/([0-9a-fA-F-]+):view", self.path)
             if view_match:
                 status, upstream = self.upstream_json("POST", f"/v1/private/cards/{view_match.group(1)}:view", payload, headers)

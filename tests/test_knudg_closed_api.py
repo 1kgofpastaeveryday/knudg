@@ -1216,7 +1216,6 @@ def test_closed_api_private_publish_requires_token_and_digest_before_storage():
         status, capabilities = get_json(f"{base_url}/capabilities")
         assert status == 200
         assert capabilities["features"]["operator_private_publish"] is True
-        assert capabilities["features"]["operator_private_trusted_completion"] is True
         assert capabilities["features"]["publication"] is False
 
         status, unauthorized = post_publish(f"{base_url}/v1/private/cards:publish", {"card": card})
@@ -1373,88 +1372,6 @@ def test_closed_api_private_search_rejects_non_technical_retrieval_domain_withou
         stop_process(process)
 
 
-def test_closed_api_redacted_experience_storage_rejects_raw_record_without_echoing_canary():
-    env = {**os.environ}
-    env.pop("DATABASE_URL", None)
-    env["KNUDG_OPERATOR_TOKEN"] = "test-token"
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            str(ROOT / "scripts" / "knudg_closed_api.py"),
-            "--port",
-            "0",
-            "--quiet",
-        ],
-        cwd=ROOT,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    try:
-        startup = read_startup_line(process)
-        base_url = f"http://127.0.0.1:{startup['port']}"
-        canary = "CANARY_EXPERIENCE_RECORD_DO_NOT_ECHO"
-        record = json.loads((ROOT / "fixtures" / "experience-storage-record.career-private.redacted.json").read_text(encoding="utf-8"))
-        record["redacted_experience"]["summary"] = f"Raw marker {canary} user@example.com should be rejected."
-        status, rejected = post_private(
-            f"{base_url}/v1/private/experience-records:store",
-            {"workspace": "closed-beta-test", "record": record},
-            token="test-token",
-        )
-        assert status == 400
-        assert rejected == {"status": "rejected", "stored": False, "reject_class": "redacted_experience_record"}
-    finally:
-        stop_process(process)
-    serialized = json.dumps(rejected)
-    assert canary not in serialized
-    assert canary not in process.stdout.read()
-    assert canary not in process.stderr.read()
-
-
-def test_closed_api_private_retention_completion_requires_confirmations_without_echoing_canary():
-    env = {**os.environ}
-    env.pop("DATABASE_URL", None)
-    env["KNUDG_OPERATOR_TOKEN"] = "test-token"
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            str(ROOT / "scripts" / "knudg_closed_api.py"),
-            "--port",
-            "0",
-            "--quiet",
-        ],
-        cwd=ROOT,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    try:
-        startup = read_startup_line(process)
-        base_url = f"http://127.0.0.1:{startup['port']}"
-        canary = "CANARY_COMPLETION_DO_NOT_ECHO"
-        status, rejected = post_private(
-            f"{base_url}/v1/private/approval-handoffs/11111111-1111-4111-8111-111111111111:complete-private-retention",
-            {
-                "workspace": "closed-beta-test",
-                "idempotency_key": f"bad-{canary}",
-                "comprehension_confirmed": False,
-                "private_retention_scope_confirmed": True,
-                "no_publication_confirmed": True,
-            },
-            token="test-token",
-        )
-        assert status == 400
-        assert rejected == {"status": "rejected", "reject_class": "private_retention_completion"}
-    finally:
-        stop_process(process)
-    serialized = json.dumps(rejected)
-    assert canary not in serialized
-    assert canary not in process.stdout.read()
-    assert canary not in process.stderr.read()
-
-
 def test_closed_api_private_search_revoke_purge_loop(migrated_db):
     tenant_id = "11111111-1111-4111-8111-111111111111"
     namespace_id = "22222222-2222-4222-8222-222222222222"
@@ -1507,7 +1424,6 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
         card = validate_local_private_card_v0(json.loads((ROOT / "fixtures" / "local-private-card.sample.json").read_text(encoding="utf-8")))
         digest = canonical_digest_hex(card)
         task_profile = json.loads((ROOT / "fixtures" / "local-private-task-profile.sample.json").read_text(encoding="utf-8"))
-        experience_record = json.loads((ROOT / "fixtures" / "experience-storage-record.career-private.redacted.json").read_text(encoding="utf-8"))
 
         status, ready = get_json(f"{base_url}/health/ready")
         assert status == 200
@@ -1592,42 +1508,6 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
                 "select lifecycle_status from local_private_search_documents where card_version_id = %s",
                 (first_version_id,),
             ).fetchone()[0] == "revoked"
-            consent_proof = seed_closed_api_private_retention_proof(
-                conn,
-                tenant_id,
-                namespace_id,
-                principal_id,
-                published["card_id"],
-                published["card_version_id"],
-            )
-        experience_record["consent"]["private_retention_consent_proof"] = consent_proof
-        experience_record["source_controls"]["source_digest"] = "sha256:" + consent_proof["artifact_digest"].removeprefix("sha256:")
-
-        status, stored_experience = post_private(
-            f"{base_url}/v1/private/experience-records:store",
-            {"workspace": "closed-beta-test", "record": experience_record},
-        )
-        assert status == 201
-        assert stored_experience["status"] == "redacted_experience_stored"
-        assert stored_experience["stored"] is True
-        assert stored_experience["private_retention_proof_bound"] is True
-        assert stored_experience["domain"] == "career_private"
-        assert stored_experience["subject_public_name"] == "Example Company"
-        assert stored_experience["record_visible_to_retrieval"] is False
-        assert stored_experience["public_candidate_conversion_enabled"] is False
-        assert stored_experience["public_serving_enabled"] is False
-        assert stored_experience["b2b_delivery_enabled"] is False
-        assert stored_experience["dashboard_enabled"] is False
-
-        status, revoked_experience = post_private(
-            f"{base_url}/v1/private/experience-records/{stored_experience['record_id']}:revoke",
-            {"workspace": "closed-beta-test", "reason": "closed beta experience revoke"},
-        )
-        assert status == 200
-        assert revoked_experience["status"] == "redacted_experience_revoked"
-        assert revoked_experience["revoked"] is True
-        assert revoked_experience["lifecycle_status"] == "revoked"
-        assert revoked_experience["publication_enabled"] is False
 
         status, found = post_private(
             f"{base_url}/v1/private/search",
@@ -1800,26 +1680,6 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
             """,
             (card_id,),
         ).fetchone()
-        event_row = conn.execute(
-            """
-            select event_json
-            from local_private_value_events
-            where card_id = %s and event_name = 'publication_candidate_prepared'
-            order by created_at desc
-            limit 1
-            """,
-            (card_id,),
-        ).fetchone()
-        experience_row = conn.execute(
-            """
-            select domain, subject_type, subject_public_name, record_visible_to_retrieval,
-              lifecycle_status, public_candidate_conversion_enabled, public_serving_enabled, b2b_delivery_enabled,
-              dashboard_enabled, private_retention_consent_id, private_retention_handoff_id
-            from redacted_private_experience_records
-            where id = %s
-            """,
-            (stored_experience["record_id"],),
-        ).fetchone()
     assert len(rows) == 2
     assert all(row[0] == {} for row in rows)
     assert all(row[1] == "purged" for row in rows)
@@ -1827,21 +1687,6 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
     assert all(row[3] == "purged" for row in rows)
     assert purge_event_row[0]["search_versions_purged"] == 2
     assert purge_event_row[0]["body_versions_purged"] == 2
-    assert event_row[0]["candidate_digest"] == candidate["candidate_digest"]
-    assert event_row[0]["public_publication_enabled"] is False
-    assert experience_row == (
-        "career_private",
-        "company",
-        "Example Company",
-        False,
-        "revoked",
-        False,
-        False,
-        False,
-        False,
-        uuid.UUID(consent_proof["consent_id"]),
-        uuid.UUID(consent_proof["handoff_id"]),
-    )
 
 
 def test_closed_api_allows_deployment_type_override():

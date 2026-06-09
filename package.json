@@ -33,8 +33,6 @@
     "knudgctl": "node scripts/run-python.js scripts/knudgctl.py",
     "post:private-card": "node scripts/run-python.js scripts/knudg_post_private_card.py",
     "task-profile": "node scripts/run-python.js scripts/knudg_task_profile.py",
-    "experience:storage": "node scripts/run-python.js -m pytest tests/test_experience_storage_record.py tests/test_redacted_experience_storage_migration.py",
-    "candidate:facets": "node scripts/run-python.js -m pytest tests/test_candidate_payload_facets.py",
     "domain:lookup": "node scripts/run-python.js -m pytest tests/test_domain_policy_lookup_migration.py",
     "domain:policies": "node scripts/run-python.js -m pytest tests/test_domain_policy_registry.py tests/test_task_profile_schema.py tests/test_knudg_task_profile_builder.py"
   },

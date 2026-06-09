@@ -72,39 +72,6 @@ class UpstreamHandler(BaseHTTPRequestHandler):
                 }
             )
             return
-        if self.path == "/v1/private/experience-records:store":
-            self._write_json(
-                {
-                    "status": "redacted_experience_stored",
-                    "stored": True,
-                    "record_id": "44444444-4444-4444-8444-444444444444",
-                    "record_visible_to_retrieval": False,
-                    "public_candidate_conversion_enabled": False,
-                },
-                status=201,
-            )
-            return
-        if self.path == "/v1/private/experience-records/44444444-4444-4444-8444-444444444444:revoke":
-            self._write_json(
-                {
-                    "status": "redacted_experience_revoked",
-                    "record_id": "44444444-4444-4444-8444-444444444444",
-                    "revoked": True,
-                    "lifecycle_status": "revoked",
-                    "publication_enabled": False,
-                }
-            )
-            return
-        if self.path == "/v1/private/approval-handoffs/11111111-1111-4111-8111-111111111111:complete-private-retention":
-            self._write_json(
-                {
-                    "status": "private_retention_consent_completed",
-                    "handoff_id": "11111111-1111-4111-8111-111111111111",
-                    "consent_id": "55555555-5555-4555-8555-555555555555",
-                    "public_publication_enabled": False,
-                }
-            )
-            return
         if self.path == "/v1/private/cards/11111111-1111-4111-8111-111111111111:view":
             self._write_json({"status": "private_card", "card": {"title": "Viewed card"}})
             return
@@ -220,38 +187,6 @@ def test_local_frontend_stages_write_search_and_view_without_browser_token():
         code, viewed = post_json(f"{base_url}/api/cards/11111111-1111-4111-8111-111111111111:view", {"workspace": "closed-beta-test"})
         assert code == 200
         assert viewed["card"]["title"] == "Viewed card"
-
-        code, stored = post_json(
-            f"{base_url}/api/experience-records:store",
-            {"workspace": "closed-beta-test", "record": {"schema_version": "experience-storage-record-v0"}},
-        )
-        assert code == 201
-        assert stored["status"] == "redacted_experience_stored"
-        assert stored["stored"] is True
-        assert stored["record_visible_to_retrieval"] is False
-
-        code, revoked_experience = post_json(
-            f"{base_url}/api/experience-records/44444444-4444-4444-8444-444444444444:revoke",
-            {"workspace": "closed-beta-test", "reason": "closed beta revoke"},
-        )
-        assert code == 200
-        assert revoked_experience["status"] == "redacted_experience_revoked"
-        assert revoked_experience["revoked"] is True
-        assert revoked_experience["publication_enabled"] is False
-
-        code, completed = post_json(
-            f"{base_url}/api/approval-handoffs/11111111-1111-4111-8111-111111111111:complete-private-retention",
-            {
-                "workspace": "closed-beta-test",
-                "idempotency_key": "consent-complete-001",
-                "comprehension_confirmed": True,
-                "private_retention_scope_confirmed": True,
-                "no_publication_confirmed": True,
-            },
-        )
-        assert code == 200
-        assert completed["status"] == "private_retention_consent_completed"
-        assert completed["public_publication_enabled"] is False
     finally:
         stop_process(process)
         upstream.shutdown()

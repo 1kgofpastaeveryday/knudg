@@ -28,8 +28,6 @@ from card_payload import canonical_digest_hex
 from knudg_local_private import LocalPrivateCardError, validate_local_private_card_v0
 from knudgctl import local_search_terms, require_local_search_task_profile
 from jsonschema import Draft202012Validator
-from validate_experience_storage_record import SCHEMA_PATH as EXPERIENCE_STORAGE_SCHEMA_PATH
-from validate_experience_storage_record import gate_failures as experience_storage_gate_failures
 
 
 API_VERSION = "v1"
@@ -89,7 +87,6 @@ FINAL_FILTER_BLOCK_PATTERNS = (
     ("local_path", re.compile(r"\b[A-Z]:\\(?:Users|working|tmp|Windows)\\", re.IGNORECASE)),
     ("raw_transcript", re.compile(r"\b(raw transcript|raw log|chat log|full transcript)\b", re.IGNORECASE)),
 )
-_EXPERIENCE_STORAGE_VALIDATOR = None
 _NVIDIA_START_RATE_LIMITER = None
 _NVIDIA_START_RATE_LIMITER_LOCK = threading.Lock()
 _FINAL_FILTER_QUEUE_STARTED = False
@@ -460,7 +457,6 @@ def components_from_snapshot(snapshot):
         "protected_retrieval": "disabled",
         "publication": "disabled",
         "operator_private_publish": "ready" if operator_auth_configured() and all(private_workspace_env()[key] for key in ("tenant_id", "namespace_id", "principal_id")) else "not_configured",
-        "redacted_experience_storage": "ready" if operator_auth_configured() and all(private_workspace_env()[key] for key in ("tenant_id", "namespace_id", "principal_id")) else "not_configured",
         "final_filter": "ready" if operator_auth_configured() else "not_configured",
         "final_filter_queue": "ready" if final_filter_queue_enabled() and database_url() else "disabled",
         "final_filter_queue_workers": "ready" if final_filter_queue_enabled() and final_filter_queue_workers_enabled() and nvidia_api_key() and database_url() else "not_configured",
@@ -477,8 +473,6 @@ def route_classes():
         "submit/write": "operator_private_sanitized_only" if auth_configured else "disabled",
         "trusted-consent-revocation": "operator_private_revoke_purge" if auth_configured else "disabled",
         "final-filter": "operator_private_llm_judge_fail_closed" if auth_configured else "disabled",
-        "redacted-experience-storage": "operator_private_redacted_storage_only" if auth_configured else "disabled",
-        "private-retention-completion": "operator_private_trusted_completion" if auth_configured else "disabled",
         "reviewer-admin": "disabled",
         "worker-lane": "disabled",
         "landing": "disabled",
@@ -522,10 +516,6 @@ def route_label(method, path):
         return "private_cards_publish"
     if clean_path == "/v1/private/search":
         return "private_search"
-    if clean_path == "/v1/private/experience-records:store":
-        return "private_experience_store"
-    if re.fullmatch(r"/v1/private/experience-records/[0-9a-fA-F-]+:(revoke|purge)", clean_path):
-        return "private_experience_mutate"
     if re.fullmatch(r"/v1/private/cards/[0-9a-fA-F-]+:(revoke|purge)", clean_path):
         return "private_cards_mutate"
     if clean_path == "/v1/private/final-filter:evaluate":
@@ -534,8 +524,6 @@ def route_label(method, path):
         return "private_final_filter_queue_stats"
     if re.fullmatch(r"/v1/private/final-filter/jobs/[0-9a-fA-F-]+:view", clean_path):
         return "private_final_filter_job_view"
-    if re.fullmatch(r"/v1/private/approval-handoffs/[0-9a-fA-F-]+:complete-private-retention", clean_path):
-        return "private_retention_complete"
     if re.fullmatch(r"/v1/private/cards/[0-9a-fA-F-]+:view", clean_path):
         return "private_cards_view"
     if clean_path.startswith("/v1/private/"):
@@ -842,180 +830,6 @@ def mutate_private_card(action, card_id, reason, *, workspace_id):
         "protected_data_serving_enabled": False,
         "publication_enabled": False,
     }
-
-
-def experience_storage_validator():
-    global _EXPERIENCE_STORAGE_VALIDATOR
-    if _EXPERIENCE_STORAGE_VALIDATOR is None:
-        _EXPERIENCE_STORAGE_VALIDATOR = Draft202012Validator(
-            json.loads(EXPERIENCE_STORAGE_SCHEMA_PATH.read_text(encoding="utf-8"))
-        )
-    return _EXPERIENCE_STORAGE_VALIDATOR
-
-
-def validate_redacted_experience_record(record):
-    if not isinstance(record, dict):
-        raise ValueError("record rejected")
-    errors = sorted(experience_storage_validator().iter_errors(record), key=lambda error: list(error.path))
-    if errors or experience_storage_gate_failures(record):
-        raise ValueError("record rejected")
-    return record
-
-
-def store_redacted_experience(record, *, workspace_id):
-    record = validate_redacted_experience_record(record)
-    tenant_id, namespace_ids, principal_id, workspace = closed_private_workspace_args(workspace_id)
-    url = database_url()
-    if not url:
-        raise RuntimeError("DATABASE_URL is not configured")
-    import psycopg
-    from psycopg.rows import dict_row
-
-    with psycopg.connect(url, row_factory=dict_row, connect_timeout=3) as conn:
-        row = conn.execute(
-            """
-            select *
-            from knudg_closed_api_store_redacted_experience(%s, %s::jsonb)
-            """,
-            (workspace, json.dumps(record, sort_keys=True)),
-        ).fetchone()
-    return {
-        "tenant_id": str(row["tenant_id"]),
-        "namespace_id": str(row["namespace_id"]),
-        "principal_id": str(row["principal_id"]),
-        "record_id": str(row["record_id"]),
-        "private_retention_proof_bound": True,
-        "domain": row["domain"],
-        "subject_type": row["subject_type"],
-        "subject_public_name": row["subject_public_name"],
-        "payload_digest": row["payload_digest"],
-        "stored": True,
-        "publication_scope": "private",
-        "record_visible_to_retrieval": bool(row["record_visible_to_retrieval"]),
-        "public_candidate_conversion_enabled": bool(row["public_candidate_conversion_enabled"]),
-        "public_serving_enabled": bool(row["public_serving_enabled"]),
-        "b2b_delivery_enabled": bool(row["b2b_delivery_enabled"]),
-        "identity_processing_enabled": bool(row["identity_processing_enabled"]),
-        "raw_detail_escrow_enabled": bool(row["raw_detail_escrow_enabled"]),
-        "dashboard_enabled": bool(row["dashboard_enabled"]),
-        "protected_data_serving_enabled": False,
-    }
-
-
-def mutate_redacted_experience(action, record_id, reason, *, workspace_id):
-    if not isinstance(record_id, str) or not UUID_RE.fullmatch(record_id):
-        raise ValueError("record id rejected")
-    if not isinstance(reason, str) or not reason.strip() or len(reason) > 200:
-        raise ValueError("reason rejected")
-    tenant_id, namespace_ids, principal_id, workspace = closed_private_workspace_args(workspace_id)
-    reason_digest = hashlib.sha256(reason.encode("utf-8")).hexdigest()
-    url = database_url()
-    if not url:
-        raise RuntimeError("DATABASE_URL is not configured")
-    import psycopg
-    from psycopg.rows import dict_row
-
-    function_name = {
-        "revoke": "knudg_closed_api_revoke_redacted_experience",
-        "purge": "knudg_closed_api_purge_redacted_experience",
-    }[action]
-    with psycopg.connect(url, row_factory=dict_row, connect_timeout=3) as conn:
-        row = conn.execute(
-            f"""
-            select *
-            from {function_name}(%s, %s::uuid, %s)
-            """,
-            (workspace, record_id, reason_digest),
-        ).fetchone()
-    affected_key = "revoked" if action == "revoke" else "purged"
-    return {
-        "record_id": str(row["record_id"]),
-        "lifecycle_status": row["lifecycle_status"],
-        affected_key: bool(row[affected_key]),
-        "protected_data_serving_enabled": False,
-        "publication_enabled": False,
-    }
-
-
-def complete_private_retention(handoff_id, request_body, *, workspace_id):
-    if not isinstance(handoff_id, str) or not UUID_RE.fullmatch(handoff_id):
-        raise ValueError("handoff id rejected")
-    if not isinstance(request_body, dict):
-        raise ValueError("request rejected")
-    required_confirmations = [
-        "comprehension_confirmed",
-        "private_retention_scope_confirmed",
-        "no_publication_confirmed",
-    ]
-    if any(request_body.get(flag) is not True for flag in required_confirmations):
-        raise ValueError("request rejected")
-    idempotency_key = request_body.get("idempotency_key")
-    if not isinstance(idempotency_key, str) or not re.fullmatch(r"[A-Za-z0-9_.:-]{8,120}", idempotency_key):
-        raise ValueError("request rejected")
-    digest_fields = ["artifact_digest", "challenge_digest", "handoff_digest"]
-    for field in digest_fields:
-        value = request_body.get(field)
-        pattern = r"(?:sha256:)?[a-f0-9]{64}" if field == "artifact_digest" else r"sha256:[a-f0-9]{64}"
-        if not isinstance(value, str) or not re.fullmatch(pattern, value):
-            raise ValueError("request rejected")
-    tenant_id, namespace_ids, principal_id, workspace = closed_private_workspace_args(workspace_id)
-    request_digest = "sha256:" + canonical_digest_hex(
-        {
-            "handoff_id": handoff_id.lower(),
-            "idempotency_key": idempotency_key,
-            "workspace": workspace,
-            "confirmations": required_confirmations,
-            "artifact_digest": request_body["artifact_digest"],
-            "challenge_digest": request_body["challenge_digest"],
-            "handoff_digest": request_body["handoff_digest"],
-        }
-    )
-    correlation_id = request_body.get("correlation_id") or str(uuid_from_digest(request_digest))
-    url = database_url()
-    if not url:
-        raise RuntimeError("DATABASE_URL is not configured")
-    import psycopg
-    from psycopg.rows import dict_row
-
-    with psycopg.connect(url, row_factory=dict_row, connect_timeout=3) as conn:
-        row = conn.execute(
-            """
-            select *
-            from knudg_closed_api_complete_private_retention(%s, %s::uuid, %s, %s, %s::uuid, %s, %s, %s, %s, %s, %s)
-            """,
-            (
-                workspace,
-                handoff_id,
-                idempotency_key,
-                request_digest,
-                correlation_id,
-                request_body["artifact_digest"],
-                request_body["challenge_digest"],
-                request_body["handoff_digest"],
-                request_body["comprehension_confirmed"],
-                request_body["private_retention_scope_confirmed"],
-                request_body["no_publication_confirmed"],
-            ),
-        ).fetchone()
-    return {
-        "handoff_id": str(row["handoff_id"]),
-        "challenge_id": str(row["challenge_id"]),
-        "card_id": str(row["card_id"]),
-        "card_version_id": str(row["current_version_id"]),
-        "consent_id": str(row["consent_id"]),
-        "event_id": str(row["event_id"]),
-        "previous_status": row["previous_status"],
-        "next_status": row["next_status"],
-        "handoff_state": "consent_completed",
-        "public_publication_enabled": False,
-        "team_sharing_enabled": False,
-        "protected_data_serving_enabled": False,
-    }
-
-
-def uuid_from_digest(digest):
-    raw = hashlib.sha256(digest.encode("utf-8")).hexdigest()
-    return f"{raw[:8]}-{raw[8:12]}-4{raw[13:16]}-8{raw[17:20]}-{raw[20:32]}"
 
 
 def sha256_digest_ref(digest):
@@ -2103,9 +1917,6 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
                 "publication": False,
                 "write": auth_configured,
                 "operator_private_publish": auth_configured,
-                "operator_private_publication_candidate": auth_configured,
-                "operator_private_redacted_experience_storage": auth_configured,
-                "operator_private_trusted_completion": auth_configured,
                 "operator_private_final_filter": auth_configured,
                 "operator_private_final_filter_queue": auth_configured and final_filter_queue_enabled(),
                 "nvidia_glm_5_1_final_filter": bool(nvidia_api_key()),
@@ -2259,47 +2070,6 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self.write_json({"status": "unavailable", "error_class": exc.__class__.__name__}, status=503)
             return
-        if self.path == "/v1/private/experience-records:store":
-            ok, status, detail = verify_operator_auth(self)
-            if not ok:
-                self.write_json({"status": "unauthorized" if status == 401 else "forbidden", "detail": detail}, status=status)
-                return
-            try:
-                request_body = read_json_request(self)
-                result = store_redacted_experience(
-                    request_body.get("record"),
-                    workspace_id=request_body.get("workspace", "closed-launch-manual"),
-                )
-                self.write_json({"status": "redacted_experience_stored", **result}, status=201)
-            except (ValueError, json.JSONDecodeError):
-                self.write_json({"status": "rejected", "stored": False, "reject_class": "redacted_experience_record"}, status=400)
-            except Exception as exc:
-                if exc.__class__.__name__ in {"CheckViolation", "ForeignKeyViolation", "InvalidTextRepresentation"}:
-                    self.write_json({"status": "rejected", "stored": False, "reject_class": "redacted_experience_consent_proof"}, status=400)
-                    return
-                self.write_json({"status": "unavailable", "stored": False, "error_class": exc.__class__.__name__}, status=503)
-            return
-        experience_action_match = re.fullmatch(r"/v1/private/experience-records/([0-9a-fA-F-]+):(revoke|purge)", self.path)
-        if experience_action_match:
-            ok, status, detail = verify_operator_auth(self)
-            if not ok:
-                self.write_json({"status": "unauthorized" if status == 401 else "forbidden", "detail": detail}, status=status)
-                return
-            record_id, action = experience_action_match.groups()
-            try:
-                request_body = read_json_request(self)
-                result = mutate_redacted_experience(
-                    action,
-                    record_id,
-                    request_body.get("reason"),
-                    workspace_id=request_body.get("workspace", "closed-launch-manual"),
-                )
-                self.write_json({"status": "redacted_experience_revoked" if action == "revoke" else "redacted_experience_purged", **result})
-            except (ValueError, json.JSONDecodeError):
-                self.write_json({"status": "rejected"}, status=400)
-            except Exception as exc:
-                self.write_json({"status": "unavailable", "error_class": exc.__class__.__name__}, status=503)
-            return
         action_match = re.fullmatch(r"/v1/private/cards/([0-9a-fA-F-]+):(revoke|purge)", self.path)
         if action_match:
             ok, status, detail = verify_operator_auth(self)
@@ -2359,25 +2129,6 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
                 self.write_json({"status": "rejected", "reject_class": "final_filter_job_request"}, status=400)
             except PermissionError:
                 self.write_json({"status": "not_found"}, status=404)
-            except Exception as exc:
-                self.write_json({"status": "unavailable", "error_class": exc.__class__.__name__}, status=503)
-            return
-        handoff_completion_match = re.fullmatch(r"/v1/private/approval-handoffs/([0-9a-fA-F-]+):complete-private-retention", self.path)
-        if handoff_completion_match:
-            ok, status, detail = verify_operator_auth(self)
-            if not ok:
-                self.write_json({"status": "unauthorized" if status == 401 else "forbidden", "detail": detail}, status=status)
-                return
-            try:
-                request_body = read_json_request(self)
-                result = complete_private_retention(
-                    handoff_completion_match.group(1),
-                    request_body,
-                    workspace_id=request_body.get("workspace", "closed-launch-manual"),
-                )
-                self.write_json({"status": "private_retention_consent_completed", **result})
-            except (ValueError, json.JSONDecodeError):
-                self.write_json({"status": "rejected", "reject_class": "private_retention_completion"}, status=400)
             except Exception as exc:
                 self.write_json({"status": "unavailable", "error_class": exc.__class__.__name__}, status=503)
             return

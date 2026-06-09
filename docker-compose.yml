@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16
+    image: pgvector/pgvector:pg16
     container_name: knudg-postgres
     # Development-only credentials for local self-host testing.
     # Do not use these values in production.

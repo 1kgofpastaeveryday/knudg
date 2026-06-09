@@ -1690,20 +1690,18 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
 
 
 def semantic_embedding_available():
-    # Model-gated: semantic search downloads a local model on first use. If the
-    # model cannot be constructed (offline / not installed), the e2e is skipped
-    # rather than failed — the FTS path is what stays mandatory.
-    prev = os.environ.get("KNUDG_EMBEDDING_ENABLED")
-    os.environ["KNUDG_EMBEDDING_ENABLED"] = "1"
+    # Opt-in + model-gated. Semantic search is opt-in (KNUDG_EMBEDDING_ENABLED)
+    # and downloads a local model on first use, so this e2e must not run on the
+    # default CI path — a required status check cannot depend on a model download
+    # / network. It runs only when embeddings are explicitly enabled, and even
+    # then skips (rather than fails) if the model cannot be constructed; the FTS
+    # path is what stays mandatory.
+    if not closed_api.embedding_enabled():
+        return False
     try:
         return closed_api.embed_text("semantic search availability probe") is not None
     except Exception:
         return False
-    finally:
-        if prev is None:
-            os.environ.pop("KNUDG_EMBEDDING_ENABLED", None)
-        else:
-            os.environ["KNUDG_EMBEDDING_ENABLED"] = prev
 
 
 def test_closed_api_semantic_hybrid_e2e(migrated_db):

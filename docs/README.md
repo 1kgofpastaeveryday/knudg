@@ -12,26 +12,16 @@ machine-specific paths.
 ## Development
 
 - [Local Development](development.md)
-- [Pending Approval Queue](operations/pending-approval-queue.md)
 
 ## Operations
 
 - [Cloud Closed-Launch Deployment Template](operations/cloud-closed-launch-runbook.md)
 - [Landing Page Runbook](operations/landing-page-runbook.md)
-- [Launch Gate Manifest](operations/launch-gate-manifest.md)
-- [Runbook Command Manifest](operations/runbook-command-manifest.md)
 - [WEDGE-001 Evidence](operations/wedge-001-evidence.md)
-- [M3 Retrieval Gates](operations/m3-retrieval-gates.md)
-- [Review Ops Gates](operations/review-ops-gates.md)
-- [Circuit Gates](operations/circuit-gates.md)
-- [Intake Safety Gate](operations/intake-safety-gate.md)
-- [Auth Verifier Gate](operations/auth-verifier-gate.md)
-- [Consent Revocation Gate](operations/consent-revocation-gate.md)
-- [Trust and Safety Audit Gate](operations/trust-and-safety-audit.md)
-- [Experience Surface Gates](operations/experience-surface-gates.md)
-- [Abuse Identity Enforcement Preflight](operations/abuse-identity-enforcement.md)
-- [Raw Detail Escrow Preflight](operations/raw-detail-escrow.md)
-- [Company Store Dashboard Preflight](operations/company-store-dashboard.md)
+
+The gate/preflight runbooks that used to be listed here were part of the
+human-gated milestone model and were removed in the reshape. See
+`docs/architecture/target-model.md` for the current backend shape.
 
 ## Architecture
 

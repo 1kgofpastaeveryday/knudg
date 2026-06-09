@@ -14,7 +14,6 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 UI_ROOT = ROOT / "operator-ui"
-CONSENT_GATE_FIXTURE = ROOT / "fixtures" / "consent-revocation-gate.draft.json"
 DEFAULT_API_BASE_URL = "http://127.0.0.1:8765"
 MAX_JSON_BYTES = 64 * 1024
 ALLOWED_API_HOSTS = {"api.knudg.com", "localhost", "127.0.0.1", "::1"}
@@ -37,61 +36,6 @@ def parse_allowed_users(values):
             continue
         users.extend(part.strip().lower() for part in value.split(",") if part.strip())
     return frozenset(users)
-
-
-def consent_review_surface():
-    gate = json.loads(CONSENT_GATE_FIXTURE.read_text(encoding="utf-8"))
-    enabled_flags = sorted(name for name, value in gate["enablement"].items() if value)
-    private_retention_completion_ready = any(
-        surface["surface_type"] == "private_retention_consent"
-        and surface["status"] == "trusted_completion_ready"
-        and surface["completion_transport"] == "trusted_browser_or_os_surface"
-        for surface in gate["surfaces"]
-    )
-    return {
-        "schema_version": "consent-review-surface-v0",
-        "source_gate_id": gate["gate_id"],
-        "source_schema_version": gate["schema_version"],
-        "status": gate["status"],
-        "review_only": not private_retention_completion_ready,
-        "completion_actions_enabled": private_retention_completion_ready,
-        "private_retention_completion_ready": private_retention_completion_ready,
-        "trusted_completion_enabled": gate["enablement"]["trusted_completion_enabled"],
-        "public_publication_enabled": gate["enablement"]["public_publication_enabled"],
-        "enabled_flags": enabled_flags,
-        "blocked_until": gate["blocked_until"],
-        "surfaces": [
-            {
-                "surface_type": surface["surface_type"],
-                "canonical_scope": surface["canonical_scope"],
-                "status": surface["status"],
-                "completion_transport": surface["completion_transport"],
-                "requires_step_up": surface["requires_step_up"],
-                "requires_comprehension_gate": surface["requires_comprehension_gate"],
-                "completion_action": (
-                    "complete_private_retention"
-                    if surface["surface_type"] == "private_retention_consent"
-                    and private_retention_completion_ready
-                    else "disabled"
-                ),
-            }
-            for surface in gate["surfaces"]
-        ],
-        "experience_domain_boundaries": [
-            {
-                "domain": domain,
-                "real_ingest_enabled": boundary["real_ingest_enabled"],
-                "private_retention_completion_enabled": boundary["private_retention_completion_enabled"],
-                "public_candidate_conversion_enabled": boundary["public_candidate_conversion_enabled"],
-                "public_publication_completion_enabled": boundary["public_publication_completion_enabled"],
-                "raw_source_retention_enabled": boundary["raw_source_retention_enabled"],
-                "requires_domain_scoped_revocation": boundary["requires_domain_scoped_revocation"],
-            }
-            for domain, boundary in sorted(gate["experience_domain_boundaries"].items())
-        ],
-        "challenge_controls": gate["challenge_controls"],
-        "agent_boundaries": gate["agent_boundaries"],
-    }
 
 
 def normalize_api_base_url(value):
@@ -236,9 +180,6 @@ class LocalFrontendHandler(BaseHTTPRequestHandler):
                 },
                 status=200,
             )
-            return
-        if self.path == "/api/consent-review":
-            self.write_json(consent_review_surface())
             return
         self.write_json({"status": "not_found"}, status=404)
 

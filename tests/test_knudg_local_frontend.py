@@ -339,60 +339,6 @@ def test_local_frontend_can_require_tailscale_identity_headers():
         upstream.shutdown()
 
 
-def test_local_frontend_exposes_private_retention_consent_review_surface():
-    upstream = serve_upstream()
-    env = {
-        **os.environ,
-        "KNUDG_OPERATOR_TOKEN": "test-token",
-        "KNUDG_FRONTEND_API_BASE_URL": f"http://127.0.0.1:{upstream.server_port}",
-    }
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            str(ROOT / "scripts" / "knudg_local_frontend.py"),
-            "--port",
-            "0",
-            "--quiet",
-        ],
-        cwd=ROOT,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    try:
-        startup = read_startup_line(process)
-        code, review = get_json(f"{startup['url']}/api/consent-review")
-
-        assert code == 200
-        assert review["schema_version"] == "consent-review-surface-v0"
-        assert review["source_gate_id"] == "PR-003"
-        assert review["review_only"] is False
-        assert review["completion_actions_enabled"] is True
-        assert review["private_retention_completion_ready"] is True
-        assert review["trusted_completion_enabled"] is True
-        assert review["public_publication_enabled"] is False
-        assert review["enabled_flags"] == ["trusted_completion_enabled"]
-        private_surface = next(surface for surface in review["surfaces"] if surface["surface_type"] == "private_retention_consent")
-        assert private_surface["completion_action"] == "complete_private_retention"
-        assert private_surface["completion_transport"] == "trusted_browser_or_os_surface"
-        assert all(
-            surface["completion_action"] == "disabled"
-            for surface in review["surfaces"]
-            if surface["surface_type"] != "private_retention_consent"
-        )
-        assert all(
-            boundary["public_candidate_conversion_enabled"] is False
-            and boundary["public_candidate_conversion_enabled"] is False
-            and boundary["raw_source_retention_enabled"] is False
-            and boundary["requires_domain_scoped_revocation"] is True
-            for boundary in review["experience_domain_boundaries"]
-        )
-    finally:
-        stop_process(process)
-        upstream.shutdown()
-
-
 def test_local_frontend_fails_closed_when_stage_writes_upstream():
     upstream = serve_upstream()
     UpstreamHandler.force_store_on_stage = True
@@ -425,16 +371,3 @@ def test_local_frontend_fails_closed_when_stage_writes_upstream():
     finally:
         stop_process(process)
         upstream.shutdown()
-
-
-def test_operator_ui_renders_review_only_consent_controls():
-    index = (ROOT / "operator-ui" / "index.html").read_text(encoding="utf-8")
-    app = (ROOT / "operator-ui" / "app.js").read_text(encoding="utf-8")
-
-    assert 'id="consent-review"' in index
-    assert 'id="experience-form"' in index
-    assert "/api/consent-review" in app
-    assert "/api/experience-records:store" in app
-    assert "Private retention ready" in app
-    assert "complete_private_retention" in app
-    assert "pendingWrite.approved_digest" not in app

@@ -60,6 +60,7 @@ EXPECTED_MIGRATIONS = (
     "0015_local_private_merge_update",
     "0016_closed_private_purge_all_versions",
     "0017_semantic_search_embedding",
+    "0018_semantic_search_functions",
 )
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", re.IGNORECASE)
 LOCAL_PRIVATE_WORKSPACE_REJECT = (
@@ -763,6 +764,100 @@ def closed_private_workspace_args(workspace_id):
     return env["tenant_id"], [env["namespace_id"]], env["principal_id"], local_private_check_workspace(workspace_id)
 
 
+EMBEDDING_DIM = 384
+_EMBEDDING_MODEL = None
+
+
+def embedding_enabled():
+    # Opt-in: semantic search needs a local model download on first use, so the
+    # default is off and the backend stays FTS-only until the operator enables it.
+    return os.environ.get("KNUDG_EMBEDDING_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def embedding_model():
+    global _EMBEDDING_MODEL
+    if _EMBEDDING_MODEL is None:
+        from fastembed import TextEmbedding
+
+        _EMBEDDING_MODEL = TextEmbedding(model_name=os.environ.get("KNUDG_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5"))
+    return _EMBEDDING_MODEL
+
+
+def embedding_text_for_card(card):
+    if not isinstance(card, dict):
+        return ""
+    parts = [str(card.get("title") or "")]
+    summary = card.get("human_summary")
+    if isinstance(summary, dict):
+        parts.append(str(summary.get("content") or ""))
+    parts.append(str(card.get("problem_summary") or ""))
+    parts.append(str(card.get("solution_summary") or ""))
+    for key in ("public_packages", "environment_tags", "command_labels", "error_fingerprints", "lessons"):
+        values = card.get(key)
+        if isinstance(values, list):
+            parts.append(" ".join(str(v) for v in values))
+    return "\n".join(part for part in parts if part).strip()
+
+
+def embed_text(text):
+    # Best-effort local embedding. Returns a 384-d list or None; on any failure
+    # the caller falls back to FTS-only so capture/search never break.
+    if not embedding_enabled() or not isinstance(text, str) or not text.strip():
+        return None
+    try:
+        vector = next(iter(embedding_model().embed([text])))
+        return [float(value) for value in vector]
+    except Exception:
+        return None
+
+
+def embedding_to_pgvector(vector):
+    return "[" + ",".join(str(float(value)) for value in vector) + "]"
+
+
+def store_card_embedding(card, card_id, card_version_id, *, workspace_id):
+    # Called after a successful publish/merge. Best-effort: a missing provider or
+    # any error leaves the card FTS-searchable without a vector.
+    vector = embed_text(embedding_text_for_card(card))
+    if vector is None:
+        return
+    url = database_url()
+    if not url:
+        return
+    try:
+        import psycopg
+
+        with psycopg.connect(url, connect_timeout=5) as conn:
+            conn.execute(
+                "select * from knudg_closed_api_set_embedding(%s, %s::uuid, %s::uuid, %s)",
+                (workspace_id, str(card_id), str(card_version_id), embedding_to_pgvector(vector)),
+            )
+    except Exception:
+        return
+
+
+def merge_search_rows(fts_rows, vector_rows):
+    # Hybrid merge: dedup by card version; a card found by both FTS and vector
+    # gets its scores summed and reasons unioned. Vector rows are already
+    # similarity-thresholded in SQL; FTS rows already passed FTS matching.
+    merged = {}
+    for rows in (fts_rows, vector_rows):
+        for row in rows:
+            key = (str(row["card_id"]), str(row["card_version_id"]))
+            existing = merged.get(key)
+            if existing is None:
+                entry = dict(row)
+                entry["match_score"] = int(row["match_score"])
+                entry["coarse_match_reason"] = list(row.get("coarse_match_reason") or [])
+                merged[key] = entry
+            else:
+                existing["match_score"] = int(existing["match_score"]) + int(row["match_score"])
+                for reason in row.get("coarse_match_reason") or []:
+                    if reason not in existing["coarse_match_reason"]:
+                        existing["coarse_match_reason"].append(reason)
+    return sorted(merged.values(), key=lambda row: (-int(row["match_score"]), str(row["card_id"])))
+
+
 def search_private_cards(task_profile, *, workspace_id, limit=3, min_score=1, latency_budget_ms=250):
     task_profile = require_local_search_task_profile(task_profile)
     terms = local_search_terms(task_profile)
@@ -775,24 +870,38 @@ def search_private_cards(task_profile, *, workspace_id, limit=3, min_score=1, la
     url = database_url()
     if not url:
         raise RuntimeError("DATABASE_URL is not configured")
+    query_vector = embed_text(query_text)
     import psycopg
     from psycopg.rows import dict_row
 
     with psycopg.connect(url, row_factory=dict_row, connect_timeout=3) as conn:
-        rows = conn.execute(
+        fts_rows = conn.execute(
             """
             select *
             from knudg_closed_api_search(%s, %s::text[], %s, %s)
             """,
             (workspace, terms, query_text, limit),
         ).fetchall()
-    cards = [closed_private_panel_card(row) for row in rows if int(row["match_score"]) >= min_score]
+        vector_rows = []
+        if query_vector is not None:
+            try:
+                vector_rows = conn.execute(
+                    """
+                    select *
+                    from knudg_closed_api_vector_search(%s, %s, %s)
+                    """,
+                    (workspace, embedding_to_pgvector(query_vector), limit),
+                ).fetchall()
+            except Exception:
+                conn.rollback()
+                vector_rows = []
+    cards = [closed_private_panel_card(row) for row in merge_search_rows(fts_rows, vector_rows) if int(row["match_score"]) >= min_score]
     if not cards:
         return closed_private_no_suggestion("no_authorized_match", latency_budget_ms)
     return {
         "decision": "cards_found",
         "delivery_mode": "retrieval_panel",
-        "served_from": "closed_private_exact_fts",
+        "served_from": "closed_private_hybrid" if query_vector is not None else "closed_private_exact_fts",
         "latency_budget_ms": latency_budget_ms,
         "cards": cards[:3],
     }
@@ -2025,6 +2134,7 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
                     result = insert_private_published_card(card, workspace_id)
                     response_status = "private_published"
                     status_code = 201
+                store_card_embedding(card, result["card_id"], result["card_version_id"], workspace_id=workspace_id)
                 self.write_json(
                     {
                         "status": response_status,

@@ -44,6 +44,17 @@ round-trip per search is the wrong default. NVIDIA stays available as a swappabl
 provider (it is already wired for the filter), but it should not be the search
 default. The provider is config-selected so this is reversible.
 
+**Decided + implemented:** local fastembed (`BAAI/bge-small-en-v1.5`, dim 384),
+verified end-to-end (embed + cosine). The whole feature is **opt-in**
+(`KNUDG_EMBEDDING_ENABLED=1`) because it downloads a model on first use; with it
+off the backend stays FTS-only. Implemented additively (migration 0018 adds
+`knudg_closed_api_set_embedding` and `knudg_closed_api_vector_search`; the FTS
+publish/search functions are unchanged; the API combines FTS + vector results
+with `merge_search_rows`). A full HTTP-level semantic e2e (publish with embedding
+on → embedding stored → hybrid served) is the recommended next test; current
+coverage is unit tests for the Python logic, migration apply, pgvector cosine
+ops, and the FTS path staying green with embedding off.
+
 ## Flow
 
 - Capture: after the deterministic redaction passes and the card is stored,

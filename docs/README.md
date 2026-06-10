@@ -17,7 +17,6 @@ machine-specific paths.
 
 - [Cloud Closed-Launch Deployment Template](operations/cloud-closed-launch-runbook.md)
 - [Landing Page Runbook](operations/landing-page-runbook.md)
-- [WEDGE-001 Evidence](operations/wedge-001-evidence.md)
 
 The gate/preflight runbooks that used to be listed here were part of the
 human-gated milestone model and were removed in the reshape. See

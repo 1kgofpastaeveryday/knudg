@@ -48,5 +48,4 @@ jobs:
       - run: npm run secret:scan -- --history
       - run: npm run py -- scripts/migrate.py up
       - run: npm run py -- -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py tests/test_task_profile_schema.py tests/test_knudg_task_profile_builder.py tests/test_retrieval_panel_schema.py tests/test_knudg_client_config.py
-      - run: npm run gates:all
       - run: npm run check:lp

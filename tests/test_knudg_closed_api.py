@@ -22,7 +22,6 @@ from scripts.knudg_local_private import validate_local_private_card_v0
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_URL = "postgresql://knudg_migration:knudg_migration@localhost:54329/knudg"
-PUBLIC_EXPOSURE_SCHEMA = ROOT / "schemas" / "public-exposure-contract-v0.schema.json"
 
 
 def read_startup_line(process, timeout_seconds=5):
@@ -1217,7 +1216,6 @@ def test_closed_api_private_publish_requires_token_and_digest_before_storage():
         status, capabilities = get_json(f"{base_url}/capabilities")
         assert status == 200
         assert capabilities["features"]["operator_private_publish"] is True
-        assert capabilities["features"]["operator_private_trusted_completion"] is True
         assert capabilities["features"]["publication"] is False
 
         status, unauthorized = post_publish(f"{base_url}/v1/private/cards:publish", {"card": card})
@@ -1332,47 +1330,6 @@ def test_closed_api_private_search_rejects_raw_profile_without_echoing_canary():
     assert canary not in process.stderr.read()
 
 
-def test_closed_api_publication_candidate_rejects_workspace_without_echoing_canary():
-    env = {**os.environ}
-    env.pop("DATABASE_URL", None)
-    env["KNUDG_OPERATOR_TOKEN"] = "test-token"
-    env["KNUDG_PRIVATE_TENANT_ID"] = "11111111-1111-4111-8111-111111111111"
-    env["KNUDG_PRIVATE_NAMESPACE_ID"] = "22222222-2222-4222-8222-222222222222"
-    env["KNUDG_PRIVATE_PRINCIPAL_ID"] = "33333333-3333-4333-8333-333333333333"
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            str(ROOT / "scripts" / "knudg_closed_api.py"),
-            "--port",
-            "0",
-            "--quiet",
-        ],
-        cwd=ROOT,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    try:
-        startup = read_startup_line(process)
-        base_url = f"http://127.0.0.1:{startup['port']}"
-        canary = "CANARY_CANDIDATE_WORKSPACE_DO_NOT_ECHO"
-        status, rejected = post_private(
-            f"{base_url}/v1/private/cards/11111111-1111-4111-8111-111111111111:publication-candidate",
-            {"workspace": f"C:\\Users\\redacted\\private\\{canary}"},
-            token="test-token",
-        )
-        assert status == 400
-        assert rejected == {"status": "rejected"}
-    finally:
-        stop_process(process)
-    serialized = json.dumps(rejected)
-    assert canary not in serialized
-    assert "Users" not in serialized
-    assert canary not in process.stdout.read()
-    assert canary not in process.stderr.read()
-
-
 def test_closed_api_private_search_rejects_non_technical_retrieval_domain_without_echoing():
     env = {**os.environ}
     env.pop("DATABASE_URL", None)
@@ -1413,88 +1370,6 @@ def test_closed_api_private_search_rejects_non_technical_retrieval_domain_withou
         assert rejected == {"status": "rejected", "reject_class": "task_profile"}
     finally:
         stop_process(process)
-
-
-def test_closed_api_redacted_experience_storage_rejects_raw_record_without_echoing_canary():
-    env = {**os.environ}
-    env.pop("DATABASE_URL", None)
-    env["KNUDG_OPERATOR_TOKEN"] = "test-token"
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            str(ROOT / "scripts" / "knudg_closed_api.py"),
-            "--port",
-            "0",
-            "--quiet",
-        ],
-        cwd=ROOT,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    try:
-        startup = read_startup_line(process)
-        base_url = f"http://127.0.0.1:{startup['port']}"
-        canary = "CANARY_EXPERIENCE_RECORD_DO_NOT_ECHO"
-        record = json.loads((ROOT / "fixtures" / "experience-storage-record.career-private.redacted.json").read_text(encoding="utf-8"))
-        record["redacted_experience"]["summary"] = f"Raw marker {canary} user@example.com should be rejected."
-        status, rejected = post_private(
-            f"{base_url}/v1/private/experience-records:store",
-            {"workspace": "closed-beta-test", "record": record},
-            token="test-token",
-        )
-        assert status == 400
-        assert rejected == {"status": "rejected", "stored": False, "reject_class": "redacted_experience_record"}
-    finally:
-        stop_process(process)
-    serialized = json.dumps(rejected)
-    assert canary not in serialized
-    assert canary not in process.stdout.read()
-    assert canary not in process.stderr.read()
-
-
-def test_closed_api_private_retention_completion_requires_confirmations_without_echoing_canary():
-    env = {**os.environ}
-    env.pop("DATABASE_URL", None)
-    env["KNUDG_OPERATOR_TOKEN"] = "test-token"
-    process = subprocess.Popen(
-        [
-            sys.executable,
-            str(ROOT / "scripts" / "knudg_closed_api.py"),
-            "--port",
-            "0",
-            "--quiet",
-        ],
-        cwd=ROOT,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    try:
-        startup = read_startup_line(process)
-        base_url = f"http://127.0.0.1:{startup['port']}"
-        canary = "CANARY_COMPLETION_DO_NOT_ECHO"
-        status, rejected = post_private(
-            f"{base_url}/v1/private/approval-handoffs/11111111-1111-4111-8111-111111111111:complete-private-retention",
-            {
-                "workspace": "closed-beta-test",
-                "idempotency_key": f"bad-{canary}",
-                "comprehension_confirmed": False,
-                "private_retention_scope_confirmed": True,
-                "no_publication_confirmed": True,
-            },
-            token="test-token",
-        )
-        assert status == 400
-        assert rejected == {"status": "rejected", "reject_class": "private_retention_completion"}
-    finally:
-        stop_process(process)
-    serialized = json.dumps(rejected)
-    assert canary not in serialized
-    assert canary not in process.stdout.read()
-    assert canary not in process.stderr.read()
 
 
 def test_closed_api_private_search_revoke_purge_loop(migrated_db):
@@ -1549,7 +1424,6 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
         card = validate_local_private_card_v0(json.loads((ROOT / "fixtures" / "local-private-card.sample.json").read_text(encoding="utf-8")))
         digest = canonical_digest_hex(card)
         task_profile = json.loads((ROOT / "fixtures" / "local-private-task-profile.sample.json").read_text(encoding="utf-8"))
-        experience_record = json.loads((ROOT / "fixtures" / "experience-storage-record.career-private.redacted.json").read_text(encoding="utf-8"))
 
         status, ready = get_json(f"{base_url}/health/ready")
         assert status == 200
@@ -1634,42 +1508,6 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
                 "select lifecycle_status from local_private_search_documents where card_version_id = %s",
                 (first_version_id,),
             ).fetchone()[0] == "revoked"
-            consent_proof = seed_closed_api_private_retention_proof(
-                conn,
-                tenant_id,
-                namespace_id,
-                principal_id,
-                published["card_id"],
-                published["card_version_id"],
-            )
-        experience_record["consent"]["private_retention_consent_proof"] = consent_proof
-        experience_record["source_controls"]["source_digest"] = "sha256:" + consent_proof["artifact_digest"].removeprefix("sha256:")
-
-        status, stored_experience = post_private(
-            f"{base_url}/v1/private/experience-records:store",
-            {"workspace": "closed-beta-test", "record": experience_record},
-        )
-        assert status == 201
-        assert stored_experience["status"] == "redacted_experience_stored"
-        assert stored_experience["stored"] is True
-        assert stored_experience["private_retention_proof_bound"] is True
-        assert stored_experience["domain"] == "career_private"
-        assert stored_experience["subject_public_name"] == "Example Company"
-        assert stored_experience["record_visible_to_retrieval"] is False
-        assert stored_experience["public_candidate_conversion_enabled"] is False
-        assert stored_experience["public_serving_enabled"] is False
-        assert stored_experience["b2b_delivery_enabled"] is False
-        assert stored_experience["dashboard_enabled"] is False
-
-        status, revoked_experience = post_private(
-            f"{base_url}/v1/private/experience-records/{stored_experience['record_id']}:revoke",
-            {"workspace": "closed-beta-test", "reason": "closed beta experience revoke"},
-        )
-        assert status == 200
-        assert revoked_experience["status"] == "redacted_experience_revoked"
-        assert revoked_experience["revoked"] is True
-        assert revoked_experience["lifecycle_status"] == "revoked"
-        assert revoked_experience["publication_enabled"] is False
 
         status, found = post_private(
             f"{base_url}/v1/private/search",
@@ -1681,50 +1519,6 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
         assert found["result"]["cards"][0]["card_id"] == card_id
         assert found["result"]["cards"][0]["card_version_id"] == published["card_version_id"]
         assert "summary" not in found["result"]["cards"][0]
-
-        status, candidate = post_private(
-            f"{base_url}/v1/private/cards/{card_id}:publication-candidate",
-            {"workspace": "closed-beta-test"},
-        )
-        assert status == 200
-        assert candidate["status"] == "publication_candidate_ready"
-        assert candidate["stored_public_card"] is False
-        assert candidate["public_publication_enabled"] is False
-        assert candidate["external_publication_enabled"] is False
-        assert candidate["requires_human_approval"] is True
-        assert candidate["final_filter"]["schema_version"] == "final-filter-result-v0"
-        assert candidate["final_filter"]["verdict"] == "hold"
-        assert candidate["final_filter"]["risk_reasons"] == ["llm_provider_unconfigured"]
-        assert candidate["final_filter"]["provider"] == "none"
-        assert candidate["final_filter"]["llm_called"] is False
-        assert candidate["final_filter"]["fail_closed"] is True
-        assert candidate["final_filter"]["automated_repair_required"] is True
-        assert candidate["final_filter"]["hold_repair_policy"]["parallel_reviewer_count"] == 3
-        assert candidate["final_filter"]["public_publication_enabled"] is False
-        assert candidate["final_filter"]["final_publication_completion_enabled"] is False
-        assert candidate["candidate"]["schema_version"] == "closed-publication-candidate-v0"
-        assert candidate["candidate"]["candidate_state"] == "publication_ready_candidate"
-        assert candidate["candidate"]["redaction"]["state"] == "sanitized_public_fields_only"
-        assert candidate["candidate"]["redaction"]["raw_body_excluded"] is True
-        assert candidate["candidate"]["redaction"]["candidate_digest_binds_exact_artifact"] is True
-        assert candidate["candidate"]["review"]["public_indexing_enabled"] is False
-        assert candidate["candidate"]["artifact"]["title"] == card["title"]
-        assert candidate["candidate"]["source"]["card_id"] == card_id
-        surface_contracts = candidate["surface_contracts"]
-        Draft202012Validator(json.loads(PUBLIC_EXPOSURE_SCHEMA.read_text(encoding="utf-8"))).validate(surface_contracts)
-        assert surface_contracts["contract_digest_binding"]["candidate_digest"] == candidate["candidate_digest"]
-        assert surface_contracts["contract_digest_binding"]["payload_digest"] == candidate["payload_digest"]
-        assert surface_contracts["public_candidate_conversion"]["enabled"] is False
-        assert surface_contracts["public_candidate_conversion"]["serving_enabled"] is False
-        assert surface_contracts["public_candidate_conversion"]["stored_public_card"] is False
-        assert surface_contracts["b2b_respondent_portal"]["enabled"] is False
-        assert surface_contracts["b2b_respondent_portal"]["b2b_delivery_enabled"] is False
-        assert surface_contracts["b2b_respondent_portal"]["response_available"] is False
-        assert surface_contracts["company_store_dashboard"]["enabled"] is False
-        assert surface_contracts["company_store_dashboard"]["dashboard_enabled"] is False
-        assert surface_contracts["company_store_dashboard"]["aggregate_signal_available"] is False
-        assert "submitter_identity" in surface_contracts["forbidden_outputs"]["public_candidate_conversion"]
-        assert "protected_fingerprint" in surface_contracts["forbidden_outputs"]["company_store_dashboard"]
 
         status, viewed = post_private(
             f"{base_url}/v1/private/cards/{card_id}:view",
@@ -1886,26 +1680,6 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
             """,
             (card_id,),
         ).fetchone()
-        event_row = conn.execute(
-            """
-            select event_json
-            from local_private_value_events
-            where card_id = %s and event_name = 'publication_candidate_prepared'
-            order by created_at desc
-            limit 1
-            """,
-            (card_id,),
-        ).fetchone()
-        experience_row = conn.execute(
-            """
-            select domain, subject_type, subject_public_name, record_visible_to_retrieval,
-              lifecycle_status, public_candidate_conversion_enabled, public_serving_enabled, b2b_delivery_enabled,
-              dashboard_enabled, private_retention_consent_id, private_retention_handoff_id
-            from redacted_private_experience_records
-            where id = %s
-            """,
-            (stored_experience["record_id"],),
-        ).fetchone()
     assert len(rows) == 2
     assert all(row[0] == {} for row in rows)
     assert all(row[1] == "purged" for row in rows)
@@ -1913,21 +1687,157 @@ def test_closed_api_private_search_revoke_purge_loop(migrated_db):
     assert all(row[3] == "purged" for row in rows)
     assert purge_event_row[0]["search_versions_purged"] == 2
     assert purge_event_row[0]["body_versions_purged"] == 2
-    assert event_row[0]["candidate_digest"] == candidate["candidate_digest"]
-    assert event_row[0]["public_publication_enabled"] is False
-    assert experience_row == (
-        "career_private",
-        "company",
-        "Example Company",
-        False,
-        "revoked",
-        False,
-        False,
-        False,
-        False,
-        uuid.UUID(consent_proof["consent_id"]),
-        uuid.UUID(consent_proof["handoff_id"]),
+
+
+def semantic_embedding_available():
+    # Opt-in + model-gated. Semantic search is opt-in (KNUDG_EMBEDDING_ENABLED)
+    # and downloads a local model on first use, so this e2e must not run on the
+    # default CI path — a required status check cannot depend on a model download
+    # / network. It runs only when embeddings are explicitly enabled, and even
+    # then skips (rather than fails) if the model cannot be constructed; the FTS
+    # path is what stays mandatory.
+    if not closed_api.embedding_enabled():
+        return False
+    try:
+        return closed_api.embed_text("semantic search availability probe") is not None
+    except Exception:
+        return False
+
+
+def test_closed_api_semantic_hybrid_e2e(migrated_db):
+    if not semantic_embedding_available():
+        pytest.skip("embedding model unavailable; semantic search e2e is model-gated")
+    tenant_id = "11111111-1111-4111-8111-111111111111"
+    namespace_id = "22222222-2222-4222-8222-222222222222"
+    principal_id = "33333333-3333-4333-8333-333333333333"
+    api_password = "knudg_api_app_test"
+    api_url = api_role_url(migrated_db, api_password)
+    with psycopg.connect(migrated_db, autocommit=True, connect_timeout=3) as conn:
+        conn.execute(sql.SQL("alter role knudg_api_app login password {}").format(sql.Literal(api_password)))
+        conn.execute(
+            """
+            insert into knudg_private.closed_api_runtime_bindings(
+              tenant_id, namespace_id, principal_id, tenant_slug, namespace_key
+            )
+            values (%s, %s, %s, 'knudg-closed-private', 'closed-private')
+            on conflict (tenant_id, namespace_id, principal_id) do update
+            set tenant_slug = excluded.tenant_slug,
+                namespace_key = excluded.namespace_key,
+                enabled = true,
+                updated_at = now()
+            """,
+            (tenant_id, namespace_id, principal_id),
+        )
+
+    env = {**os.environ}
+    env["DATABASE_URL"] = api_url
+    env["KNUDG_OPERATOR_TOKEN"] = "test-token"
+    env["KNUDG_PRIVATE_TENANT_ID"] = tenant_id
+    env["KNUDG_PRIVATE_NAMESPACE_ID"] = namespace_id
+    env["KNUDG_PRIVATE_PRINCIPAL_ID"] = principal_id
+    env["KNUDG_EMBEDDING_ENABLED"] = "1"
+    env.pop("KNUDG_NVIDIA_API_KEY", None)
+    env.pop("NVIDIA_API_KEY", None)
+    env.pop("NGC_API_KEY", None)
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "knudg_closed_api.py"),
+            "--port",
+            "0",
+            "--quiet",
+        ],
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
+    workspace = "semantic-e2e-test"
+    try:
+        startup = read_startup_line(process)
+        base_url = f"http://127.0.0.1:{startup['port']}"
+        card = validate_local_private_card_v0(
+            json.loads((ROOT / "fixtures" / "local-private-card.sample.json").read_text(encoding="utf-8"))
+        )
+        digest = canonical_digest_hex(card)
+        keyword_task_profile = json.loads(
+            (ROOT / "fixtures" / "local-private-task-profile.sample.json").read_text(encoding="utf-8")
+        )
+        # Semantically about the same card (relational-schema migration capture)
+        # but deliberately keyword-disjoint: none of these terms FTS-match the
+        # stored card, so any hit here must come from the vector path.
+        semantic_task_profile = {
+            "schema_version": "task_profile.v0",
+            "intent": "debug",
+            "explicit_query": "saving relational schema upgrade notes from a data-store client without leaking secrets",
+            "repo_shape_category": "relational-store-notes",
+            "retrieval_domains": ["technical_work"],
+            "recent_event_kinds": ["task_start"],
+        }
+
+        status, published = post_publish(
+            f"{base_url}/v1/private/cards:publish",
+            {"workspace": workspace, "card": card},
+            token="test-token",
+            digest=digest,
+        )
+        assert status == 201
+        assert published["status"] == "private_published"
+        card_id = published["card_id"]
+        card_version_id = published["card_version_id"]
+
+        # Publish with embedding on stores the vector best-effort.
+        with psycopg.connect(migrated_db, connect_timeout=3) as conn:
+            embedded = conn.execute(
+                "select embedding is not null from local_private_search_documents where card_version_id = %s",
+                (card_version_id,),
+            ).fetchone()[0]
+        assert embedded is True
+
+        # Keyword query: FTS still matches, and because embedding is on the query
+        # is also embedded, so the response is served from the hybrid path.
+        status, keyword_found = post_private(
+            f"{base_url}/v1/private/search",
+            {"workspace": workspace, "task_profile": keyword_task_profile, "limit": 3, "min_score": 1},
+        )
+        assert status == 200
+        assert keyword_found["result"]["decision"] == "cards_found"
+        assert keyword_found["result"]["served_from"] == "closed_private_hybrid"
+        assert keyword_found["result"]["cards"][0]["card_id"] == card_id
+
+        # Semantic query: no shared keywords, so FTS contributes nothing. The card
+        # is found purely via vector cosine similarity — proven by the match
+        # reason being semantic-only.
+        status, semantic_found = post_private(
+            f"{base_url}/v1/private/search",
+            {"workspace": workspace, "task_profile": semantic_task_profile, "limit": 3, "min_score": 1},
+        )
+        assert status == 200
+        assert semantic_found["result"]["decision"] == "cards_found"
+        assert semantic_found["result"]["served_from"] == "closed_private_hybrid"
+        matches = [c for c in semantic_found["result"]["cards"] if c["card_id"] == card_id]
+        assert matches, "semantic query did not retrieve the card via the vector path"
+        assert matches[0]["coarse_match_reason"] == ["semantic_similarity"]
+        assert "summary" not in matches[0]
+
+        # Revocation fence applies to vector rows exactly as to FTS rows: a revoked
+        # card is not vector-retrievable.
+        status, revoked = post_private(
+            f"{base_url}/v1/private/cards/{card_id}:revoke",
+            {"workspace": workspace, "reason": "semantic e2e revoke"},
+        )
+        assert status == 200
+        assert revoked["revoked"] is True
+
+        status, hidden = post_private(
+            f"{base_url}/v1/private/search",
+            {"workspace": workspace, "task_profile": semantic_task_profile, "limit": 3, "min_score": 1},
+        )
+        assert status == 200
+        assert hidden["result"]["decision"] == "no_suggestion"
+    finally:
+        stop_process(process)
 
 
 def test_closed_api_allows_deployment_type_override():

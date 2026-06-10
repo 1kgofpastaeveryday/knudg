@@ -28,8 +28,6 @@ from card_payload import canonical_digest_hex
 from knudg_local_private import LocalPrivateCardError, validate_local_private_card_v0
 from knudgctl import local_search_terms, require_local_search_task_profile
 from jsonschema import Draft202012Validator
-from validate_experience_storage_record import SCHEMA_PATH as EXPERIENCE_STORAGE_SCHEMA_PATH
-from validate_experience_storage_record import gate_failures as experience_storage_gate_failures
 
 
 API_VERSION = "v1"
@@ -61,6 +59,8 @@ EXPECTED_MIGRATIONS = (
     "0014_final_filter_queue",
     "0015_local_private_merge_update",
     "0016_closed_private_purge_all_versions",
+    "0017_semantic_search_embedding",
+    "0018_semantic_search_functions",
 )
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", re.IGNORECASE)
 LOCAL_PRIVATE_WORKSPACE_REJECT = (
@@ -89,7 +89,6 @@ FINAL_FILTER_BLOCK_PATTERNS = (
     ("local_path", re.compile(r"\b[A-Z]:\\(?:Users|working|tmp|Windows)\\", re.IGNORECASE)),
     ("raw_transcript", re.compile(r"\b(raw transcript|raw log|chat log|full transcript)\b", re.IGNORECASE)),
 )
-_EXPERIENCE_STORAGE_VALIDATOR = None
 _NVIDIA_START_RATE_LIMITER = None
 _NVIDIA_START_RATE_LIMITER_LOCK = threading.Lock()
 _FINAL_FILTER_QUEUE_STARTED = False
@@ -460,8 +459,6 @@ def components_from_snapshot(snapshot):
         "protected_retrieval": "disabled",
         "publication": "disabled",
         "operator_private_publish": "ready" if operator_auth_configured() and all(private_workspace_env()[key] for key in ("tenant_id", "namespace_id", "principal_id")) else "not_configured",
-        "publication_candidate": "ready" if operator_auth_configured() and all(private_workspace_env()[key] for key in ("tenant_id", "namespace_id", "principal_id")) else "not_configured",
-        "redacted_experience_storage": "ready" if operator_auth_configured() and all(private_workspace_env()[key] for key in ("tenant_id", "namespace_id", "principal_id")) else "not_configured",
         "final_filter": "ready" if operator_auth_configured() else "not_configured",
         "final_filter_queue": "ready" if final_filter_queue_enabled() and database_url() else "disabled",
         "final_filter_queue_workers": "ready" if final_filter_queue_enabled() and final_filter_queue_workers_enabled() and nvidia_api_key() and database_url() else "not_configured",
@@ -477,10 +474,7 @@ def route_classes():
         "card-read": "metadata_only",
         "submit/write": "operator_private_sanitized_only" if auth_configured else "disabled",
         "trusted-consent-revocation": "operator_private_revoke_purge" if auth_configured else "disabled",
-        "publication-candidate": "operator_private_candidate_only" if auth_configured else "disabled",
         "final-filter": "operator_private_llm_judge_fail_closed" if auth_configured else "disabled",
-        "redacted-experience-storage": "operator_private_redacted_storage_only" if auth_configured else "disabled",
-        "private-retention-completion": "operator_private_trusted_completion" if auth_configured else "disabled",
         "reviewer-admin": "disabled",
         "worker-lane": "disabled",
         "landing": "disabled",
@@ -524,22 +518,14 @@ def route_label(method, path):
         return "private_cards_publish"
     if clean_path == "/v1/private/search":
         return "private_search"
-    if clean_path == "/v1/private/experience-records:store":
-        return "private_experience_store"
-    if re.fullmatch(r"/v1/private/experience-records/[0-9a-fA-F-]+:(revoke|purge)", clean_path):
-        return "private_experience_mutate"
     if re.fullmatch(r"/v1/private/cards/[0-9a-fA-F-]+:(revoke|purge)", clean_path):
         return "private_cards_mutate"
-    if re.fullmatch(r"/v1/private/cards/[0-9a-fA-F-]+:publication-candidate", clean_path):
-        return "private_cards_publication_candidate"
     if clean_path == "/v1/private/final-filter:evaluate":
         return "private_final_filter_evaluate"
     if clean_path == "/v1/private/final-filter/jobs:stats":
         return "private_final_filter_queue_stats"
     if re.fullmatch(r"/v1/private/final-filter/jobs/[0-9a-fA-F-]+:view", clean_path):
         return "private_final_filter_job_view"
-    if re.fullmatch(r"/v1/private/approval-handoffs/[0-9a-fA-F-]+:complete-private-retention", clean_path):
-        return "private_retention_complete"
     if re.fullmatch(r"/v1/private/cards/[0-9a-fA-F-]+:view", clean_path):
         return "private_cards_view"
     if clean_path.startswith("/v1/private/"):
@@ -778,6 +764,100 @@ def closed_private_workspace_args(workspace_id):
     return env["tenant_id"], [env["namespace_id"]], env["principal_id"], local_private_check_workspace(workspace_id)
 
 
+EMBEDDING_DIM = 384
+_EMBEDDING_MODEL = None
+
+
+def embedding_enabled():
+    # Opt-in: semantic search needs a local model download on first use, so the
+    # default is off and the backend stays FTS-only until the operator enables it.
+    return os.environ.get("KNUDG_EMBEDDING_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def embedding_model():
+    global _EMBEDDING_MODEL
+    if _EMBEDDING_MODEL is None:
+        from fastembed import TextEmbedding
+
+        _EMBEDDING_MODEL = TextEmbedding(model_name=os.environ.get("KNUDG_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5"))
+    return _EMBEDDING_MODEL
+
+
+def embedding_text_for_card(card):
+    if not isinstance(card, dict):
+        return ""
+    parts = [str(card.get("title") or "")]
+    summary = card.get("human_summary")
+    if isinstance(summary, dict):
+        parts.append(str(summary.get("content") or ""))
+    parts.append(str(card.get("problem_summary") or ""))
+    parts.append(str(card.get("solution_summary") or ""))
+    for key in ("public_packages", "environment_tags", "command_labels", "error_fingerprints", "lessons"):
+        values = card.get(key)
+        if isinstance(values, list):
+            parts.append(" ".join(str(v) for v in values))
+    return "\n".join(part for part in parts if part).strip()
+
+
+def embed_text(text):
+    # Best-effort local embedding. Returns a 384-d list or None; on any failure
+    # the caller falls back to FTS-only so capture/search never break.
+    if not embedding_enabled() or not isinstance(text, str) or not text.strip():
+        return None
+    try:
+        vector = next(iter(embedding_model().embed([text])))
+        return [float(value) for value in vector]
+    except Exception:
+        return None
+
+
+def embedding_to_pgvector(vector):
+    return "[" + ",".join(str(float(value)) for value in vector) + "]"
+
+
+def store_card_embedding(card, card_id, card_version_id, *, workspace_id):
+    # Called after a successful publish/merge. Best-effort: a missing provider or
+    # any error leaves the card FTS-searchable without a vector.
+    vector = embed_text(embedding_text_for_card(card))
+    if vector is None:
+        return
+    url = database_url()
+    if not url:
+        return
+    try:
+        import psycopg
+
+        with psycopg.connect(url, connect_timeout=5) as conn:
+            conn.execute(
+                "select * from knudg_closed_api_set_embedding(%s, %s::uuid, %s::uuid, %s)",
+                (workspace_id, str(card_id), str(card_version_id), embedding_to_pgvector(vector)),
+            )
+    except Exception:
+        return
+
+
+def merge_search_rows(fts_rows, vector_rows):
+    # Hybrid merge: dedup by card version; a card found by both FTS and vector
+    # gets its scores summed and reasons unioned. Vector rows are already
+    # similarity-thresholded in SQL; FTS rows already passed FTS matching.
+    merged = {}
+    for rows in (fts_rows, vector_rows):
+        for row in rows:
+            key = (str(row["card_id"]), str(row["card_version_id"]))
+            existing = merged.get(key)
+            if existing is None:
+                entry = dict(row)
+                entry["match_score"] = int(row["match_score"])
+                entry["coarse_match_reason"] = list(row.get("coarse_match_reason") or [])
+                merged[key] = entry
+            else:
+                existing["match_score"] = int(existing["match_score"]) + int(row["match_score"])
+                for reason in row.get("coarse_match_reason") or []:
+                    if reason not in existing["coarse_match_reason"]:
+                        existing["coarse_match_reason"].append(reason)
+    return sorted(merged.values(), key=lambda row: (-int(row["match_score"]), str(row["card_id"])))
+
+
 def search_private_cards(task_profile, *, workspace_id, limit=3, min_score=1, latency_budget_ms=250):
     task_profile = require_local_search_task_profile(task_profile)
     terms = local_search_terms(task_profile)
@@ -790,24 +870,38 @@ def search_private_cards(task_profile, *, workspace_id, limit=3, min_score=1, la
     url = database_url()
     if not url:
         raise RuntimeError("DATABASE_URL is not configured")
+    query_vector = embed_text(query_text)
     import psycopg
     from psycopg.rows import dict_row
 
     with psycopg.connect(url, row_factory=dict_row, connect_timeout=3) as conn:
-        rows = conn.execute(
+        fts_rows = conn.execute(
             """
             select *
             from knudg_closed_api_search(%s, %s::text[], %s, %s)
             """,
             (workspace, terms, query_text, limit),
         ).fetchall()
-    cards = [closed_private_panel_card(row) for row in rows if int(row["match_score"]) >= min_score]
+        vector_rows = []
+        if query_vector is not None:
+            try:
+                vector_rows = conn.execute(
+                    """
+                    select *
+                    from knudg_closed_api_vector_search(%s, %s, %s)
+                    """,
+                    (workspace, embedding_to_pgvector(query_vector), limit),
+                ).fetchall()
+            except Exception:
+                conn.rollback()
+                vector_rows = []
+    cards = [closed_private_panel_card(row) for row in merge_search_rows(fts_rows, vector_rows) if int(row["match_score"]) >= min_score]
     if not cards:
         return closed_private_no_suggestion("no_authorized_match", latency_budget_ms)
     return {
         "decision": "cards_found",
         "delivery_mode": "retrieval_panel",
-        "served_from": "closed_private_exact_fts",
+        "served_from": "closed_private_hybrid" if query_vector is not None else "closed_private_exact_fts",
         "latency_budget_ms": latency_budget_ms,
         "cards": cards[:3],
     }
@@ -848,322 +942,10 @@ def mutate_private_card(action, card_id, reason, *, workspace_id):
     }
 
 
-def prepare_publication_candidate(card_id, *, workspace_id):
-    if not isinstance(card_id, str) or not UUID_RE.fullmatch(card_id):
-        raise ValueError("card id rejected")
-    tenant_id, namespace_ids, principal_id, workspace = closed_private_workspace_args(workspace_id)
-    url = database_url()
-    if not url:
-        raise RuntimeError("DATABASE_URL is not configured")
-    import psycopg
-    from psycopg.rows import dict_row
-
-    with psycopg.connect(url, row_factory=dict_row, connect_timeout=3) as conn:
-        row = conn.execute(
-            """
-            select *
-            from knudg_closed_api_publication_candidate(%s, %s::uuid)
-            """,
-            (workspace, card_id),
-        ).fetchone()
-    surface_contracts = public_exposure_contract(row["candidate_digest"], row["payload_digest"])
-    policy_context = {
-        "check_stage": "publication_candidate_final_filter",
-        "visibility_target": "public_candidate",
-        "candidate_digest": row["candidate_digest"],
-        "payload_digest": sha256_digest_ref(row["payload_digest"]),
-        "surface_contracts": surface_contracts,
-        "ad_or_spam_assessment_required": True,
-        "commercial_incentive_disclosure_required": True,
-        "spam_or_undisclosed_ad_blocks_publication": True,
-        "public_publication_enabled": False,
-    }
-    final_filter = enqueue_or_evaluate_final_filter(row["candidate_json"], policy_context)
-    return {
-        "card_id": str(row["card_id"]),
-        "card_version_id": str(row["card_version_id"]),
-        "body_digest": row["body_digest"],
-        "payload_digest": sha256_digest_ref(row["payload_digest"]),
-        "candidate_digest": row["candidate_digest"],
-        "candidate": row["candidate_json"],
-        "surface_contracts": surface_contracts,
-        "final_filter": final_filter,
-        "stored_public_card": False,
-        "public_publication_enabled": False,
-        "external_publication_enabled": False,
-        "requires_human_approval": True,
-    }
-
-
-def experience_storage_validator():
-    global _EXPERIENCE_STORAGE_VALIDATOR
-    if _EXPERIENCE_STORAGE_VALIDATOR is None:
-        _EXPERIENCE_STORAGE_VALIDATOR = Draft202012Validator(
-            json.loads(EXPERIENCE_STORAGE_SCHEMA_PATH.read_text(encoding="utf-8"))
-        )
-    return _EXPERIENCE_STORAGE_VALIDATOR
-
-
-def validate_redacted_experience_record(record):
-    if not isinstance(record, dict):
-        raise ValueError("record rejected")
-    errors = sorted(experience_storage_validator().iter_errors(record), key=lambda error: list(error.path))
-    if errors or experience_storage_gate_failures(record):
-        raise ValueError("record rejected")
-    return record
-
-
-def store_redacted_experience(record, *, workspace_id):
-    record = validate_redacted_experience_record(record)
-    tenant_id, namespace_ids, principal_id, workspace = closed_private_workspace_args(workspace_id)
-    url = database_url()
-    if not url:
-        raise RuntimeError("DATABASE_URL is not configured")
-    import psycopg
-    from psycopg.rows import dict_row
-
-    with psycopg.connect(url, row_factory=dict_row, connect_timeout=3) as conn:
-        row = conn.execute(
-            """
-            select *
-            from knudg_closed_api_store_redacted_experience(%s, %s::jsonb)
-            """,
-            (workspace, json.dumps(record, sort_keys=True)),
-        ).fetchone()
-    return {
-        "tenant_id": str(row["tenant_id"]),
-        "namespace_id": str(row["namespace_id"]),
-        "principal_id": str(row["principal_id"]),
-        "record_id": str(row["record_id"]),
-        "private_retention_proof_bound": True,
-        "domain": row["domain"],
-        "subject_type": row["subject_type"],
-        "subject_public_name": row["subject_public_name"],
-        "payload_digest": row["payload_digest"],
-        "stored": True,
-        "publication_scope": "private",
-        "record_visible_to_retrieval": bool(row["record_visible_to_retrieval"]),
-        "public_candidate_conversion_enabled": bool(row["public_candidate_conversion_enabled"]),
-        "public_serving_enabled": bool(row["public_serving_enabled"]),
-        "b2b_delivery_enabled": bool(row["b2b_delivery_enabled"]),
-        "identity_processing_enabled": bool(row["identity_processing_enabled"]),
-        "raw_detail_escrow_enabled": bool(row["raw_detail_escrow_enabled"]),
-        "dashboard_enabled": bool(row["dashboard_enabled"]),
-        "protected_data_serving_enabled": False,
-    }
-
-
-def mutate_redacted_experience(action, record_id, reason, *, workspace_id):
-    if not isinstance(record_id, str) or not UUID_RE.fullmatch(record_id):
-        raise ValueError("record id rejected")
-    if not isinstance(reason, str) or not reason.strip() or len(reason) > 200:
-        raise ValueError("reason rejected")
-    tenant_id, namespace_ids, principal_id, workspace = closed_private_workspace_args(workspace_id)
-    reason_digest = hashlib.sha256(reason.encode("utf-8")).hexdigest()
-    url = database_url()
-    if not url:
-        raise RuntimeError("DATABASE_URL is not configured")
-    import psycopg
-    from psycopg.rows import dict_row
-
-    function_name = {
-        "revoke": "knudg_closed_api_revoke_redacted_experience",
-        "purge": "knudg_closed_api_purge_redacted_experience",
-    }[action]
-    with psycopg.connect(url, row_factory=dict_row, connect_timeout=3) as conn:
-        row = conn.execute(
-            f"""
-            select *
-            from {function_name}(%s, %s::uuid, %s)
-            """,
-            (workspace, record_id, reason_digest),
-        ).fetchone()
-    affected_key = "revoked" if action == "revoke" else "purged"
-    return {
-        "record_id": str(row["record_id"]),
-        "lifecycle_status": row["lifecycle_status"],
-        affected_key: bool(row[affected_key]),
-        "protected_data_serving_enabled": False,
-        "publication_enabled": False,
-    }
-
-
-def complete_private_retention(handoff_id, request_body, *, workspace_id):
-    if not isinstance(handoff_id, str) or not UUID_RE.fullmatch(handoff_id):
-        raise ValueError("handoff id rejected")
-    if not isinstance(request_body, dict):
-        raise ValueError("request rejected")
-    required_confirmations = [
-        "comprehension_confirmed",
-        "private_retention_scope_confirmed",
-        "no_publication_confirmed",
-    ]
-    if any(request_body.get(flag) is not True for flag in required_confirmations):
-        raise ValueError("request rejected")
-    idempotency_key = request_body.get("idempotency_key")
-    if not isinstance(idempotency_key, str) or not re.fullmatch(r"[A-Za-z0-9_.:-]{8,120}", idempotency_key):
-        raise ValueError("request rejected")
-    digest_fields = ["artifact_digest", "challenge_digest", "handoff_digest"]
-    for field in digest_fields:
-        value = request_body.get(field)
-        pattern = r"(?:sha256:)?[a-f0-9]{64}" if field == "artifact_digest" else r"sha256:[a-f0-9]{64}"
-        if not isinstance(value, str) or not re.fullmatch(pattern, value):
-            raise ValueError("request rejected")
-    tenant_id, namespace_ids, principal_id, workspace = closed_private_workspace_args(workspace_id)
-    request_digest = "sha256:" + canonical_digest_hex(
-        {
-            "handoff_id": handoff_id.lower(),
-            "idempotency_key": idempotency_key,
-            "workspace": workspace,
-            "confirmations": required_confirmations,
-            "artifact_digest": request_body["artifact_digest"],
-            "challenge_digest": request_body["challenge_digest"],
-            "handoff_digest": request_body["handoff_digest"],
-        }
-    )
-    correlation_id = request_body.get("correlation_id") or str(uuid_from_digest(request_digest))
-    url = database_url()
-    if not url:
-        raise RuntimeError("DATABASE_URL is not configured")
-    import psycopg
-    from psycopg.rows import dict_row
-
-    with psycopg.connect(url, row_factory=dict_row, connect_timeout=3) as conn:
-        row = conn.execute(
-            """
-            select *
-            from knudg_closed_api_complete_private_retention(%s, %s::uuid, %s, %s, %s::uuid, %s, %s, %s, %s, %s, %s)
-            """,
-            (
-                workspace,
-                handoff_id,
-                idempotency_key,
-                request_digest,
-                correlation_id,
-                request_body["artifact_digest"],
-                request_body["challenge_digest"],
-                request_body["handoff_digest"],
-                request_body["comprehension_confirmed"],
-                request_body["private_retention_scope_confirmed"],
-                request_body["no_publication_confirmed"],
-            ),
-        ).fetchone()
-    return {
-        "handoff_id": str(row["handoff_id"]),
-        "challenge_id": str(row["challenge_id"]),
-        "card_id": str(row["card_id"]),
-        "card_version_id": str(row["current_version_id"]),
-        "consent_id": str(row["consent_id"]),
-        "event_id": str(row["event_id"]),
-        "previous_status": row["previous_status"],
-        "next_status": row["next_status"],
-        "handoff_state": "consent_completed",
-        "public_publication_enabled": False,
-        "team_sharing_enabled": False,
-        "protected_data_serving_enabled": False,
-    }
-
-
-def uuid_from_digest(digest):
-    raw = hashlib.sha256(digest.encode("utf-8")).hexdigest()
-    return f"{raw[:8]}-{raw[8:12]}-4{raw[13:16]}-8{raw[17:20]}-{raw[20:32]}"
-
-
 def sha256_digest_ref(digest):
     if isinstance(digest, str) and re.fullmatch(r"[a-f0-9]{64}", digest):
         return "sha256:" + digest
     return digest
-
-
-def public_exposure_contract(candidate_digest, payload_digest):
-    return {
-        "schema_version": "public-exposure-contract-v0",
-        "contract_digest_binding": {
-            "candidate_digest": candidate_digest,
-            "payload_digest": sha256_digest_ref(payload_digest),
-        },
-        "public_candidate_conversion": {
-            "objective_item": 9,
-            "enabled": False,
-            "serving_enabled": False,
-            "stored_public_card": False,
-            "required_gates": ["PR-003", "PR-005", "PR-006", "REVIEWER_PUBLISH"],
-        },
-        "b2b_respondent_portal": {
-            "objective_item": 10,
-            "enabled": False,
-            "b2b_delivery_enabled": False,
-            "response_available": False,
-            "required_gates": ["ED-005", "MODERATION_WORKFLOW", "NO_DISCLOSURE_NEGATIVE_TESTS", "RESPONDENT_POLICY"],
-        },
-        "company_store_dashboard": {
-            "objective_item": 13,
-            "enabled": False,
-            "dashboard_enabled": False,
-            "aggregate_signal_available": False,
-            "required_gates": [
-                "AGGREGATE_PRIVACY_THRESHOLD_POLICY",
-                "AGGREGATE_SIGNAL_POLICY",
-                "CORRECTION_TAKEDOWN_POLICY",
-                "DASHBOARD_DISPLAY_POLICY",
-                "DASHBOARD_EXPORT_DOWNLOAD_POLICY",
-                "FAIR_REVIEW_PRESENTATION_POLICY",
-                "MANIPULATION_RESISTANCE_POLICY",
-                "MIN_SOURCE_COUNT_POLICY",
-                "MODERATION_WORKFLOW",
-                "NO_ESCROW_ARTIFACT_DISPLAY_TESTS",
-                "NO_IDENTITY_LEAKAGE_TESTS",
-                "NO_SINGLE_OBSERVATION_DISPLAY_TESTS",
-                "NO_SUPPRESSION_SURFACE_TESTS",
-                "PUBLIC_B2B_DISCLOSURE_POLICY",
-            ],
-        },
-        "forbidden_outputs": {
-            "public_candidate_conversion": [
-                "submitter_identity",
-                "raw_source_material",
-                "private_selection_status",
-                "staff_identity",
-                "raw_review_body",
-                "non_public_operational_detail",
-            ],
-            "b2b_respondent_portal": [
-                "submitter_identity",
-                "raw_source_material",
-                "device_or_network_signal",
-                "reidentification_hint",
-                "protected_fingerprint",
-                "raw_review_body",
-                "source_metadata",
-                "raw_moderation_evidence",
-                "escrow_ciphertext",
-                "escrow_handle",
-                "escrow_key_material",
-                "reviewer_private_note",
-                "non_public_operational_detail",
-                "respondent_visible_user_attribution",
-            ],
-            "company_store_dashboard": [
-                "submitter_identity",
-                "raw_source_material",
-                "device_or_network_signal",
-                "reidentification_hint",
-                "protected_fingerprint",
-                "raw_review_body",
-                "source_metadata",
-                "raw_moderation_evidence",
-                "escrow_ciphertext",
-                "escrow_handle",
-                "escrow_key_material",
-                "account_identifier",
-                "match_status",
-                "individual_claim",
-                "single_observation_detail",
-                "reviewer_private_note",
-                "non_public_operational_detail",
-            ],
-        },
-    }
 
 
 def final_filter_digest(candidate, policy_context):
@@ -2245,9 +2027,6 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
                 "publication": False,
                 "write": auth_configured,
                 "operator_private_publish": auth_configured,
-                "operator_private_publication_candidate": auth_configured,
-                "operator_private_redacted_experience_storage": auth_configured,
-                "operator_private_trusted_completion": auth_configured,
                 "operator_private_final_filter": auth_configured,
                 "operator_private_final_filter_queue": auth_configured and final_filter_queue_enabled(),
                 "nvidia_glm_5_1_final_filter": bool(nvidia_api_key()),
@@ -2355,6 +2134,7 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
                     result = insert_private_published_card(card, workspace_id)
                     response_status = "private_published"
                     status_code = 201
+                store_card_embedding(card, result["card_id"], result["card_version_id"], workspace_id=workspace_id)
                 self.write_json(
                     {
                         "status": response_status,
@@ -2401,47 +2181,6 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self.write_json({"status": "unavailable", "error_class": exc.__class__.__name__}, status=503)
             return
-        if self.path == "/v1/private/experience-records:store":
-            ok, status, detail = verify_operator_auth(self)
-            if not ok:
-                self.write_json({"status": "unauthorized" if status == 401 else "forbidden", "detail": detail}, status=status)
-                return
-            try:
-                request_body = read_json_request(self)
-                result = store_redacted_experience(
-                    request_body.get("record"),
-                    workspace_id=request_body.get("workspace", "closed-launch-manual"),
-                )
-                self.write_json({"status": "redacted_experience_stored", **result}, status=201)
-            except (ValueError, json.JSONDecodeError):
-                self.write_json({"status": "rejected", "stored": False, "reject_class": "redacted_experience_record"}, status=400)
-            except Exception as exc:
-                if exc.__class__.__name__ in {"CheckViolation", "ForeignKeyViolation", "InvalidTextRepresentation"}:
-                    self.write_json({"status": "rejected", "stored": False, "reject_class": "redacted_experience_consent_proof"}, status=400)
-                    return
-                self.write_json({"status": "unavailable", "stored": False, "error_class": exc.__class__.__name__}, status=503)
-            return
-        experience_action_match = re.fullmatch(r"/v1/private/experience-records/([0-9a-fA-F-]+):(revoke|purge)", self.path)
-        if experience_action_match:
-            ok, status, detail = verify_operator_auth(self)
-            if not ok:
-                self.write_json({"status": "unauthorized" if status == 401 else "forbidden", "detail": detail}, status=status)
-                return
-            record_id, action = experience_action_match.groups()
-            try:
-                request_body = read_json_request(self)
-                result = mutate_redacted_experience(
-                    action,
-                    record_id,
-                    request_body.get("reason"),
-                    workspace_id=request_body.get("workspace", "closed-launch-manual"),
-                )
-                self.write_json({"status": "redacted_experience_revoked" if action == "revoke" else "redacted_experience_purged", **result})
-            except (ValueError, json.JSONDecodeError):
-                self.write_json({"status": "rejected"}, status=400)
-            except Exception as exc:
-                self.write_json({"status": "unavailable", "error_class": exc.__class__.__name__}, status=503)
-            return
         action_match = re.fullmatch(r"/v1/private/cards/([0-9a-fA-F-]+):(revoke|purge)", self.path)
         if action_match:
             ok, status, detail = verify_operator_auth(self)
@@ -2458,24 +2197,6 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
                     workspace_id=request_body.get("workspace", "closed-launch-manual"),
                 )
                 self.write_json({"status": "revoked" if action == "revoke" else "purged", **result})
-            except (ValueError, json.JSONDecodeError):
-                self.write_json({"status": "rejected"}, status=400)
-            except Exception as exc:
-                self.write_json({"status": "unavailable", "error_class": exc.__class__.__name__}, status=503)
-            return
-        candidate_match = re.fullmatch(r"/v1/private/cards/([0-9a-fA-F-]+):publication-candidate", self.path)
-        if candidate_match:
-            ok, status, detail = verify_operator_auth(self)
-            if not ok:
-                self.write_json({"status": "unauthorized" if status == 401 else "forbidden", "detail": detail}, status=status)
-                return
-            try:
-                request_body = read_json_request(self)
-                result = prepare_publication_candidate(
-                    candidate_match.group(1),
-                    workspace_id=request_body.get("workspace", "closed-launch-manual"),
-                )
-                self.write_json({"status": "publication_candidate_ready", **result})
             except (ValueError, json.JSONDecodeError):
                 self.write_json({"status": "rejected"}, status=400)
             except Exception as exc:
@@ -2519,25 +2240,6 @@ class KnudgClosedApiHandler(BaseHTTPRequestHandler):
                 self.write_json({"status": "rejected", "reject_class": "final_filter_job_request"}, status=400)
             except PermissionError:
                 self.write_json({"status": "not_found"}, status=404)
-            except Exception as exc:
-                self.write_json({"status": "unavailable", "error_class": exc.__class__.__name__}, status=503)
-            return
-        handoff_completion_match = re.fullmatch(r"/v1/private/approval-handoffs/([0-9a-fA-F-]+):complete-private-retention", self.path)
-        if handoff_completion_match:
-            ok, status, detail = verify_operator_auth(self)
-            if not ok:
-                self.write_json({"status": "unauthorized" if status == 401 else "forbidden", "detail": detail}, status=status)
-                return
-            try:
-                request_body = read_json_request(self)
-                result = complete_private_retention(
-                    handoff_completion_match.group(1),
-                    request_body,
-                    workspace_id=request_body.get("workspace", "closed-launch-manual"),
-                )
-                self.write_json({"status": "private_retention_consent_completed", **result})
-            except (ValueError, json.JSONDecodeError):
-                self.write_json({"status": "rejected", "reject_class": "private_retention_completion"}, status=400)
             except Exception as exc:
                 self.write_json({"status": "unavailable", "error_class": exc.__class__.__name__}, status=503)
             return

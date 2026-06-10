@@ -12,59 +12,43 @@ machine-specific paths.
 ## Development
 
 - [Local Development](development.md)
-- [Pending Approval Queue](operations/pending-approval-queue.md)
 
 ## Operations
 
 - [Cloud Closed-Launch Deployment Template](operations/cloud-closed-launch-runbook.md)
 - [Landing Page Runbook](operations/landing-page-runbook.md)
-- [Launch Gate Manifest](operations/launch-gate-manifest.md)
-- [Runbook Command Manifest](operations/runbook-command-manifest.md)
-- [WEDGE-001 Evidence](operations/wedge-001-evidence.md)
-- [M3 Retrieval Gates](operations/m3-retrieval-gates.md)
-- [Review Ops Gates](operations/review-ops-gates.md)
-- [Circuit Gates](operations/circuit-gates.md)
-- [Intake Safety Gate](operations/intake-safety-gate.md)
-- [Auth Verifier Gate](operations/auth-verifier-gate.md)
-- [Consent Revocation Gate](operations/consent-revocation-gate.md)
-- [Trust and Safety Audit Gate](operations/trust-and-safety-audit.md)
-- [Experience Surface Gates](operations/experience-surface-gates.md)
-- [Abuse Identity Enforcement Preflight](operations/abuse-identity-enforcement.md)
-- [Raw Detail Escrow Preflight](operations/raw-detail-escrow.md)
-- [Company Store Dashboard Preflight](operations/company-store-dashboard.md)
+
+The gate/preflight runbooks that used to be listed here were part of the
+human-gated milestone model and were removed in the reshape. See
+`docs/architecture/target-model.md` for the current backend shape.
 
 ## Architecture
 
-- [Architecture Overview](architecture/overview.md)
+- [Target Model](architecture/target-model.md) - source of truth for what Knudg
+  is and the one-pipe backend shape
+- [Semantic Search](architecture/semantic-search.md) - pillar ④, hybrid FTS + pgvector
 - [Security and Privacy](architecture/security-privacy.md)
 - [Data Model](architecture/data-model.md)
-- [Experience Domains](architecture/experience-domains.md)
 - [M0 Contract Split](architecture/m0-contract-split.md)
-- [Enterprise Governance](architecture/enterprise-governance.md)
-- [Agent Access](architecture/agent-access.md)
 - [Summoned Role MVP](architecture/summoned-roles.md) - product design only;
   active implementation uses live backend orchestration
 - [Retrieval Model](architecture/retrieval.md)
 - [Search Strategy](architecture/search-strategy.md)
-- [Operations](architecture/operations.md)
-- [Consent and Revocation UX](architecture/consent-revocation-ux.md)
-- [Implementation Readiness](architecture/implementation-readiness.md)
+
+The human-gated milestone, consent/approval, enterprise-governance,
+experience-domains, and public-publication-path docs were retired in the
+reshape (see git history); `architecture/target-model.md` is the map back.
 
 ## Product
 
 - [Product Strategy](product/strategy.md)
-- [Public Corpus Growth Roadmap](product/public-corpus-roadmap.md)
-- [Intent Crosswalk](product/intent-crosswalk.md)
-- [Closed-Launch Private-Use Notice](product/closed-launch-private-use-notice.md)
 - [Pre-M1 Validation Protocol](product/pre-m1-validation-protocol.md)
 - [WEDGE-001 Validation Workbook](product/wedge-001-validation-workbook.md)
+- [Private Validation Replay (2026-06-01)](product/private-validation-replay-2026-06-01.md)
+- [Codex for OSS Readiness](product/codex-for-oss-readiness.md)
 - [Landing Page Design](product/landing-page-design.md)
 - [Landing Page Japanese Design](product/landing-page-ja-design.md)
 - [Landing Page Simplified Chinese Design](product/landing-page-zh-cn-design.md)
-
-## Decisions
-
-- [Decision Backlog](decisions/README.md)
 
 ## RFCs
 
@@ -75,13 +59,12 @@ machine-specific paths.
 
 - [RFC 0002 - Codex Subconscious Sidecar](rfcs/0002-codex-subconscious-sidecar.md) - superseded, non-normative, and not part of active Knudg production architecture
 
-Draft RFCs are exploratory and non-normative until explicitly accepted. Do not treat draft RFC behavior as implementation-authoritative when it conflicts with `docs/architecture/`, `docs/product/`, or `docs/decisions/`.
+Draft RFCs are exploratory and non-normative until explicitly accepted. Do not treat draft RFC behavior as implementation-authoritative when it conflicts with `docs/architecture/` or `docs/product/`.
 
-Accepted RFCs are normative only for their declared milestone and scope. For M0
-lifecycle, visibility, and publication semantics, `docs/architecture/data-model.md`
-is the implementation authority and RFC 0001 is the constrained implementation
-appendix. If an RFC and architecture document disagree, the same change must
-update the architecture source of truth or the architecture document wins.
+`docs/architecture/target-model.md` is the source of truth. Where any RFC or
+older architecture doc conflicts with it, target-model wins. RFC 0001 remains
+the constrained M0 schema appendix and `docs/architecture/data-model.md` the
+table-level reference for what the migrations build.
 
 ## Split Rule
 

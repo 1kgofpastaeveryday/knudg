@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae
+        image: pgvector/pgvector:pg16@sha256:00ba258a66dac104fd5171074a0084462a64a1369d8513f3d0a634e2f24d15bc
         env:
           POSTGRES_DB: knudg
           POSTGRES_USER: knudg_migration
@@ -48,5 +48,4 @@ jobs:
       - run: npm run secret:scan -- --history
       - run: npm run py -- scripts/migrate.py up
       - run: npm run py -- -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py tests/test_task_profile_schema.py tests/test_knudg_task_profile_builder.py tests/test_retrieval_panel_schema.py tests/test_knudg_client_config.py
-      - run: npm run gates:all
       - run: npm run check:lp

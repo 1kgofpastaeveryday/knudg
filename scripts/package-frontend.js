@@ -63,7 +63,6 @@ fs.mkdirSync(STAGE, { recursive: true });
 copyDirectory("operator-ui");
 copyFile("scripts/knudg_local_frontend.py");
 copyFile("scripts/run-python.js");
-copyFile("fixtures/consent-revocation-gate.draft.json");
 
 fs.mkdirSync(path.join(STAGE, "bin"), { recursive: true });
 fs.writeFileSync(

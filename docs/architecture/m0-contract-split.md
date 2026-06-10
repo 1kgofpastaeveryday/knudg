@@ -79,6 +79,7 @@ stored, all of these must be true:
 
 Future slices may use M0 stable foundation tables and functions. Future slices
 must not turn local-only scaffolding into a protected-data path by accident. If
-a slice needs non-synthetic data, team sharing, public publication, production
-auth, object storage, or external retrieval, it must first satisfy the
-corresponding gate in `implementation-readiness.md`.
+a slice shares data beyond the local machine, it must go through the one pipe
+defined in [target-model.md](target-model.md): upload to the backend feeds the
+throttled queue, the GLM filter is the sole publication gate, and revoke always
+works. private stays local and is never uploaded.

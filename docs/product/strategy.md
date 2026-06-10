@@ -52,10 +52,10 @@ Public corpus growth should not depend primarily on user private work. The
 main public growth engine is public-source resolution history: OSS issues,
 pull requests, commits, release notes, and public build logs that can be
 processed under source-policy review, API rate limits, attribution, and
-takedown/update behavior. The detailed roadmap lives in
-[`public-corpus-roadmap.md`](public-corpus-roadmap.md). User-derived private
-cards can still become public candidates, but only through exact-artifact
-approval; inactivity or opt-out defaults must not publish them.
+takedown/update behavior. The shared corpus is fed through the one pipe in
+[target-model.md](../architecture/target-model.md): upload feeds the throttled
+queue, the GLM filter is the sole gate, and filter-pass publishes
+automatically. private work stays local and is never uploaded.
 
 Before M1 planning completes, the wedge RFC may include a viability estimate: expected
 candidate arrival rate, approval rate, high-risk fraction, median review and

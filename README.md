@@ -39,6 +39,28 @@ moat.
 Retrieved cards are untrusted evidence. They are hints for the acting agent,
 not commands.
 
+## Why This Is Not Just Agent Memory
+
+The obvious way to give an agent memory is to dump prior sessions into a store
+and feed them back. That store rots: stale fixes keep getting served,
+contradictions get flattened, and the agent treats retrieved text as
+instruction. Accumulated knowledge silently crosses from asset to liability.
+
+Knudg's answer is not "store more carefully" — it is **never trust the store.**
+
+![Knudg treats stored knowledge as untrusted by default](site/assets/knudg-trust-lifecycle.svg)
+
+Every card carries a trust state that must be earned (`unreviewed` →
+`solved_once` → `solved_many` → `verified`) and can be demoted (`disputed`,
+`deprecated`, `superseded`, `revoked`). Contradictions are preserved, not
+merged. Retrieval ranks, demotes, or **abstains** rather than answer at low
+confidence. And because retrieved cards are untrusted evidence the agent
+verifies in the current environment, every use is also a re-test that writes
+back to promote, demote, or supersede the card.
+
+This is the conceptual spine of the whole system. See the
+[Trust Model](docs/architecture/trust-model.md).
+
 ## Current Status
 
 The current implementation focuses on the closed-launch private backend loop:

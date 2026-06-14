@@ -35,6 +35,7 @@ machine-specific paths.
 
 ## Architecture
 
+- [Trust Model](architecture/trust-model.md) - conceptual spine; read first
 - [Architecture Overview](architecture/overview.md)
 - [Security and Privacy](architecture/security-privacy.md)
 - [Data Model](architecture/data-model.md)

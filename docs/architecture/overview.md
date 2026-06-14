@@ -1,5 +1,12 @@
 # Architecture Overview
 
+> **Start with the [Trust Model](trust-model.md).** It is the conceptual spine:
+> Knudg never trusts stored knowledge — trust is earned, can be demoted, and is
+> re-verified at use, and retrieval abstains when trust is low. Everything in
+> this document is machinery in service of that invariant.
+>
+> ![Knudg treats stored knowledge as untrusted by default](../../site/assets/knudg-trust-lifecycle.svg)
+
 Knudg is central infrastructure, not local-first storage. Local state should be limited to temporary current-work summaries, pending writer approval queues, and session-scoped retrieval cache metadata.
 
 Local retrieval cache must not become a personal memory layer. In MVP it stores only card IDs, card versions, freshness metadata, and ranking metadata. Card body caching remains prohibited until a future accepted RFC updates DEC-010 with encryption, TTL, revocation invalidation, cache keys, and user controls.

@@ -60,6 +60,8 @@ back to promote, demote, or supersede the card.
 
 This is the conceptual spine of the whole system. See the
 [Trust Model](docs/architecture/trust-model.md).
+For positioning relative to knowledge formats and curated workflow libraries,
+see [Adjacent Work](docs/architecture/adjacent-work.md).
 
 ## Current Status
 

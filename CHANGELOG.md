@@ -4,6 +4,12 @@ All notable public changes to Knudg are tracked here.
 
 ## Unreleased
 
+No unreleased changes.
+
+## 0.1.2 - 2026-06-16
+
+Launch positioning and public copy.
+
 - Added public launch positioning with competitive context and announcement
   copy drafts.
 - Reframed README and landing-page copy from generic memory to a coding-agent

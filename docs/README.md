@@ -49,6 +49,7 @@ reshape (see git history); `architecture/target-model.md` is the map back.
 - [WEDGE-001 Validation Workbook](product/wedge-001-validation-workbook.md)
 - [Private Validation Replay (2026-06-01)](product/private-validation-replay-2026-06-01.md)
 - [Codex for OSS Readiness](product/codex-for-oss-readiness.md)
+- [Public Launch Positioning](product/launch-positioning.md)
 - [Landing Page Design](product/landing-page-design.md)
 - [Landing Page Japanese Design](product/landing-page-ja-design.md)
 - [Landing Page Simplified Chinese Design](product/landing-page-zh-cn-design.md)

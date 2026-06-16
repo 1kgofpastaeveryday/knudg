@@ -13,9 +13,9 @@ The project is currently strongest as a Codex-adjacent OSS infrastructure
 candidate, not as a broadly adopted maintainer-workload case. The public repo
 has a self-hostable closed-launch private backend loop, schemas, CLI/API
 commands, migrations, fixtures, tests, safety gates, and Codex plugin/skill
-assets. It does not yet have broad external adoption, tagged releases, public
-publication, team namespaces, protected hosted retrieval, or trusted hosted
-consent completion.
+assets. It does not yet have broad external adoption, public publication, team
+namespaces, protected hosted retrieval, or trusted hosted consent
+completion.
 
 ## Evidence Available Today
 
@@ -35,12 +35,16 @@ consent completion.
   `npm run codex:oss-demo`.
 - A documented rule that retrieved cards are untrusted evidence, not agent
   instructions.
+- Tagged release `v0.1.0` with GitHub Release and dated CHANGELOG entry.
+- Clean-machine quickstart transcript on Ubuntu 24.04 (Node 20.20.2,
+  Python 3.12.3, PostgreSQL 16.14 with pgvector): 58 passed, 1 skipped,
+  public release validation passed. See
+  `docs/evidence/quickstart-transcript-v0.1.0.md`.
 
 ## Evidence Not Yet Available
 
 - Meaningful usage, monthly downloads, stars, forks, downstream dependencies,
   or external maintainer adoption.
-- A tagged release with a verified clean-machine quickstart transcript.
 - Public/team search or publication readiness.
 - Reviewer capacity measurements for public-card admission.
 - A WEDGE-001 replay evaluation proving retrieval lift over current baselines.
@@ -84,8 +88,9 @@ redaction validators, hostile-card handling, and authorization assumptions.
 
 ## Work That Would Strengthen A Later Application
 
-1. Tag an initial release and publish release notes.
-2. Capture a clean-machine quickstart transcript using `npm run py --`.
+1. ~~Tag an initial release and publish release notes.~~ Done: v0.1.0.
+2. ~~Capture a clean-machine quickstart transcript.~~ Done: see
+   `docs/evidence/quickstart-transcript-v0.1.0.md`.
 3. Expand the synthetic/public demo corpus beyond
    `fixtures/codex-oss-demo-wedge-evidence.sample.json` and add provenance for
    any public-source examples.

@@ -15,6 +15,8 @@ All notable public changes to Knudg are tracked here.
 - Updated landing-page smoke checks and runbook anchor policy to allow the
   canonical GitHub repository link while still rejecting other external
   anchors.
+- Synced `LICENSE` with the canonical Apache-2.0 license text for repository
+  license detection.
 - Fixed a stale trust-model link to point at the current target model.
 
 ## 0.1.0 - 2026-06-16

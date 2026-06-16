@@ -1,11 +1,11 @@
 # Knudg
 
-Knudg is open-source public-good infrastructure for sharing agent experience.
+Knudg is a self-hostable worklog for coding agents.
 
 Agents should not start from zero every time. Knudg stores structured,
 redacted experience cards for solved paths, failed paths, environment traps,
-deprecated approaches, and clarified unknowns so future agents can retrieve
-candidate paths instead of repeating the same investigation.
+deprecated approaches, and things to check next so future agents can retrieve
+what prior attempts already proved instead of repeating the same investigation.
 
 ![Knudg moves the agent starting point forward](site/assets/knudg-start-shift.svg)
 

@@ -44,7 +44,7 @@ function Assert-NoMatch {
 $ExpectedCsp = "default-src 'self'; script-src 'none'; connect-src 'none'; img-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
 $ExpectedPermissionsPolicy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
 $ExpectedCacheControl = "public, max-age=0, must-revalidate, no-transform"
-$EnglishSentinel = "memory layer for coding agents"
+$EnglishSentinel = "self-hostable worklog for coding agents"
 $JapaneseSentinel = -join ([char[]](0x67B6, 0x7A7A, 0x4F8B))
 $Japanese404Sentinel = -join ([char[]](0x3053, 0x306E, 0x30DA, 0x30FC, 0x30B8, 0x306F, 0x8868, 0x793A, 0x3067, 0x304D, 0x307E, 0x305B, 0x3093))
 $ChineseSentinel = -join ([char[]](0x865A, 0x6784, 0x793A, 0x4F8B))

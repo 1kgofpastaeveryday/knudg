@@ -1,82 +1,91 @@
 # Knudg Backlog
 
-This directory is the implementation queue for Knudg. It translates product
-intent and architecture docs into small, testable slices.
+The implementation queue for Knudg, aligned to the current model.
 
-## Current Readiness
+Design source of truth:
+- [docs/architecture/target-model.md](../docs/architecture/target-model.md) — what Knudg is and the one-pipe backend shape.
+- [docs/architecture/semantic-search.md](../docs/architecture/semantic-search.md) — pillar ④ design.
 
-Knudg's core is designed at the architecture/RFC level, but only the lower
-foundation is implemented.
+The older milestone task files (m0/m1/m3, experience-domains, backend-roadmap,
+production-readiness, core-status) described a private-first, human-gated,
+M0–M6 model that the reshape replaced. They were retired; see git history if you
+need the prior plan. Where anything conflicts, target-model.md wins.
 
-| Area | Design state | Implementation state | Notes |
-|---|---|---|---|
-| Codex plugin/client | designed | live closed-launch ready | `$knudg` skill, pinned backend status/capabilities, live profile/search/nudge/write-candidate commands, and Greencloud closed-launch pinning work. |
-| M0 trust/data kernel | designed | largely implemented | SQL migration, RLS, event log, revocation, consent records, outbox/jobs, and tests exist. |
-| Structured card payload | designed | implemented as schema/digest helper | Validates canonical payload shape and digest; legacy local writer-draft helpers have been removed. |
-| Private writer flow | designed | backend primitives implemented, product path gated | Candidate submission tests and private approval paths exist; trusted human UI and product-path non-synthetic storage remain gated. |
-| Knowledge crawler/retrieval | designed | closed-launch private retrieval implemented | Request validation, abstention, retrieval-panel shape, Greencloud/closed-launch search, and local-private card fences exist; legacy synthetic corpus and loopback server paths have been removed. |
-| Summoned Knudg roles | designed | live backend orchestration only | The active skill uses live profile/search/nudge/write-candidate commands; legacy local role wrapper scripts have been removed. |
-| Experience domains | design reflected | not implemented | Technical, personal reasoning, career, place/service, public-candidate, and public-aggregate domains are defined as future domain-separated retrieval/consent boundaries. |
-| Consent/revocation UX | designed | not implemented as UI | DB primitives exist; trusted human UI remains launch-blocking before public/team sharing. |
-| Shared/public corpus | gated | not implemented | Blocked until WEDGE-001 validation, public privacy gates, reviewer supply, and consent/revocation E2E. |
+## The four pillars (and where they stand)
 
-Implemented primitives and local-private labels do not open product gates.
-`local_private_dogfood` remains a constrained source class used by the current
-closed-launch backend paths, but the old local-only fixture server, synthetic
-retrieval harness, synthetic writer draft command, and local role wrappers have
-been removed from the active implementation. Product-path non-synthetic session
-capture still remains closed unless the relevant signed launch-gate manifest is
-open.
+1. **Agents create knudg** — proactive write offer at solved-work boundaries
+   (SKILL.md completion self-check). Done.
+2. **Share** — the public/Team shared pipe. Deferred on purpose until the solo
+   loop is proven useful (do not build the sharing side first).
+3. **Strip non-public info** — deterministic redaction at capture + the GLM
+   filter queue (40 rpm throttle). The queue exists; it still needs rewiring so
+   ingestion feeds it directly (see ③ below).
+4. **Semantic search** — hybrid FTS + pgvector, opt-in. Done (storage + functions
+   + API + HTTP-level e2e).
 
-`agent-subconscious` is not the Knudg canonical store. It may observe local
-agent work, extract candidate facts, and propose local drafts. Knudg owns the
-canonical schema, consent/approval/revocation state, shared database, retrieval
-contracts, and publication gates.
+## Done in the reshape (2026-06)
 
-The current agent-native direction is live closed-launch orchestration first:
-build a sanitized task profile, query the pinned backend, return compact nudger
-signals, and create only approval-required write candidates.
+- Adopted target-model.md as the core map.
+- Removed the human-gate / on-backend-private / broader-domain machinery:
+  publication-candidate, consent-review UI, private-retention completion,
+  redacted-experience storage, candidate-payload-facets, and ~94 over-scope gate
+  scaffolds. The capture → FTS search → revoke/purge loop and the GLM filter
+  queue stayed intact.
+- ① writer now offers a knudg proactively at solved-work boundaries (no hook,
+  no auto-write).
+- ④ semantic search: dev Postgres → `pgvector/pgvector:pg16`; migration 0017
+  (embedding column + HNSW); migration 0018 (`set_embedding`, `vector_search`,
+  additive — FTS functions untouched); API embed seam (fastembed BGE-small/384,
+  opt-in `KNUDG_EMBEDDING_ENABLED=1`) + hybrid merge.
+- Verified: 206 tests pass (2 pre-existing `test_m0_schema` failures are
+  unrelated — see Known issues).
 
-## Operating Rules
+## Next slices (ordered)
 
-- Prefer vertical slices that exercise the closed-launch backend directly.
-- Do not add new production/shared gates, enterprise governance, vector/rerank,
-  billing, or public corpus work until the closed-launch private backend loop
-  is usable and measured.
-- Allow `local_private_dogfood` before production gates only as an immutable
-  source class for explicit local operator-authored cards with no raw
-  transcript/file ingestion and no team/public sharing.
-- Keep local private cards out of hosted sync, production projections,
-  embeddings, publication consent rows, product candidate queues, exports, and
-  review/admin surfaces.
-- Do not store non-synthetic private candidate metadata or draft bodies until
-  the `non_synthetic_body_persistence_gate` is satisfied.
-- Treat removed local/synthetic writer work as historical scaffolding, not as
-  an active implementation path.
-- Keep retrieval abstention-first until authorization, revocation fences,
-  exact/FTS semantics, and safety gates are implemented.
-- Treat `exploration_depth` as local root-cause discipline for whether a client
-  stops at a solved path or pushes toward publication-grade evidence. It does
-  not authorize broader data collection or bypass synthetic-only guards.
-- Update task status when a slice is implemented, blocked, or superseded.
+1. **Dogfood ① + ④.** Turn on `KNUDG_EMBEDDING_ENABLED=1`, use the loop for real,
+   and judge whether hybrid retrieval and the write offer actually help. This
+   gates whether ③ (sharing) is worth building.
+2. **③ ingestion → queue rewire.** Make capture enqueue every knudg into the GLM
+   filter queue (the project's "everything goes through the filter" model),
+   decoupled from the old publication path. This is the spine of the shared pipe.
+   Only after the solo loop proves useful.
+3. **Shared pipe / serving** (Public + Team servers as one pipe with
+   filter+access config) — the heavy ② work; after ③.
 
-## Task Files
+Done since:
 
-- [core-status.md](core-status.md): current design/implementation map.
-- [m0-data-kernel.md](m0-data-kernel.md): trust/data kernel follow-through.
-- [m1-writer.md](m1-writer.md): private writer queue, candidate draft, consent, and approval tasks.
-- [m3-retrieval.md](m3-retrieval.md): crawler/search/retrieval-panel path.
-- [experience-domains.md](experience-domains.md): broader technical/personal/career/place-service domain separation and starter implementation slices.
-- [backend-roadmap.md](backend-roadmap.md): backend path to use-ready and production-ready.
-- [production-readiness.md](production-readiness.md): production, team, and public-pilot blockers.
+- **Doc consolidation (was ④).** Retired the human-gated/M0–M6-milestone,
+  consent/approval, enterprise-governance, experience-domains, and
+  public-publication-path apparatus that predated target-model: deleted 18 docs
+  (the `architecture/` overview/operations/agent-access/consent-revocation-ux/
+  enterprise-governance/experience-domains/implementation-readiness docs, the
+  `decisions/` backlog, the retired `product/` roadmap/crosswalk/notice docs,
+  RFC 0004, and the 5 adversarial-review snapshots). Reconciled survivors
+  (top README, docs/README, data-model, security-privacy, m0-contract-split,
+  strategy, RFC 0001, landing-page-runbook) to point at target-model.md and
+  fixed every internal link. Deleted docs live in git history.
+- **Semantic-search e2e test (was ⑤).** HTTP-level publish with embedding on →
+  embedding stored → hybrid served, plus a keyword-disjoint query retrieved
+  purely via the vector path and the revoke fence on vector rows. Model-gated
+  skip. `tests/test_knudg_closed_api.py::test_closed_api_semantic_hybrid_e2e`.
 
-## Next Recommended Slice
+## Known issues / cleanup
 
-The current authority is Greencloud closed-launch first. Keep tightening that
-path and only broaden product-path ingestion once the relevant gates are open.
+- Two pre-existing `test_m0_schema` failures (`audit_insert_function...`,
+  `knudgctl_local_private_capture_search_revoke_purge_vertical_loop`, exit 3).
+  Unrelated to the reshape (migrations/knudgctl unchanged); needs separate
+  investigation.
+- `tests/test_knudg_closed_api.py::seed_closed_api_private_retention_proof` is a
+  now-unused dead helper; remove when convenient.
+- dev Postgres image changed to pgvector; the existing data volume needed a
+  `REFRESH COLLATION VERSION` (dev-only artifact of the image switch).
 
-`M1-WR-004` and production `M3-RT-004` remain gated by WEDGE-001,
-protected-data, and retrieval-quality gates. The next order is protected-data
-durability, intake safety, product submit, trusted approval/revocation UI, and
-production exact/FTS projections; add local vault support only if the
-approval-preview path genuinely requires it.
+## Operating rules
+
+- YAGNI gate: before adding a new surface/gate/table/capability, confirm the user
+  asked for it *this iteration*. If not, don't build it. (This is what the
+  reshape was undoing.)
+- private stays local; the backend is the shared corpus only.
+- The GLM filter is the sole publication gate; its quality is the safety boundary.
+- Revoke must always work (un-share after the fact).
+- Prefer vertical slices that exercise the real backend; keep changes verifiable.

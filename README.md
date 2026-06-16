@@ -242,12 +242,11 @@ Knudg keeps these boundaries explicit:
   stored by default.
 - Search authorization must happen before candidate generation, ranking, and
   reranking.
-- Public publication requires a new redacted artifact, exact approval, reviewer
-  publish, and public-safety gates.
-- Experience domains are retrieval and consent boundaries.
+- Uploading to the backend is the decision to share; the GLM filter is the sole
+  publication gate and there is no per-card human approval step.
 - Revocation and purge paths are first-class backend operations.
 
-See [Security Policy](SECURITY.md), [Architecture Overview](docs/architecture/overview.md),
+See [Security Policy](SECURITY.md), [Target Model](docs/architecture/target-model.md),
 and [Data Model](docs/architecture/data-model.md).
 
 ## Codex For OSS Readiness

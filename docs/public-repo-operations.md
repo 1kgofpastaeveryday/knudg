@@ -14,13 +14,6 @@ npm test
 npm run check:lp
 ```
 
-Use the full gate sweep for shared schema, migration, consent, revocation,
-publication, or future-surface changes:
-
-```powershell
-npm run gates:all
-```
-
 `npm run secret:scan` is a high-confidence local scanner for known token and
 private-key shapes. It complements GitHub native secret scanning; it does not
 replace rotating any exposed real secret.

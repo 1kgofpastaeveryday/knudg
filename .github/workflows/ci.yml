@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16@sha256:4b7183ac05f8ef417db21fd72d71047a4238340c261d3cc3ddb6d579ab5071ae
+        image: pgvector/pgvector:pg16@sha256:00ba258a66dac104fd5171074a0084462a64a1369d8513f3d0a634e2f24d15bc
         env:
           POSTGRES_DB: knudg
           POSTGRES_USER: knudg_migration
@@ -31,13 +31,13 @@ jobs:
       KNUDG_OPERATOR_TOKEN: ci-local-token
       KNUDG_API_URL: http://127.0.0.1:8765
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: "20"
           cache: npm
@@ -48,5 +48,4 @@ jobs:
       - run: npm run secret:scan -- --history
       - run: npm run py -- scripts/migrate.py up
       - run: npm run py -- -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py tests/test_task_profile_schema.py tests/test_knudg_task_profile_builder.py tests/test_retrieval_panel_schema.py tests/test_knudg_client_config.py
-      - run: npm run gates:all
       - run: npm run check:lp

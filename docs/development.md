@@ -68,29 +68,7 @@ migration runner or tests.
 npm run py -- -m pytest tests/test_m0_schema.py
 ```
 
-## Gate Checks
-
-The current local gate validators are runnable through npm:
-
-```powershell
-npm run m3:gates
-npm run review:gates
-npm run circuit:gates
-npm run runbook:manifest
-npm run launch:gates
-npm run intake:gates
-npm run auth:gates
-npm run consent:gates
-npm run tns:audit
-npm run experience:surfaces
-npm run abuse:identity
-npm run abuse:identity-enforcement
-npm run raw:detail-escrow
-npm run dashboard:company-store
-npm run gates:all
-```
-
-Landing page checks are separate from backend gates:
+## Landing Page Checks
 
 ```powershell
 npm run check:lp

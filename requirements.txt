@@ -1,1 +1,2 @@
-psycopg[binary]>=3.2,<4
+psycopg[binary]>=3.3.4,<4
+fastembed>=0.3,<1

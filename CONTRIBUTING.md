@@ -17,8 +17,6 @@ Run focused tests before broad suites:
 npm run py -- -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py
 ```
 
-Use `npm run gates:all` only when you need the full validation sweep.
-
 Before opening a pull request that changes public docs, CI, schemas, fixtures,
 or publication/security gates, run:
 

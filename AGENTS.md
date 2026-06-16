@@ -76,6 +76,22 @@ secrets, and machine-specific notes as out of scope for commits.
 - Before adding or changing a recurring background trigger, explain what will
   run, how often it will run, whether any UI can appear, and how to disable it.
 
+## Versioning And Releases
+
+- Follow semantic versioning: `MAJOR.MINOR.PATCH`.
+  - PATCH: bug fixes, doc corrections, test stabilization.
+  - MINOR: new features, new schemas, new CLI commands, new API routes.
+  - MAJOR: breaking changes to schemas, API contracts, or migration format.
+- Every release gets a git tag (`v0.1.0`), a matching GitHub Release with notes
+  from CHANGELOG.md, and a dated CHANGELOG entry.
+- CHANGELOG.md is the single source for release notes. Keep an `## Unreleased`
+  section at the top. When cutting a release, move Unreleased items into a new
+  dated version section and reset Unreleased to empty.
+- Do not skip versions or reuse a version number.
+- Tag releases on the main branch only, after merging and verifying tests pass.
+- Pre-1.0: the project is pre-stable. MINOR bumps may include breaking changes
+  to internal schemas or migrations as long as CHANGELOG documents them.
+
 ## Documentation Discipline
 
 - Keep the root README public, concise, and install-oriented.

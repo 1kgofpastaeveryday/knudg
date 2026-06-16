@@ -12,6 +12,9 @@ All notable public changes to Knudg are tracked here.
 - Upgraded Wrangler and pinned transitive audit fixes for `esbuild` and `ws`.
 - Optimized history secret scanning so the public CI gate scans unique git
   blobs instead of each file at each revision.
+- Updated landing-page smoke checks and runbook anchor policy to allow the
+  canonical GitHub repository link while still rejecting other external
+  anchors.
 - Fixed a stale trust-model link to point at the current target model.
 
 ## 0.1.0 - 2026-06-16

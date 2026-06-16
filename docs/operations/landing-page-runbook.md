@@ -52,8 +52,10 @@ Document authority:
 - `npm run check:lp` must reject `<script>`, `<form>`, `<button>`,
   submit/image/button inputs, `[formaction]`, `mailto:` links,
   `[role="button"]`, clickable closed-state chips, and external anchor links
+  except the canonical GitHub repository link
 - `npm run check:lp` must enforce a strict anchor allowlist: section anchors,
-  `/`, `/ja/`, `/zh-cn/`, locale equivalents, and documented 404 recovery links only.
+  `/`, `/ja/`, `/zh-cn/`, locale equivalents, documented 404 recovery links,
+  install-note links, and `https://github.com/1kgofpastaeveryday/knudg` only.
   Reject `mailto:`, `tel:`, protocol URLs, downloads, product-route-looking
   relative paths, and every other `href`
 - `npm run check:lp` must enforce a strict rendered resource allowlist: the page
@@ -122,9 +124,9 @@ Expected results:
 - expected `Cache-Control`: `public, max-age=0, must-revalidate, no-transform`
 - `www.knudg.com` remains unresolved until an explicit redirect or route is
   configured
-- served `/`, `/ja/`, and `/zh-cn/` HTML still contain no scripts, forms, buttons,
-  product-action links, or client-side third-party resource loads after
-  Cloudflare handling
+- served `/`, `/ja/`, and `/zh-cn/` HTML still contain no scripts, forms,
+  buttons, product-action links, disallowed external anchors, or client-side
+  third-party resource loads after Cloudflare handling
 
 ## Rollback
 

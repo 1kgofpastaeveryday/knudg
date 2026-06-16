@@ -4,6 +4,14 @@ All notable public changes to Knudg are tracked here.
 
 ## Unreleased
 
+No unreleased changes.
+
+## 0.1.1 - 2026-06-16
+
+Release hardening after the initial public release.
+
+- Added the verified v0.1.0 clean-machine quickstart transcript and moved the
+  Codex for OSS readiness evidence from "missing" to "available."
 - Added an adjacent-work architecture note that positions Knudg relative to
   knowledge formats and curated workflow libraries without changing the target
   upload boundary.

@@ -210,7 +210,7 @@ function Assert-StaticPreviewBody {
   Assert-NoMatch "$Name button roles" $Content 'role=["'']button["'']'
   Assert-NoMatch "$Name mailto links" $Content 'href=["'']mailto:'
   Assert-NoMatch "$Name tel links" $Content 'href=["'']tel:'
-  Assert-NoMatch "$Name external anchors" $Content '<a\b[^>]+href=["''](?:https?:)?//'
+  Assert-NoMatch "$Name disallowed external anchors" $Content '<a\b[^>]+href=["''](?!(?:https://github\.com/1kgofpastaeveryday/knudg/?)(?:["'']|#|\?))(?:https?:)?//'
   Assert-NoMatch "$Name iframes" $Content "<iframe\b"
   Assert-NoMatch "$Name object embeds" $Content "<(object|embed)\b"
   Assert-NoMatch "$Name media embeds" $Content "<(video|audio|source|picture)\b"

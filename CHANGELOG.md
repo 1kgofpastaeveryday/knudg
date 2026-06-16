@@ -4,7 +4,15 @@ All notable public changes to Knudg are tracked here.
 
 ## Unreleased
 
-No unreleased changes.
+- Added an adjacent-work architecture note that positions Knudg relative to
+  knowledge formats and curated workflow libraries without changing the target
+  upload boundary.
+- Updated landing-page deployment scripts to use the pinned local Wrangler
+  devDependency.
+- Upgraded Wrangler and pinned transitive audit fixes for `esbuild` and `ws`.
+- Optimized history secret scanning so the public CI gate scans unique git
+  blobs instead of each file at each revision.
+- Fixed a stale trust-model link to point at the current target model.
 
 ## 0.1.0 - 2026-06-16
 

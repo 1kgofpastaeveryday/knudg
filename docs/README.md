@@ -25,6 +25,8 @@ human-gated milestone model and were removed in the reshape. See
 ## Architecture
 
 - [Trust Model](architecture/trust-model.md) - conceptual spine; read first
+- [Adjacent Work](architecture/adjacent-work.md) - how Knudg differs from
+  knowledge formats and curated workflow libraries
 - [Target Model](architecture/target-model.md) - source of truth for what Knudg
   is and the one-pipe backend shape
 - [Semantic Search](architecture/semantic-search.md) - pillar ④, hybrid FTS + pgvector

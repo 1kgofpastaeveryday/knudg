@@ -73,6 +73,12 @@ class Finding:
     fingerprint: str
 
 
+@dataclass(frozen=True)
+class HistoryBlob:
+    oid: str
+    path: str
+
+
 def run_git(*args: str, text: bool = True) -> str | bytes:
     result = subprocess.run(
         ["git", *args],
@@ -91,16 +97,21 @@ def tracked_and_public_untracked_files() -> list[str]:
     return [line.strip() for line in output.splitlines() if line.strip()]
 
 
-def all_revisions() -> list[str]:
-    output = run_git("rev-list", "--all")
+def history_blob_entries() -> list[HistoryBlob]:
+    output = run_git("rev-list", "--objects", "--all")
     assert isinstance(output, str)
-    return [line.strip() for line in output.splitlines() if line.strip()]
-
-
-def files_at_revision(revision: str) -> list[str]:
-    output = run_git("ls-tree", "-r", "--name-only", "-z", revision, text=False)
-    assert isinstance(output, bytes)
-    return [part.decode("utf-8", errors="replace") for part in output.split(b"\0") if part]
+    entries: list[HistoryBlob] = []
+    seen_oids: set[str] = set()
+    for line in output.splitlines():
+        parts = line.split(maxsplit=1)
+        if len(parts) != 2:
+            continue
+        oid, file_name = parts
+        if oid in seen_oids or not is_text_candidate(file_name):
+            continue
+        seen_oids.add(oid)
+        entries.append(HistoryBlob(oid=oid, path=file_name))
+    return entries
 
 
 def is_text_candidate(file_name: str) -> bool:
@@ -153,37 +164,73 @@ def scan_worktree() -> list[Finding]:
     return findings
 
 
-def blob_at_revision(revision: str, file_name: str) -> bytes | None:
-    try:
-        output = run_git("show", f"{revision}:{file_name}", text=False)
-    except subprocess.CalledProcessError:
-        return None
-    assert isinstance(output, bytes)
-    if len(output) > MAX_FILE_BYTES:
-        return None
-    return output
+def batch_blob_sizes(oids: list[str]) -> dict[str, int]:
+    if not oids:
+        return {}
+    result = subprocess.run(
+        ["git", "cat-file", "--batch-check=%(objectname) %(objecttype) %(objectsize)"],
+        cwd=ROOT,
+        input="".join(f"{oid}\n" for oid in oids),
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    sizes: dict[str, int] = {}
+    for line in result.stdout.splitlines():
+        oid, object_type, size_text = line.split()
+        if object_type == "blob":
+            sizes[oid] = int(size_text)
+    return sizes
+
+
+def batch_blob_contents(entries: list[HistoryBlob]) -> dict[str, bytes]:
+    if not entries:
+        return {}
+    result = subprocess.run(
+        ["git", "cat-file", "--batch"],
+        cwd=ROOT,
+        input="".join(f"{entry.oid}\n" for entry in entries).encode("utf-8"),
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    contents: dict[str, bytes] = {}
+    offset = 0
+    data = result.stdout
+    while offset < len(data):
+        header_end = data.find(b"\n", offset)
+        if header_end < 0:
+            break
+        header = data[offset:header_end].decode("utf-8", errors="replace").split()
+        if len(header) < 3:
+            break
+        oid, object_type, size_text = header[:3]
+        size = int(size_text)
+        offset = header_end + 1
+        content = data[offset : offset + size]
+        offset += size
+        if offset < len(data) and data[offset : offset + 1] == b"\n":
+            offset += 1
+        if object_type == "blob":
+            contents[oid] = content
+    return contents
 
 
 def scan_history() -> list[Finding]:
     findings: list[Finding] = []
-    seen_blobs: set[tuple[str, str]] = set()
-    for revision in all_revisions():
-        short_revision = revision[:12]
-        for file_name in files_at_revision(revision):
-            if not is_text_candidate(file_name):
-                continue
-            blob = blob_at_revision(revision, file_name)
-            if blob is None:
-                continue
-            blob_digest = hashlib.sha256(blob).hexdigest()
-            blob_key = (file_name, blob_digest)
-            if blob_key in seen_blobs:
-                continue
-            seen_blobs.add(blob_key)
-            text = decode_text(blob)
-            if text is None:
-                continue
-            findings.extend(scan_text(f"history:{short_revision}", file_name, text))
+    entries = history_blob_entries()
+    sizes = batch_blob_sizes([entry.oid for entry in entries])
+    entries = [entry for entry in entries if sizes.get(entry.oid, MAX_FILE_BYTES + 1) <= MAX_FILE_BYTES]
+    contents = batch_blob_contents(entries)
+    for entry in entries:
+        blob = contents.get(entry.oid)
+        if blob is None:
+            continue
+        text = decode_text(blob)
+        if text is None:
+            continue
+        findings.extend(scan_text(f"history:{entry.oid[:12]}", entry.path, text))
     return findings
 
 

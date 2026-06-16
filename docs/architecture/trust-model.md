@@ -119,4 +119,4 @@ gate, follow the pointer:
 - Untrusted-evidence rendering, hostile-card handling, redaction boundaries:
   [Security and Privacy](security-privacy.md)
 - How a card is admitted, reviewed, and compacted without becoming new ground
-  truth: [Architecture Overview](overview.md)
+  truth: [Target Model](target-model.md)

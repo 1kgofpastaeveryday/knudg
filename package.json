@@ -18,11 +18,11 @@
     "py": "node scripts/run-python.js",
     "setup:python": "node scripts/install-python-deps.js",
     "test": "node scripts/run-python.js -m pytest tests/test_knudg_closed_api.py tests/test_knudg_live_agent.py tests/test_task_profile_schema.py tests/test_knudg_client_config.py",
-    "deploy:lp": "npx --yes wrangler@4.90.0 deploy --message \"LP deploy\"",
-    "deploy:lp:candidate": "npx --yes wrangler@4.90.0 versions upload --message \"LP candidate\"",
-    "deploy:lp:dry-run": "npx --yes wrangler@4.90.0 deploy --dry-run",
-    "deploy:lp:list": "npx --yes wrangler@4.90.0 deployments list",
-    "rollback:lp": "npx --yes wrangler@4.90.0 rollback --name knudg-site --message \"Rollback LP deploy\" --yes",
+    "deploy:lp": "wrangler deploy --message \"LP deploy\"",
+    "deploy:lp:candidate": "wrangler versions upload --message \"LP candidate\"",
+    "deploy:lp:dry-run": "wrangler deploy --dry-run",
+    "deploy:lp:list": "wrangler deployments list",
+    "rollback:lp": "wrangler rollback --name knudg-site --message \"Rollback LP deploy\" --yes",
     "package:frontend": "node scripts/package-frontend.js",
     "check:lp": "node scripts/check-knudg-layout.js",
     "public:release-check": "node scripts/run-python.js scripts/validate_public_release.py",
@@ -38,6 +38,10 @@
   },
   "devDependencies": {
     "playwright": "^1.60.0",
-    "wrangler": "4.99.0"
+    "wrangler": "4.100.0"
+  },
+  "overrides": {
+    "esbuild": "0.28.1",
+    "ws": "8.21.0"
   }
 }

@@ -1,4 +1,4 @@
-# Contributor Agent Instructions
+# Knudg — Project Instructions
 
 This repository is intended to be public and self-hostable. Treat all local
 operator state, private transcripts, generated drafts, credentials, deployment
@@ -69,8 +69,6 @@ secrets, and machine-specific notes as out of scope for commits.
   helpers, or recurring processes that can show a terminal, console,
   PowerShell, cmd, Windows Terminal, or other focus-stealing popup without the
   user's explicit permission.
-- This matters especially on Windows, where even a momentary popup can steal
-  focus, interrupt typing, and reduce productivity.
 - If background execution is necessary, use a non-interactive hidden/no-window
   mechanism and verify that it does not create visible windows or steal focus.
 - Before adding or changing a recurring background trigger, explain what will
@@ -99,3 +97,12 @@ secrets, and machine-specific notes as out of scope for commits.
 - Mark blocked, draft, synthetic, and model-only examples clearly.
 - Do not document private deployment credentials or operator-only machine
   details.
+
+## Development
+
+- `npm test` runs core public-readiness tests.
+- `npm run public:release-check` and `npm run secret:scan -- --history` for
+  hygiene checks.
+- Python scripts run via `npm run py -- <script>` (uses `.venv` or system
+  Python 3.12+).
+- Postgres 16+ required for backend tests (`docker compose up -d postgres`).

@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 620" role="img" aria-labelledby="title desc">
+  <title id="title">Knudg treats stored knowledge as untrusted by default</title>
+  <desc id="desc">Raw experience becomes a structured card that enters as unreviewed and earns trust toward verified. Cards can be demoted to disputed, deprecated, superseded, or revoked. Retrieval ranks, demotes, or abstains. The acting agent treats cards as untrusted evidence, verifies the path in the current environment, and that verification feeds back to promote, demote, or supersede the card.</desc>
+  <defs>
+    <marker id="arrow-ink" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 9 6 2 10" fill="none" stroke="#121820" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 9 6 2 10" fill="none" stroke="#1477f8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 9 6 2 10" fill="none" stroke="#ef5b4c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .ink { fill: #121820; }
+      .blue { fill: #1477f8; }
+      .white { fill: #ffffff; }
+      .title { font-family: Arial, Helvetica, sans-serif; font-size: 32px; font-weight: 900; }
+      .sub { font-family: Arial, Helvetica, sans-serif; font-size: 19px; font-weight: 700; fill: #475569; }
+      .box-t { font-family: Arial, Helvetica, sans-serif; font-size: 21px; font-weight: 900; }
+      .box-s { font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: 700; fill: #475569; }
+      .pill-t { font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: 900; fill: #ffffff; }
+      .lab { font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: 900; }
+      .lab-r { fill: #ef5b4c; }
+      .lab-b { fill: #1477f8; }
+      .box { fill: #ffffff; stroke: #121820; stroke-width: 3; }
+      .line { stroke-width: 3.5; stroke-linecap: round; fill: none; }
+      .flow { stroke: #121820; marker-end: url(#arrow-ink); }
+      .demote { stroke: #ef5b4c; marker-end: url(#arrow-red); }
+      .feedback { stroke: #1477f8; marker-end: url(#arrow-blue); stroke-dasharray: 2 9; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1400" height="620" rx="24"/>
+
+  <text class="title ink" x="60" y="62">Knudg treats stored knowledge as untrusted by default</text>
+  <text class="sub" x="60" y="96">Trust is earned, can be demoted, and is re-verified at use. Low trust &#8594; retrieval abstains.</text>
+
+  <!-- Pipeline row -->
+  <g>
+    <rect class="box" x="60" y="140" width="250" height="96" rx="14"/>
+    <text class="box-t ink" x="185" y="184" text-anchor="middle">Raw experience</text>
+    <text class="box-s" x="185" y="210" text-anchor="middle">a solved / failed / unknown path</text>
+
+    <line class="line flow" x1="320" y1="188" x2="392" y2="188"/>
+
+    <rect class="box" x="402" y="140" width="250" height="96" rx="14"/>
+    <text class="box-t ink" x="527" y="184" text-anchor="middle">Structured card</text>
+    <text class="box-s" x="527" y="210" text-anchor="middle">redacted, environment-tagged</text>
+
+    <line class="line flow" x1="662" y1="188" x2="734" y2="188"/>
+
+    <rect class="box" x="744" y="140" width="250" height="96" rx="14"/>
+    <text class="box-t ink" x="869" y="180" text-anchor="middle">Retrieval</text>
+    <text class="box-s" x="869" y="206" text-anchor="middle">rank &#183; demote &#183; abstain</text>
+
+    <line class="line flow" x1="1004" y1="188" x2="1076" y2="188"/>
+
+    <rect class="box" x="1086" y="140" width="254" height="96" rx="14"/>
+    <text class="box-t ink" x="1213" y="180" text-anchor="middle">Agent at work</text>
+    <text class="box-s" x="1213" y="206" text-anchor="middle">evidence, not a command</text>
+  </g>
+
+  <!-- connector card -> trust ladder -->
+  <line class="line flow" x1="527" y1="236" x2="527" y2="318"/>
+
+  <!-- Trust ladder -->
+  <text class="lab ink" x="60" y="360">Trust state — earned and reversible</text>
+  <g>
+    <rect x="60" y="380" width="190" height="44" rx="22" fill="#94a3b8"/>
+    <text class="pill-t" x="155" y="408" text-anchor="middle">unreviewed</text>
+
+    <line class="line flow" x1="256" y1="402" x2="304" y2="402"/>
+    <rect x="310" y="380" width="190" height="44" rx="22" fill="#ffb020"/>
+    <text class="pill-t" x="405" y="408" text-anchor="middle">solved_once</text>
+
+    <line class="line flow" x1="506" y1="402" x2="554" y2="402"/>
+    <rect x="560" y="380" width="190" height="44" rx="22" fill="#12b5cb"/>
+    <text class="pill-t" x="655" y="408" text-anchor="middle">solved_many</text>
+
+    <line class="line flow" x1="756" y1="402" x2="804" y2="402"/>
+    <rect x="810" y="380" width="190" height="44" rx="22" fill="#16a66a"/>
+    <text class="pill-t" x="905" y="408" text-anchor="middle">verified</text>
+  </g>
+
+  <!-- demotion sink -->
+  <line class="line demote" x1="530" y1="424" x2="530" y2="486"/>
+  <rect x="60" y="494" width="940" height="44" rx="14" fill="#ef5b4c"/>
+  <text class="pill-t" x="530" y="522" text-anchor="middle">disputed &#183; deprecated &#183; superseded &#8594; revoked (never returned)</text>
+  <text class="lab lab-r" x="1020" y="510">contradictions kept,</text>
+  <text class="lab lab-r" x="1020" y="530">not flattened</text>
+
+  <!-- feedback loop: agent -> trust ladder -->
+  <path class="line feedback" d="M1213 236 C1213 300 1213 402 1006 402"/>
+  <text class="lab lab-b" x="1040" y="356" text-anchor="middle">verify in current env</text>
+  <text class="lab lab-b" x="1040" y="332" text-anchor="middle">use writes back &#8594; promote / demote / supersede</text>
+</svg>

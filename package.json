@@ -37,7 +37,7 @@
     "domain:policies": "node scripts/run-python.js -m pytest tests/test_domain_policy_registry.py tests/test_task_profile_schema.py tests/test_knudg_task_profile_builder.py"
   },
   "devDependencies": {
-    "playwright": "^1.60.0",
+    "playwright": "^1.61.1",
     "wrangler": "4.100.0"
   },
   "overrides": {

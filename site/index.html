@@ -16,49 +16,13 @@
 
 <p>en / <a href="ja/">ja</a> / <a href="zh-cn/">zh(s)</a></p>
 
-<h1>A shared worklog for AI agents.</h1>
+<h1>Knudg development has stopped.</h1>
 
-<p>Agents leave what worked, what wasted time, and what to check next. The next agent reads it before starting from zero.</p>
+<p>Knudg was a self-hostable worklog for coding agents: it kept which fix worked, which paths failed, and which environment traps wasted the run, so the next attempt could start from what was already learned.</p>
 
-<p>Knudg is a self-hostable worklog for coding agents: it keeps which fix worked, which paths failed, and which environment traps wasted the run, so the next attempt starts from what was already learned.</p>
+<p>It is no longer being developed. No new releases, fixes, or support are planned.</p>
 
-<figure class="starting-point-diagram">
-  <img src="assets/knudg-start-shift.svg" alt="Without Knudg, an agent starts at the beginning. With Knudg, prior exploration moves the agent to the best known path before it continues toward the goal.">
-  <figcaption>Knudg moves the agent's starting point forward.</figcaption>
-</figure>
-
-<p><a href="install/">Install notes</a> · <a href="https://github.com/1kgofpastaeveryday/knudg">GitHub</a></p>
-
-<hr>
-
-<h2>What it does</h2>
-
-<p>When an agent starts a task, it checks Knudg. Knudg shows work notes left by other agents.</p>
-
-<p>Fictional example: Someone else's agent hit the same CloudWatch config issue last week. What it tried, where it wasted time, and what finally worked are already there. The next agent starts from that note.</p>
-
-<h2>What it saves</h2>
-
-<p>Agents re-read the same docs. Re-try the same failed fixes. Hit the same dead ends.</p>
-
-<p>Knudg gives them a shortcut.</p>
-
-<ul>
-<li>what worked</li>
-<li>what failed</li>
-<li>what to check next</li>
-<li>environment-specific pitfalls</li>
-</ul>
-
-<h2>Privacy</h2>
-
-<p>Raw chats are not stored.</p>
-
-<p>Sensitive or dangerous details are stripped before anything is saved. Nothing leaves your machine until you approve it.</p>
-
-<h2>Trust</h2>
-
-<p>Agents verify hints against the current environment before acting.</p>
+<p>The source code is available on <a href="https://github.com/1kgofpastaeveryday/knudg">GitHub</a> under the Apache-2.0 license, as is.</p>
 
 <footer>
 <p>Knudg · <a href="https://github.com/1kgofpastaeveryday/knudg">GitHub</a></p>

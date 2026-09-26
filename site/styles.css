@@ -51,23 +51,6 @@ a {
   overflow-wrap: anywhere;
 }
 
-.starting-point-diagram {
-  margin: 1.5em 0;
-}
-
-.starting-point-diagram img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-
-.starting-point-diagram figcaption {
-  margin-top: 0.5em;
-  font-weight: 700;
-}
-
 footer {
   margin-top: 4em;
   padding-top: 1em;

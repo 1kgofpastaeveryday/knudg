@@ -44,10 +44,10 @@ function Assert-NoMatch {
 $ExpectedCsp = "default-src 'self'; script-src 'none'; connect-src 'none'; img-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests"
 $ExpectedPermissionsPolicy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
 $ExpectedCacheControl = "public, max-age=0, must-revalidate, no-transform"
-$EnglishSentinel = "self-hostable worklog for coding agents"
-$JapaneseSentinel = -join ([char[]](0x67B6, 0x7A7A, 0x4F8B))
+$EnglishSentinel = "Knudg development has stopped"
+$JapaneseSentinel = -join ([char[]](0x958B, 0x767A, 0x306F, 0x505C, 0x6B62, 0x3057, 0x307E, 0x3057, 0x305F))
 $Japanese404Sentinel = -join ([char[]](0x3053, 0x306E, 0x30DA, 0x30FC, 0x30B8, 0x306F, 0x8868, 0x793A, 0x3067, 0x304D, 0x307E, 0x305B, 0x3093))
-$ChineseSentinel = -join ([char[]](0x865A, 0x6784, 0x793A, 0x4F8B))
+$ChineseSentinel = -join ([char[]](0x5DF2, 0x505C, 0x6B62, 0x5F00, 0x53D1))
 $Chinese404Sentinel = -join ([char[]](0x8FD9, 0x4E2A, 0x9875, 0x9762, 0x65E0, 0x6CD5, 0x663E, 0x793A))
 
 function Assert-SecurityHeaders {

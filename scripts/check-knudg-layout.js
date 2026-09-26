@@ -4,12 +4,12 @@ const http = require("http");
 const path = require("path");
 
 const targets = [
-  ["en", "site/index.html", "en", true],
-  ["ja", "site/ja/index.html", "ja", true],
-  ["zh-cn", "site/zh-cn/index.html", "zh-CN", true],
-  ["install", "site/install/index.html", "en", false],
-  ["ja-install", "site/ja/install/index.html", "ja", false],
-  ["zh-cn-install", "site/zh-cn/install/index.html", "zh", false],
+  ["en", "site/index.html", "en"],
+  ["ja", "site/ja/index.html", "ja"],
+  ["zh-cn", "site/zh-cn/index.html", "zh-CN"],
+  ["install", "site/install/index.html", "en"],
+  ["ja-install", "site/ja/install/index.html", "ja"],
+  ["zh-cn-install", "site/zh-cn/install/index.html", "zh"],
 ];
 const widths = [320, 375, 768, 1024, 1280];
 
@@ -64,7 +64,7 @@ function targetUrl(baseUrl, relativePath) {
   const browser = await chromium.launch({ headless: true });
   const failures = [];
 
-  for (const [name, relativePath, expectedLang, requiresDiagram] of targets) {
+  for (const [name, relativePath, expectedLang] of targets) {
     for (const width of widths) {
       const requests = [];
       const page = await browser.newPage({ viewport: { width, height: 900 } });
@@ -72,7 +72,7 @@ function targetUrl(baseUrl, relativePath) {
       await page.goto(targetUrl(baseUrl, relativePath));
       await page.waitForLoadState("load");
 
-      const result = await page.evaluate(({ expectedLang, requiresDiagram }) => {
+      const result = await page.evaluate(({ expectedLang }) => {
         const allowedAnchor = (href) => {
           if (href === "/" || href === "../" || href === "ja/" || href === "zh-cn/" || href === "install/") return true;
           if (href === "../ja/" || href === "../zh-cn/" || href === "../install/" || href === "../ja/install/" || href === "../zh-cn/install/") return true;
@@ -101,12 +101,6 @@ function targetUrl(baseUrl, relativePath) {
         const disallowedFound = disallowedSelectors.some((selector) => document.querySelector(selector));
         const langOk = document.documentElement.lang === expectedLang;
         const cssLoaded = getComputedStyle(document.body).maxWidth !== "none";
-        const diagram = document.querySelector(".starting-point-diagram img");
-        const diagramOk = !requiresDiagram || Boolean(
-          diagram &&
-          /knudg-start-shift/.test(diagram.getAttribute("src") || "") &&
-          diagram.getBoundingClientRect().width > 0
-        );
 
         const visibleElements = Array.from(document.querySelectorAll("body, h1, h2, p, li, figure, img"))
           .filter((element) => {
@@ -135,10 +129,9 @@ function targetUrl(baseUrl, relativePath) {
           disallowedFound,
           langOk,
           cssLoaded,
-          diagramOk,
           clipped,
         };
-      }, { expectedLang, requiresDiagram });
+      }, { expectedLang });
 
       const externalRequests = requests.filter((url) => /^https?:\/\//i.test(url) && !url.startsWith(baseUrl));
 
@@ -149,7 +142,6 @@ function targetUrl(baseUrl, relativePath) {
         result.disallowedFound ||
         !result.langOk ||
         !result.cssLoaded ||
-        !result.diagramOk ||
         result.clipped.length > 0 ||
         externalRequests.length > 0
       ) {

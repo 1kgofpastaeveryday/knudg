@@ -1,6 +1,7 @@
 # Simplified Chinese Landing Page Design
 
-Status: Proposed static localization, synchronized May 12, 2026
+Status: Superseded on September 19, 2026. The live page is now a short notice
+that Knudg development has stopped; the design below is kept as history.
 
 This document defines the Simplified Chinese landing page implemented in
 `site/zh-cn/index.html` with Chinese-specific content rules in `site/styles.css`.

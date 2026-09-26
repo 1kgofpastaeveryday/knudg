@@ -4,7 +4,9 @@ All notable public changes to Knudg are tracked here.
 
 ## Unreleased
 
-No unreleased changes.
+- Replaced the landing page (English, Japanese, Simplified Chinese) and the
+  install pages with a notice that Knudg development has stopped. Layout and
+  smoke checks now expect the notice instead of the product copy and diagram.
 
 ## 0.1.2 - 2026-06-16
 

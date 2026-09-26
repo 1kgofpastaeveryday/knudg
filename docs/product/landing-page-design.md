@@ -1,6 +1,7 @@
 # Landing Page Design
 
-Status: Implemented static prototype, synchronized May 12, 2026
+Status: Superseded on September 19, 2026. The live page is now a short notice
+that Knudg development has stopped; the design below is kept as history.
 
 This document defines the public English landing page implemented in
 `site/index.html` with shared styling in `site/styles.css`.
